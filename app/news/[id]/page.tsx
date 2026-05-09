@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import ShareButtons from '@/components/ShareButtons';
+import ShareButtons from '../../../components/ShareButtons';
 
 export const revalidate = 3600; // Revalidar cada hora
 
@@ -13,7 +13,7 @@ async function getArticle(id: string) {
     .select('*')
     .eq('id', id)
     .single();
-    
+
   if (error || !data) return null;
   return data;
 }
@@ -42,7 +42,7 @@ async function getRelatedArticles(category: string, currentId: string) {
     .neq('id', currentId)
     .order('published_at', { ascending: false })
     .limit(4);
-    
+
   if (error) return [];
   return data || [];
 }
@@ -80,11 +80,11 @@ export default async function ArticlePage({ params }: { params: { id: string } }
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <article className="lg:col-span-8">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors mb-8 group text-sm font-bold uppercase tracking-widest"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6" /></svg>
             Volver a la portada
           </Link>
 
@@ -98,21 +98,21 @@ export default async function ArticlePage({ params }: { params: { id: string } }
               <span className="text-slate-500">•</span>
               <span className="text-slate-400">{new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
             </div>
-            
+
             <h1 className="text-4xl md:text-6xl font-black text-white leading-[1.05] tracking-tighter">
               {article.ai_title || article.original_title}
             </h1>
           </header>
-          
-          <ShareButtons 
-            url={`https://edunews-alpha.vercel.app/news/${article.id}`} 
-            title={article.ai_title || article.original_title} 
+
+          <ShareButtons
+            url={`https://edunews-alpha.vercel.app/news/${article.id}`}
+            title={article.ai_title || article.original_title}
           />
 
           {article.image_url && (
             <div className="relative aspect-video w-full rounded-3xl overflow-hidden mb-12 border border-white/10 shadow-2xl">
-              <Image 
-                src={article.image_url} 
+              <Image
+                src={article.image_url}
                 alt={article.ai_title}
                 fill
                 className="object-cover"
@@ -122,7 +122,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             </div>
           )}
 
-          <div 
+          <div
             className="prose prose-invert prose-lg max-w-none 
               prose-headings:text-white prose-headings:font-black prose-headings:tracking-tighter
               prose-p:text-slate-300 prose-p:leading-[1.9] prose-p:mb-12
@@ -133,19 +133,19 @@ export default async function ArticlePage({ params }: { params: { id: string } }
           />
 
           <footer className="mt-16 pt-12 border-t border-white/10">
-             <h3 className="text-2xl font-black text-white mb-8 uppercase tracking-tighter">Noticias Relacionadas</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {relatedArticles.map(rel => (
-                  <Link key={rel.id} href={`/news/${rel.id}`} className="group block space-y-4">
-                    <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10">
-                      <Image src={rel.image_url || ''} alt={rel.ai_title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                    </div>
-                    <h4 className="text-lg font-bold text-white group-hover:text-primary transition-colors leading-tight">
-                      {rel.ai_title || rel.original_title}
-                    </h4>
-                  </Link>
-                ))}
-             </div>
+            <h3 className="text-2xl font-black text-white mb-8 uppercase tracking-tighter">Noticias Relacionadas</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {relatedArticles.map(rel => (
+                <Link key={rel.id} href={`/news/${rel.id}`} className="group block space-y-4">
+                  <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10">
+                    <Image src={rel.image_url || ''} alt={rel.ai_title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                  </div>
+                  <h4 className="text-lg font-bold text-white group-hover:text-primary transition-colors leading-tight">
+                    {rel.ai_title || rel.original_title}
+                  </h4>
+                </Link>
+              ))}
+            </div>
           </footer>
         </article>
 
