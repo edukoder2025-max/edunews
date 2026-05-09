@@ -9,7 +9,7 @@ async function getNews() {
     .from('news_articles')
     .select('*')
     .order('published_at', { ascending: false })
-    .limit(10);
+    .limit(19);
     
   if (error) {
     console.error("Error cargando noticias:", error);

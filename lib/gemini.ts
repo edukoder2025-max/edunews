@@ -7,11 +7,36 @@ const genAIFallback = new GoogleGenerativeAI(process.env.GEMINI_API_KEY_FALLBACK
 
 export const getGeminiModel = (useFallback = false) => {
   const genAI = useFallback ? genAIFallback : genAIPrimary;
-  return genAI.getGenerativeModel({ 
+  return genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
     generationConfig: { responseMimeType: "application/json" }
   });
 };
+
+// Función para asegurar una estructura HTML impecable
+function cleanHtml(html: string): string {
+  if (!html) return '';
+
+  // Limpieza profunda: convertimos cualquier tipo de salto de línea en cierre y apertura de párrafo
+  let cleaned = html
+    .replace(/<\/p>\s*<p>/gi, '</p>\n<p>') // Normalizar párrafos existentes
+    .replace(/<br\s*\/?>/gi, '</p><p>')    // Convertir BR en párrafos
+    .replace(/\n/g, '</p><p>')             // CUALQUIER salto de línea se vuelve un párrafo nuevo
+    .replace(/<p>\s*<\/p>/g, '')           // Eliminar párrafos vacíos
+    .trim();
+
+  if (!cleaned.startsWith('<p>')) {
+    cleaned = `<p>${cleaned}`;
+  }
+  if (!cleaned.endsWith('</p>')) {
+    cleaned = `${cleaned}</p>`;
+  }
+
+  // Corregir posibles anidamientos erróneos de <p><p>
+  cleaned = cleaned.replace(/<p>\s*<p>/g, '<p>').replace(/<\/p>\s*<\/p>/g, '</p>');
+
+  return cleaned;
+}
 
 export async function rewriteNews(originalTitle: string, originalContent: string) {
   const prompt = `
@@ -46,17 +71,25 @@ export async function rewriteNews(originalTitle: string, originalContent: string
     const model = getGeminiModel(false);
     const result = await model.generateContent(prompt);
     const text = result.response.text();
-    return JSON.parse(text);
+    const data = JSON.parse(text);
+    return {
+      ...data,
+      new_content: cleanHtml(data.new_content)
+    };
   } catch (primaryError: any) {
     const isQuotaError = primaryError.message?.includes('429') || primaryError.message?.includes('quota');
-    
+
     if (isQuotaError && process.env.GEMINI_API_KEY_FALLBACK) {
       console.warn("Cuota excedida en API principal, intentando con API de respaldo...");
       try {
         const fallbackModel = getGeminiModel(true);
         const result = await fallbackModel.generateContent(prompt);
         const text = result.response.text();
-        return JSON.parse(text);
+        const data = JSON.parse(text);
+        return {
+          ...data,
+          new_content: cleanHtml(data.new_content)
+        };
       } catch (fallbackError: any) {
         console.error("Error en API de respaldo:", fallbackError.message || fallbackError);
         return { error: fallbackError.message || 'Error in fallback API' };
