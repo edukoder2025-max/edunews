@@ -56,6 +56,9 @@ export default function RootLayout({
                   <p className="text-sm text-slate-400 max-w-md">
                     El primer periódico digital informativo impulsado por IA diseñado para evitar el contenido generado por intereses políticos. Promovemos un periodismo ético, transparente y correcto.
                   </p>
+                  <p className="mt-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    Contacto: <a href="mailto:edukoder2025@gmail.com" className="text-primary hover:text-white transition-colors">edukoder2025@gmail.com</a>
+                  </p>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white mb-4">Legal</h3>
