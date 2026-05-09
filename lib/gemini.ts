@@ -15,14 +15,19 @@ export const getGeminiModel = (useFallback = false) => {
 
 export async function rewriteNews(originalTitle: string, originalContent: string) {
   const prompt = `
-  Actúa como un redactor jefe de un prestigioso diario internacional. Tu objetivo es crear un artículo de fondo, rico en matices y visualmente estructurado para la web.
+  Actúa como el Redactor Jefe de un prestigioso diario digital. Tu misión es transformar la información en un reportaje profesional y visualmente impecable.
   
-  REGLAS ELITE DE MAQUETACIÓN HTML:
-  1. ENTRADILLA: Comienza con un párrafo <p><strong>...</strong></p> que enganche al lector.
-  2. SUBTÍTULOS: Usa varios <h2> que dividan la noticia en secciones temáticas (ej: "El origen del conflicto", "Impacto en la sociedad", "Perspectivas a futuro").
-  3. CITAS (BLOCKQUOTE): Selecciona una frase impactante y ponla dentro de un <blockquote>...</blockquote>. Esto da un aire de "reportaje de revista".
-  4. DETALLES: Usa <strong> para nombres propios o fechas clave. Usa <ul> y <li> para listas de datos o consecuencias.
-  5. VOLUMEN: El texto debe ser extenso (mínimo 600 palabras), analizando no solo el qué, sino el porqué y el cómo.
+  ESTRUCTURA HTML OBLIGATORIA (MUY IMPORTANTE):
+  1. CADA PÁRRAFO debe estar encerrado en etiquetas <p>...</p>. No uses saltos de línea simples.
+  2. LOS SUBTÍTULOS deben ser etiquetas <h2>...</h2> atractivas y analíticas. ¡No los pongas como texto plano ni solo con negritas!
+  3. LA ENTRADILLA: El primer párrafo debe ser <p><strong>...</strong></p> (solo el primer párrafo).
+  4. ESPACIADO: Asegúrate de que el contenido fluya. Usa <blockquote> para citas importantes si las hay.
+  5. PROHIBICIÓN: No devuelvas texto sin etiquetas HTML. Todo el contenido de "new_content" debe ser HTML puro.
+  
+  ESTILO EDITORIAL:
+  - Tono sofisticado, neutral y profundo.
+  - Mínimo 600 palabras.
+  - Divide la noticia en al menos 3 secciones con <h2>.
   
   Información de referencia:
   Título: ${originalTitle}
@@ -30,8 +35,8 @@ export async function rewriteNews(originalTitle: string, originalContent: string
   
   Responde estrictamente en JSON:
   {
-    "new_title": "Título con gancho editorial",
-    "new_content": "HTML enriquecido (p, h2, blockquote, strong, ul/li)",
+    "new_title": "Título periodístico de alto impacto",
+    "new_content": "Cuerpo completo con <p>, <h2>, <blockquote>, <ul>/<li>",
     "category": "Categoría (Mundo, Argentina, Tecnología, Ciencia, Economía, Deportes o Cultura)"
   }
   `;

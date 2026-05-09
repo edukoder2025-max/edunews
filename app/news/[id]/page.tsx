@@ -84,10 +84,10 @@ export default async function ArticlePage({ params }: { params: { id: string } }
           <div 
             className="prose prose-invert prose-lg max-w-none 
               prose-headings:text-white prose-headings:font-black prose-headings:tracking-tighter
-              prose-p:text-slate-300 prose-p:leading-relaxed prose-p:mb-8
+              prose-p:text-slate-300 prose-p:leading-[1.8] prose-p:mb-10
               prose-strong:text-white prose-strong:font-black
-              prose-blockquote:border-primary prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-r-xl
-              prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-8 prose-h2:text-primary
+              prose-blockquote:border-primary prose-blockquote:bg-white/5 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:italic
+              prose-h2:text-3xl prose-h2:mt-20 prose-h2:mb-10 prose-h2:text-primary prose-h2:border-b prose-h2:border-primary/20 prose-h2:pb-4
               prose-a:text-primary hover:prose-a:text-white transition-colors"
             dangerouslySetInnerHTML={{ __html: article.ai_content || article.original_content }}
           />
