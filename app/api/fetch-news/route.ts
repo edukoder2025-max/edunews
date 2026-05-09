@@ -41,24 +41,29 @@ export async function GET() {
       const articles = await fetchRssFeed(feedUrl);
       debugInfo.push({ feedUrl, articlesFetched: articles.length });
       
-      // Procesamos solo la noticia más reciente de cada feed (3 noticias en total por ejecución)
-      const topArticles = articles.slice(0, 1);
+      // Filtramos noticias que tengan menos de 48 horas de antigüedad para frescura total
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
+
+      const freshArticles = articles.filter((a: any) => {
+        const pubDate = a.pubDate ? new Date(a.pubDate) : new Date();
+        return pubDate > twoDaysAgo;
+      });
+
+      // Procesamos las 2 noticias más recientes de este feed (Total 6 por ejecución)
+      const topArticles = freshArticles.slice(0, 2);
 
       for (const article of topArticles) {
-        // Verificar si la noticia ya existe en Supabase
-        const { data: existingArticle, error: selectError } = await supabase
+        // Verificar si la noticia ya existe por URL o por Título exacto
+        const { data: existingArticle } = await supabase
           .from('news_articles')
           .select('id')
-          .eq('source_url', article.link)
-          .single();
-
-        if (selectError && selectError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-           errors.push(`Error de Select BD: ${selectError.message}`);
-        }
+          .or(`source_url.eq."${article.link}",original_title.eq."${article.title}"`)
+          .maybeSingle();
 
         if (existingArticle) {
-          debugInfo.push({ skipped: article.title, reason: 'Already in DB' });
-          continue; // Ya la procesamos antes
+          debugInfo.push({ skipped: article.title, reason: 'Duplicate' });
+          continue; 
         }
 
         // Reescribir con Gemini
