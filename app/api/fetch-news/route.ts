@@ -28,16 +28,34 @@ function shuffleArray(array: string[]) {
   return newArr;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const loadAll = searchParams.get('all') === 'true';
+
+    // 1. Autolimpieza de la Base de Datos (Evita saturar el plan gratuito de Supabase)
+    // Eliminamos de forma automática las noticias que tengan más de 7 días de antigüedad
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const { error: pruneError } = await supabase
+      .from('news_articles')
+      .delete()
+      .lt('published_at', sevenDaysAgo.toISOString());
+      
+    if (pruneError) {
+      console.error("Error limpiando base de datos:", pruneError.message);
+    }
+
     let processedCount = 0;
     const errors: string[] = [];
     const debugInfo: any[] = [];
 
-    // Tomamos 3 feeds al azar
-    const randomFeeds = shuffleArray(RSS_FEEDS).slice(0, 3);
+    // Si loadAll es true, procesamos todos los feeds; si no, tomamos 3 al azar para no saturar
+    const selectedFeeds = loadAll ? RSS_FEEDS : shuffleArray(RSS_FEEDS).slice(0, 3);
+    const articlesPerFeed = loadAll ? 4 : 2;
 
-    for (const feedUrl of randomFeeds) {
+    for (const feedUrl of selectedFeeds) {
       const articles = await fetchRssFeed(feedUrl);
       debugInfo.push({ feedUrl, articlesFetched: articles.length });
       
@@ -50,8 +68,8 @@ export async function GET() {
         return pubDate > twoDaysAgo;
       });
 
-      // Procesamos las 2 noticias más recientes de este feed (Total 6 por ejecución)
-      const topArticles = freshArticles.slice(0, 2);
+      // Procesamos la cantidad de noticias configurada
+      const topArticles = freshArticles.slice(0, articlesPerFeed);
 
       for (const article of topArticles) {
         // Verificar si la noticia ya existe por URL o por Título exacto

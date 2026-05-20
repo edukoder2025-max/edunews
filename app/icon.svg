@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- Gradiente premium naranja-rojo brillante -->
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4500" />
+      <stop offset="100%" stop-color="#ff8c00" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <!-- Fondo redondeado elegante en Slate 900 con borde sutil -->
+  <rect x="1" y="1" width="30" height="30" rx="8" fill="#0f172a" stroke="url(#glowGrad)" stroke-width="1.5" filter="url(#shadow)" />
+  <!-- Letra E estilizada con tipografía de sistema bold -->
+  <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="20" fill="url(#glowGrad)">E</text>
+</svg>

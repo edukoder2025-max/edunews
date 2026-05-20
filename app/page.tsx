@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
+import WeatherWidget from '@/components/WeatherWidget';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -45,7 +46,7 @@ export default async function Home() {
             En Vivo
           </div>
           <span className="text-slate-500">|</span>
-          <span className="text-slate-300">Buenos Aires 22°C</span>
+          <WeatherWidget />
         </div>
       </div>
 

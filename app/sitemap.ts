@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://tu-sitio.vercel.app'; // Reemplazar con tu URL real
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
   // Obtener todas las noticias para el sitemap
   const { data: articles } = await supabase
