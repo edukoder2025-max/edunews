@@ -5,6 +5,7 @@ import CookieBanner from "@/components/CookieBanner";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import WeatherWidget from "@/components/WeatherWidget";
+import CryptoTickerWidget from "@/components/CryptoTickerWidget";
 import Script from "next/script";
 
 const inter = Inter({ 
@@ -166,6 +167,9 @@ export default async function RootLayout({
               </div>
             </div>
           )}
+
+          {/* Crypto Market Ticker - TradingView Widget */}
+          <CryptoTickerWidget />
 
           {/* Main Content */}
           <main className="flex-1 w-full">
