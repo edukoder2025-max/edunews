@@ -37,6 +37,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'hourly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/category/Tecnología`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/category/Economía`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/category/Ciencia`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/category/Deportes`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/category/Cultura`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
     ...articleEntries,
   ];
 }

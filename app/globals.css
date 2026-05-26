@@ -4,31 +4,97 @@
 
 @layer base {
   body {
-    @apply bg-background text-slate-200 antialiased selection:bg-primary/30;
+    @apply text-slate-200 antialiased selection:bg-primary/30 font-sans;
+    background-color: #050811;
+    background-image: radial-gradient(circle at top, #0d162d 0%, #050811 60%, #010307 100%);
+    background-attachment: fixed;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
   }
 }
 
 @layer utilities {
   .glass-panel {
-    @apply bg-surface backdrop-blur-md border border-slate-700/50 shadow-xl;
+    @apply bg-surface backdrop-blur-md border border-white/5 shadow-xl transition-all duration-300;
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-secondary;
   }
+  
+  /* Newspaper specific styling */
+  .border-newspaper-double {
+    border-style: double;
+    border-width: 4px 0;
+    @apply border-white/20;
+  }
+  
+  .border-newspaper-double-b {
+    border-bottom: 4px double rgba(255, 255, 255, 0.2);
+  }
+
+  .border-newspaper-double-t {
+    border-top: 4px double rgba(255, 255, 255, 0.2);
+  }
+
+  /* Drop-cap for the editorial newspaper look */
+  .editorial-drop-cap::first-letter {
+    float: left;
+    font-family: var(--font-playfair), serif;
+    font-size: 4.2rem;
+    line-height: 0.8;
+    margin-top: 0.15rem;
+    margin-right: 0.6rem;
+    font-weight: 900;
+    @apply text-primary;
+    text-shadow: 2px 2px 0px rgba(0, 210, 219, 0.2);
+  }
+}
+
+/* Animations for news ticker */
+@keyframes ticker-slide {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-ticker {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker-slide 30s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* Micro-animations */
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a; 
+  background: #050811; 
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155; 
+  background: #1e293b; 
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569; 
+  background: #ff3838; 
 }

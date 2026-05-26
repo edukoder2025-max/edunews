@@ -1,0 +1,12 @@
+# ================================================================= #
+# ARCHIVO DE VENDEDORES AUTORIZADOS DE GOOGLE ADSENSE (ads.txt)      #
+# ================================================================= #
+# Instrucciones:                                                    #
+# Reemplaza "pub-0000000000000000" con tu ID de editor real de      #
+# Google AdSense (lo encontrarás en tu panel de control de AdSense) #
+# ================================================================= #
+
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+
+# Nota: Mantén la cadena final "f08c47fec0942fa0" intacta, ya que es el 
+# código universal del sistema de publicidad de Google.

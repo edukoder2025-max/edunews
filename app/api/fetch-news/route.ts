@@ -7,15 +7,30 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 // Lista robusta de RSS agrupados por categorías (Noticias, Tecnología, Ciencia, Economía, Deportes)
+// Balanceamos intencionalmente el espectro ideológico (Izquierda, Derecha, Liberal, Progresista, Centrista, Financiero y Global)
 const RSS_FEEDS = [
-  'https://feeds.bbci.co.uk/mundo/rss.xml', // BBC Mundo
-  'https://elpais.com/rss/elpais/portada.xml', // El País
-  'https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml', // El Mundo
-  'https://www.rtve.es/rss/temas_noticias.xml', // RTVE Noticias
-  'https://tn.com.ar/rss.xml', // TN (Argentina - Muy estable)
-  'https://www.clarin.com/rss/lo-ultimo/', // Clarín (Argentina)
-  'https://www.perfil.com/rss/ultimo-momento', // Perfil (Argentina)
-  'https://www.pagina12.com.ar/rss/articulos' // Página 12 (Argentina)
+  // 1. Fuentes Globales / Agencias Neutras
+  'https://feeds.bbci.co.uk/mundo/rss.xml', // BBC Mundo (Global Centrista)
+  'https://elpais.com/rss/elpais/portada.xml', // El País (España / Centro-Izquierda)
+  'https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml', // El Mundo (España / Centro-Derecha)
+  'https://www.rtve.es/rss/temas_noticias.xml', // RTVE Noticias (España / Pública)
+
+  // 2. Argentina: Izquierda / Progresismo / Keynesianismo
+  'https://www.pagina12.com.ar/rss/articulos', // Página 12 (Argentina / Izquierda Nacional)
+  'https://www.laizquierdadiario.com/spip.php?page=backend', // La Izquierda Diario (Argentina / Socialismo-Marxismo)
+  'https://www.ambito.com/rss/home.xml', // Ámbito Financiero (Argentina / Centro-Izquierda Económica)
+  'https://www.eldiario.es/rss/', // elDiario.es (España / Progresismo)
+
+  // 3. Argentina: Centro / Derecha / Liberalismo
+  'https://tn.com.ar/rss.xml', // TN Noticias (Argentina / Centro-Derecha Comercial)
+  'https://www.clarin.com/rss/lo-ultimo/', // Clarín (Argentina / Centro Comercial)
+  'https://www.lanacion.com.ar/arc/outboundfeeds/rss/', // La Nación (Argentina / Conservador-Liberal)
+  'https://www.infobae.com/feeds/rss/', // Infobae (Argentina / Centro-Derecha Masivo)
+  
+  // 4. Finanzas / Mercados / Libertarios
+  'https://www.cronista.com/files/rss/news.xml', // El Cronista (Argentina / Negocios y Finanzas)
+  'https://feeds.feedburner.com/libertaddigital/portada', // Libertad Digital (España-Latam / Liberal-Libertario)
+  'https://www.perfil.com/rss/ultimo-momento' // Perfil (Argentina / Centrista Analítico)
 ];
 
 // Función para desordenar un array (Fisher-Yates)

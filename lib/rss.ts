@@ -57,6 +57,21 @@ export async function fetchRssFeed(feedUrl: string) {
         }
       }
 
+      // Sanitizar la URL de la imagen: ignorar videos o reproductores incrustados
+      if (imageUrl) {
+        const lowerUrl = imageUrl.toLowerCase();
+        if (
+          lowerUrl.includes('/embed/') || 
+          lowerUrl.includes('vodgc.net') || 
+          lowerUrl.includes('player') || 
+          lowerUrl.includes('youtube.com') || 
+          lowerUrl.includes('vimeo.com') || 
+          lowerUrl.includes('video')
+        ) {
+          imageUrl = ''; 
+        }
+      }
+
       return {
         title: item.title || '',
         link: item.link || '',

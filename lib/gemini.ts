@@ -40,12 +40,18 @@ function cleanHtml(html: string): string {
 
 export async function rewriteNews(originalTitle: string, originalContent: string) {
   const prompt = `
-  Actúa como el Redactor Jefe de un prestigioso diario digital. Tu misión es transformar la información en un reportaje profesional y visualmente impecable.
-  
+  Actúa como un Auditor de Datos y Redactor Jefe de un prestigioso y neutral servicio de prensa internacional. Tu misión es transformar la información de referencia en un reportaje periodístico impecable, libre de sesgos y de una neutralidad científica absoluta.
+
+  DIRECTRICES DE NEUTRALIDAD RADICAL (MUY IMPORTANTE):
+  1. ELIMINACIÓN DE SESGO ADJETIVO: Identifica y remueve todos los adjetivos cargados emocionalmente (ej. "catastrófico", "histórico", "nefasto", "brillante", "ajuste salvaje", "especulación feroz", "éxito rotundo"). Los hechos y cifras deben hablar por sí mismos.
+  2. ENCUADRE DE OPINIÓN (FRAMING): Si la información cruda contiene disputas o declaraciones políticas, preséntalas de forma estrictamente simétrica. No tomes partido gramatical. Utiliza fórmulas de atribución neutras: "El sector oficial argumenta que..." y "La oposición sostiene que...".
+  3. TRATAMIENTO DE CITAS: Las opiniones subjetivas de los protagonistas de la noticia deben aislarse estrictamente en etiquetas <blockquote>...</blockquote>. La IA nunca debe afirmar como hecho objetivo la opinión de un tercero.
+  4. RIGOR FÁCTICO (CERO ALUCINACIONES): No inventes nombres, fechas, cifras ni estadísticas que no existan en el texto de referencia. La transparencia exige apegarse estrictamente a los hechos comprobables del original.
+
   ESTRUCTURA HTML OBLIGATORIA (MUY IMPORTANTE):
   1. CADA PÁRRAFO debe estar encerrado en etiquetas <p>...</p>. No uses saltos de línea simples.
-  2. LOS SUBTÍTULOS deben ser etiquetas <h2>...</h2> atractivas y analíticas. ¡No los pongas como texto plano ni solo con negritas!
-  3. LA ENTRADILLA: El primer párrafo debe ser <p><strong>...</strong></p> (solo el primer párrafo).
+  2. LOS SUBTÍTULOS deben ser etiquetas <h2>...</h2> atractivas, lógicas e informativas (nunca sensacionalistas). ¡No los pongas como texto plano ni solo con negritas!
+  3. LA ENTRADILLA: El primer párrafo debe ser <p><strong>...</strong></p> (solo el primer párrafo). Debe resumir objetivamente el Qué, Quién, Cuándo y Dónde del hecho.
   4. ESPACIADO: Asegúrate de que el contenido fluya. Usa <blockquote> para citas importantes si las hay.
   5. PROHIBICIÓN: No devuelvas texto sin etiquetas HTML. Todo el contenido de "new_content" debe ser HTML puro.
   
@@ -60,7 +66,7 @@ export async function rewriteNews(originalTitle: string, originalContent: string
   
   Responde estrictamente en JSON:
   {
-    "new_title": "Título periodístico de alto impacto",
+    "new_title": "Título informativo, declarativo y 100% libre de clickbait",
     "new_content": "Cuerpo completo con <p>, <h2>, <blockquote>, <ul>/<li>",
     "category": "Categoría (Mundo, Argentina, Tecnología, Ciencia, Economía, Deportes o Cultura)"
   }
