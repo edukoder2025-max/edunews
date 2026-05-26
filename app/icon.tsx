@@ -6,7 +6,8 @@ export const size = {
 };
 export const contentType = 'image/png';
 
-// Generador de favicon dinámico con la marca estilizada de EduNews
+// Favicon dinámico abstracto con formas puras CSS
+// IMPORTANTE: Evita colocar texto interno para prevenir el bug de fuentes de Windows en Next.js (TypeError: Invalid URL)
 export default function Icon() {
   return new ImageResponse(
     (
@@ -19,14 +20,17 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
-          fontFamily: 'serif',
-          fontWeight: '900',
-          fontSize: '18px',
-          lineHeight: '1',
         }}
       >
-        E
+        {/* Esfera blanca flotante estilizada en CSS puro para simular un isotipo de noticia */}
+        <div
+          style={{
+            width: '10px',
+            height: '10px',
+            background: 'white',
+            borderRadius: '50%',
+          }}
+        />
       </div>
     ),
     {
