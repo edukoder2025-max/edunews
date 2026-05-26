@@ -66,9 +66,11 @@ export async function GET(request: Request) {
     const errors: string[] = [];
     const debugInfo: any[] = [];
 
-    // Si loadAll es true, procesamos todos los feeds; si no, tomamos 3 al azar para no saturar
-    const selectedFeeds = loadAll ? RSS_FEEDS : shuffleArray(RSS_FEEDS).slice(0, 3);
-    const articlesPerFeed = loadAll ? 4 : 2;
+    // Como el cron solo corre 1 vez al día (plan Hobby), procesamos TODOS los feeds
+    // Gemini 2.5 Flash gratis permite ~500 req/día + tenemos key de respaldo (~1000 total)
+    // 15 feeds × 3 artículos = ~45 llamadas a Gemini (muy lejos del límite)
+    const selectedFeeds = RSS_FEEDS; // Siempre procesamos todos los feeds
+    const articlesPerFeed = loadAll ? 5 : 3;
 
     for (const feedUrl of selectedFeeds) {
       const articles = await fetchRssFeed(feedUrl);
