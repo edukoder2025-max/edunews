@@ -157,6 +157,9 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             sourceName={article.source_name || "RSS Feed"}
             sourceUrl={article.source_url || ""}
             category={article.category || "General"}
+            biasDetected={article.bias_detected}
+            biasScore={article.bias_score}
+            sourcesUsed={article.sources_used}
           />
 
           {/* Related Articles in footer of column */}

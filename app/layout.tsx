@@ -48,7 +48,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const tickerNews = await getTickerNews();
+  const rawTickerNews = await getTickerNews();
+  const tickerNews = Array.from(
+    new Map(rawTickerNews.map(news => [news.id, news])).values()
+  );
   const formattedDate = new Date().toLocaleDateString('es-ES', { 
     weekday: 'long', 
     day: 'numeric', 
@@ -200,7 +203,7 @@ export default async function RootLayout({
                 <div>
                   <h3 className="text-sm font-black uppercase tracking-wider text-white mb-4">Secciones</h3>
                   <ul className="space-y-2 text-sm text-slate-400 font-medium">
-                    <li><Link href="/como-funciona" className="hover:text-primary transition-colors">Metodología IA</Link></li>
+                    <li><Link href="/metodologia" className="hover:text-primary transition-colors">Metodología IA</Link></li>
                     <li><Link href="/nosotros" className="hover:text-primary transition-colors">Quiénes Somos</Link></li>
                     <li><Link href="/contacto" className="hover:text-primary transition-colors">Contacto</Link></li>
                   </ul>

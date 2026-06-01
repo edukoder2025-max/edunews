@@ -38,7 +38,26 @@ function cleanHtml(html: string): string {
   return cleaned;
 }
 
-export async function rewriteNews(originalTitle: string, originalContent: string) {
+export async function rewriteNews(
+  originalTitle: string,
+  originalContent: string,
+  alternatives: any[] = []
+) {
+  let referenceBlock = `
+  FUENTE PRINCIPAL:
+  Título: ${originalTitle}
+  Contenido: ${originalContent}
+  `;
+
+  if (alternatives && alternatives.length > 0) {
+    referenceBlock += `\n\nOTRAS FUENTES SOBRE EL MISMO TEMA (Perspectivas contrastantes):
+    ${alternatives.map((a, i) => `
+      [Fuente alternativa ${i+1}: ${a.source}]
+      Título: ${a.title}
+      Resumen/Contenido: ${a.snippet}
+    `).join('\n')}`;
+  }
+
   const prompt = `
   Actúa como un Auditor de Datos y Redactor Jefe de un prestigioso y neutral servicio de prensa internacional. Tu misión es transformar la información de referencia en un reportaje periodístico impecable, libre de sesgos y de una neutralidad científica absoluta.
 
@@ -47,6 +66,7 @@ export async function rewriteNews(originalTitle: string, originalContent: string
   2. ENCUADRE DE OPINIÓN (FRAMING): Si la información cruda contiene disputas o declaraciones políticas, preséntalas de forma estrictamente simétrica. No tomes partido gramatical. Utiliza fórmulas de atribución neutras: "El sector oficial argumenta que..." y "La oposición sostiene que...".
   3. TRATAMIENTO DE CITAS: Las opiniones subjetivas de los protagonistas de la noticia deben aislarse estrictamente en etiquetas <blockquote>...</blockquote>. La IA nunca debe afirmar como hecho objetivo la opinión de un tercero.
   4. RIGOR FÁCTICO (CERO ALUCINACIONES): No inventes nombres, fechas, cifras ni estadísticas que no existan en el texto de referencia. La transparencia exige apegarse estrictamente a los hechos comprobables del original.
+  5. PRESERVACIÓN DE DATOS NUMÉRICOS: Los datos numéricos (precios, cotizaciones, porcentajes, fechas, estadísticas) son hechos empíricos objetivos, no sesgos. Debes preservarlos siempre exactamente como aparecen en la fuente, incluyendo su unidad de medida original (ej. dólares, pesos, %, etc.). No los simplifiques ni omitas si son de relevancia económica.
 
   ESTRUCTURA HTML OBLIGATORIA (MUY IMPORTANTE):
   1. CADA PÁRRAFO debe estar encerrado en etiquetas <p>...</p>. No uses saltos de línea simples.
@@ -61,14 +81,19 @@ export async function rewriteNews(originalTitle: string, originalContent: string
   - Divide la noticia en al menos 3 secciones con <h2>.
   
   Información de referencia:
-  Título: ${originalTitle}
-  Contenido: ${originalContent}
+  ${referenceBlock}
   
   Responde estrictamente en JSON:
   {
     "new_title": "Título informativo, declarativo y 100% libre de clickbait",
     "new_content": "Cuerpo completo con <p>, <h2>, <blockquote>, <ul>/<li>",
-    "category": "Categoría (Mundo, Argentina, Tecnología, Ciencia, Economía, Deportes o Cultura)"
+    "category": "Categoría (Mundo, Argentina, Tecnología, Ciencia, Economía, Deportes o Cultura)",
+    "bias_detected": "Breve análisis y descripción de los sesgos, adjetivos removidos y diferencias encontradas entre las fuentes",
+    "bias_score": {
+      "original": 75,
+      "neutralized": 5,
+      "top_biased_phrases": ["lista de frases o palabras sesgadas que fueron removidas o corregidas"]
+    }
   }
   `;
 

@@ -1,0 +1,407 @@
+
+
+
+EduNews
+Documento Técnico y Estratégico
+Pipeline de IA · Mejoras · Hoja de Ruta · Prácticas Recomendadas
+Versión
+1.0
+Fecha
+Junio 2026
+Mejoras
+12 identificadas
+
+
+1. Resumen ejecutivo
+EduNews es un medio digital 100% automatizado que procesa noticias desde feeds RSS de los principales medios argentinos e internacionales, y las reescribe usando Inteligencia Artificial (Gemini 2.5 Flash de Google) para eliminar lenguaje sesgado, sensacionalismo y retórica política.
+
+El sitio está desplegado sobre Vercel, probablemente con Next.js como framework, y es operado por una sola persona. Su diferencial principal es la promesa de transparencia editorial: cada artículo incluye pestañas de auditoría que muestran el proceso de neutralización.
+
+Propuesta de valor central
+Periodismo del futuro: 100% hechos, 0% política.
+La IA toma artículos de fuentes con sesgo conocido y los reescribe bajo 4 directrices algorítmicas.
+El resultado se publica con trazabilidad total hacia la fuente original.
+
+Sitio web
+https://edunews2.vercel.app
+Motor de IA
+Gemini 2.5 Flash (Google)
+Infraestructura
+Vercel + Next.js
+Monetización actual
+Google AdSense (en configuración)
+Cobertura
+Argentina, Mundo, España
+Secciones
+Economía, Tecnología, Deportes, Cultura, Ciencia
+Contacto
+edukoder2025@gmail.com
+
+
+2. Arquitectura actual del pipeline
+El flujo editorial actual tiene un solo paso de procesamiento:
+
+2.1 Pipeline existente (Paso 1)
+Los feeds RSS de las fuentes seleccionadas son procesados automáticamente.
+El contenido crudo de cada artículo se envía a Gemini Flash.
+La IA reescribe el artículo aplicando las 4 directrices editoriales.
+El artículo neutralizado se publica en el sitio con metadata de trazabilidad.
+
+2.2 Las 4 directrices algorítmicas actuales
+1. Sin adjetivos evaluativos
+Se eliminan calificativos subjetivos como 'nefasto', 'brutal', 'catastrófico'. Los hechos y cifras hablan por sí solos.
+2. Equal framing
+Si la noticia involucra controversia ideológica, la IA presenta declaraciones de ambos espectros de forma equivalente.
+3. Citas textuales aisladas
+Las citas de protagonistas se preservan en bloques blockquote, sin parafraseo que altere el sentido.
+4. Atribución de fuente abierta
+Cada artículo enlaza a la fuente RSS original para que el lector pueda contrastar.
+
+
+3. Nueva propuesta: pipeline de dos fuentes
+La mejora central consiste en agregar un segundo paso al pipeline: antes de enviar el contenido a Gemini, el sistema busca automáticamente en internet otras fuentes que cubran la misma noticia desde una perspectiva política o editorial opuesta a la fuente original.
+
+Principio clave
+Gemini NO navega la web. El servidor (Next.js) hace la búsqueda, extrae los snippets,
+y le entrega a Gemini el texto ya preparado. Esto mantiene el costo en tokens al mínimo
+y evita depender de la capacidad de búsqueda web de la versión gratuita de Gemini.
+
+3.1 Flujo completo del nuevo pipeline
+RSS → se extrae el artículo base y el titular limpio.
+El servidor genera una query de búsqueda a partir del titular (primeras 6 palabras significativas).
+Google Custom Search API busca el mismo tema en fuentes del espectro opuesto (definidas en el mapa de fuentes).
+Se recuperan los snippets de los primeros 3 resultados (aproximadamente 150 palabras c/u, sin costo de scraping adicional).
+Se construye un prompt unificado con: artículo original + snippets alternativos.
+Un único llamado a Gemini Flash produce el artículo neutralizado + metadatos de sesgo.
+El artículo se publica con el campo biasDetected disponible para la pestaña de Auditoría.
+
+3.2 Código: extracción de query de búsqueda
+// Paso 1: ya existente — obtener artículo desde RSS
+const { title, content, source } = await fetchRSSArticle(feedUrl);
+
+// Nuevo: preparar query para búsqueda de fuentes opuestas
+const searchQuery = title
+  .replace(/[^\w\sáéíóúüñÁÉÍÓÚÜÑ]/g, '')
+  .split(' ')
+  .slice(0, 6)
+  .join(' ');
+
+3.3 Código: búsqueda de fuentes alternativas
+async function findAlternativeSources(query, originalSource) {
+  const oppositeKeyword = SOURCE_MAP[originalSource] || SOURCE_MAP.default;
+
+  const url = `https://www.googleapis.com/customsearch/v1`
+    + `?key=${process.env.GOOGLE_CSE_KEY}`
+    + `&cx=${process.env.GOOGLE_CSE_ID}`
+    + `&q=${encodeURIComponent(query + ' ' + oppositeKeyword)}`
+    + `&num=3`
+    + `&dateRestrict=d1`; // solo últimas 24 horas
+
+  const res  = await fetch(url);
+  const data = await res.json();
+
+  // Solo snippets — sin scraping adicional, mínimo costo de tokens
+  return data.items?.map(item => ({
+    title:   item.title,
+    snippet: item.snippet,
+    source:  item.displayLink,
+    link:    item.link,
+  })) ?? [];
+}
+
+3.4 Mapa de fuentes opuestas (SOURCE_MAP)
+Este objeto de configuración reemplaza la necesidad de que la IA clasifique ideología, ahorrando tokens y evitando errores de clasificación:
+
+const SOURCE_MAP = {
+  // Izquierda / oficialismo → buscar en derecha / oposición
+  'pagina12.com.ar':  'site:lanacion.com.ar OR site:infobae.com',
+  'eldestape.com':    'site:lanacion.com.ar OR site:cronista.com',
+  'elcohete.com.ar':  'site:infobae.com OR site:ambito.com',
+
+  // Derecha / oposición → buscar en izquierda / oficialismo
+  'lanacion.com.ar':  'site:pagina12.com.ar OR site:eldestape.com',
+  'infobae.com':      'site:pagina12.com.ar OR site:elcohete.com.ar',
+  'cronista.com':     'site:pagina12.com.ar OR site:ambito.com',
+
+  // Internacional — España
+  'elpais.com':       'site:elmundo.es OR site:abc.es',
+  'elmundo.es':       'site:elpais.com OR site:eldiario.es',
+
+  // Fallback genérico si la fuente no está mapeada
+  'default': '',
+};
+
+3.5 El prompt unificado para Gemini
+Este es el prompt que recibe Gemini Flash. El objetivo es que sea lo más compacto posible para no exceder la ventana de contexto del plan gratuito:
+
+const prompt = `
+Eres un periodista que escribe noticias 100% neutrales.
+
+FUENTE PRINCIPAL (${source}):
+${content.slice(0, 1500)}
+
+OTRAS FUENTES SOBRE EL MISMO TEMA:
+${alternatives.map((a, i) => `
+  [Fuente ${i+1}: ${a.source}]
+  Título: ${a.title}
+  Resumen: ${a.snippet}
+`).join('\n')}
+
+TU TAREA:
+1. Identificá los HECHOS en los que todas las fuentes coinciden.
+2. Identificá los puntos donde difieren (lenguaje, énfasis, interpretación).
+3. Redactá un artículo neutral que:
+   - Use solo hechos verificables y datos numéricos presentes en las fuentes
+   - No use adjetivos valorativos
+   - Presente perspectivas distintas como 'según X' o 'según Y'
+   - No exceda 400 palabras
+
+Responde SOLO con JSON válido:
+{
+  'article': '...',
+  'sourcesUsed': ['...', '...'],
+  'biasDetected': 'descripción de diferencias encontradas'
+}
+`;
+
+3.6 Variables de entorno necesarias
+GOOGLE_CSE_KEY
+API Key de Google Cloud (Custom Search)
+GOOGLE_CSE_ID
+ID del Custom Search Engine creado en cse.google.com
+GEMINI_API_KEY
+Ya existente — clave de la API de Google AI Studio
+
+Límites del plan gratuito
+Google Custom Search API gratuita: 100 búsquedas por día.
+Gemini 2.5 Flash gratuito: límite de tokens por minuto/día variable.
+Con 100 búsquedas/día y artículos cada ~15 minutos, el sistema procesa hasta ~96 artículos diarios sin costo adicional.
+
+
+4. Mejoras identificadas y hoja de ruta
+Las siguientes 12 mejoras fueron identificadas mediante análisis directo del sitio, revisión del código expuesto y evaluación de la propuesta editorial. Se ordenan por impacto y esfuerzo estimado.
+
+Impacto
+Esfuerzo
+Mejora
+Categoría
+Crítico
+Bajo
+Activar pestaña de Auditoría de Sesgo con diff real
+Credibilidad
+Crítico
+Medio
+Preservar datos numéricos en artículos económicos
+Contenido
+Alto
+Bajo
+Publicar metodología del índice '95.8% sesgo reducido'
+Credibilidad
+Alto
+Bajo
+Expandir página 'Quiénes somos' con identidad del proyecto
+Credibilidad
+Alto
+Bajo
+Corregir loop duplicado del ticker de noticias
+UX
+Alto
+Medio
+Implementar buscador de artículos (Fuse.js o Algolia)
+Producto
+Alto
+Medio
+Score de sesgo visual por artículo
+Producto
+Medio
+Bajo
+Separar categoría 'España' del nav
+Contenido
+Medio
+Bajo
+Vista rápida inline para breves (acordeón)
+UX
+Medio
+Medio
+Newsletter diario automatizado (Resend/Brevo)
+Crecimiento
+Medio
+Alto
+API pública de noticias neutralizadas (modelo freemium)
+Crecimiento
+Medio
+Alto
+Expansión a portugués (Brasil)
+Crecimiento
+
+
+4.1 Quick wins — implementar esta semana
+A. Corregir ticker duplicado
+El ticker de últimas noticias hace un loop mostrando cada ítem dos veces. Es el bug más visible del sitio.
+// En el componente del ticker, antes de renderizar:
+const uniqueNews = [...new Map(articles.map(a => [a.id, a])).values()];
+
+B. Preservar datos numéricos en el prompt de Gemini
+Agregar esta instrucción al prompt existente para que la IA no elimine valores económicos:
+// Agregar al prompt actual de Gemini:
+'IMPORTANTE: Los datos numéricos (precios, cotizaciones, porcentajes,
+fechas, estadísticas) son HECHOS, no sesgo. Debes preservarlos siempre
+exactamente como aparecen en la fuente, incluyendo la unidad de medida.'
+
+C. Score de sesgo por artículo
+Pedir a Gemini que devuelva este campo adicional junto con el artículo:
+// En el JSON de respuesta de Gemini, agregar:
+{
+  'article': '...',
+  'biasDetected': '...',
+  'sourcesUsed': ['...'],
+  'biasScore': {
+    'original': 72,   // 0-100, qué tan sesgada era la fuente original
+    'neutralized': 8, // qué tan neutral quedó el resultado
+    'topBiasedPhrases': ['frase 1', 'frase 2', 'frase 3']
+  }
+}
+
+
+5. Estrategia de credibilidad editorial
+La mayor amenaza para EduNews no es técnica sino de percepción. La promesa de neutralidad necesita evidencia concreta, no solo afirmaciones.
+
+5.1 Página de metodología
+Crear la ruta /metodologia con el siguiente contenido mínimo:
+Descripción de las 4 directrices algorítmicas (ya documentadas internamente).
+Explicación de cómo se calcula el índice de neutralidad (criterios usados).
+Lista de fuentes RSS monitoreadas con su clasificación editorial declarada.
+Frecuencia de actualización del modelo y criterios de revisión humana.
+Mecanismo de reporte de errores o sesgo no detectado.
+
+5.2 Auditoría de sesgo funcional
+Cada artículo ya tiene la pestaña 'Auditoría de Sesgo' en la UI, pero actualmente no muestra contenido real. Para activarla:
+Guardar en la base de datos el texto original de la fuente RSS al momento del procesamiento.
+Guardar también el campo biasDetected y biasScore que devuelve Gemini.
+Renderizar en la pestaña: texto original vs. texto neutralizado, frases modificadas destacadas, y el score comparativo.
+
+5.3 Identidad del proyecto
+La página 'Quiénes somos' actual tiene tres líneas. Para construir confianza mínima debe incluir:
+Nombre o alias del fundador con contexto (periodista, desarrollador, activista).
+La motivación detrás del proyecto en primera persona.
+Un compromiso editorial firmado (qué promete y qué NO promete EduNews).
+Mecanismo de contacto y reporte para errores editoriales.
+
+
+6. Prácticas recomendadas de desarrollo
+
+6.1 Gestión de prompts
+Regla de oro
+Los prompts son código. Versionarlos, documentarlos y probarlos con el mismo
+rigor que cualquier función de la aplicación.
+
+Guardar todos los prompts en archivos .txt o .md separados del código JS, en una carpeta /prompts.
+Incluir en cada prompt: versión, fecha, propósito, y ejemplos de input/output esperado.
+Testear cambios de prompt con un conjunto fijo de 10 artículos de referencia antes de deployar.
+Nunca hardcodear el prompt dentro de la función de llamada a la API — siempre leerlo de una variable de entorno o archivo externo.
+
+6.2 Manejo de errores de la API de Gemini
+async function callGemini(prompt, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await geminiClient.generateContent(prompt);
+      const text = res.response.text();
+      // Limpiar posibles markdown fences del JSON
+      const clean = text.replace(/```json|```/g, '').trim();
+      return JSON.parse(clean);
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      // Esperar antes de reintentar (exponential backoff)
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+    }
+  }
+}
+
+6.3 Límites de tokens — buenas prácticas
+Artículo de fuente principal
+Recortar a máximo 1500 caracteres antes de enviar a Gemini.
+Snippets de fuentes alternativas
+Usar solo el campo snippet de Google CSE (~150 palabras c/u). No scrapear el artículo completo.
+Respuesta esperada
+Limitar max_tokens a 1000. Un artículo de 400 palabras ocupa ~500 tokens.
+Prompt base
+Mantenerlo bajo 300 tokens. Revisarlo si supera esa cifra.
+
+6.4 Rate limiting y cuotas
+Google CSE gratuito: 100 queries/día. Implementar un contador en Redis o una variable de entorno que se resetee a medianoche.
+Si se alcanza el límite, hacer fallback al pipeline de fuente única (como funciona hoy).
+Loguear todas las llamadas a APIs externas con timestamp, source, y tokens usados para monitorear costos.
+Agregar un campo processed_at y pipeline_version a cada artículo en la base de datos para poder auditar qué versión del prompt generó cada nota.
+
+6.5 Variables de entorno — gestión segura
+# .env.local (nunca commitear al repositorio)
+GEMINI_API_KEY=...
+GOOGLE_CSE_KEY=...
+GOOGLE_CSE_ID=...
+
+# .env.example (sí commitear — sin valores reales)
+GEMINI_API_KEY=your_gemini_key_here
+GOOGLE_CSE_KEY=your_google_cse_key_here
+GOOGLE_CSE_ID=your_google_cse_id_here
+
+6.6 Estructura de carpetas recomendada
+edunews/
+├── prompts/
+│   ├── neutralize-single-source.txt   ← prompt actual
+│   └── neutralize-dual-source.txt     ← prompt nuevo
+├── lib/
+│   ├── gemini.js      ← cliente Gemini con retry
+│   ├── googleCSE.js   ← cliente de búsqueda
+│   └── sourceMap.js   ← mapa de fuentes opuestas
+├── pages/api/
+│   └── process-article.js  ← API route principal
+└── .env.example
+
+
+7. Hoja de ruta sugerida
+
+Semana 1 — Quick wins sin riesgo
+Corregir el loop duplicado del ticker.
+Agregar instrucción de preservación de datos numéricos al prompt de Gemini.
+Escribir página /metodologia con criterios de neutralidad.
+Expandir página /nosotros con identidad del proyecto.
+
+Semana 2 — Nuevo pipeline de dos fuentes
+Crear cuenta en Google Cloud y habilitar Custom Search API.
+Crear el Custom Search Engine en cse.google.com.
+Implementar el módulo googleCSE.js con fallback.
+Implementar el SOURCE_MAP con las fuentes principales argentinas.
+Integrar el nuevo prompt dual en el pipeline existente.
+Probar con 10 artículos reales y validar calidad de salida.
+
+Semana 3 — Credibilidad y producto
+Activar la pestaña de Auditoría de Sesgo con datos reales (guardar diff en BD).
+Mostrar el biasScore visualmente en cada artículo.
+Implementar buscador con Fuse.js.
+Agregar categoría 'España' al nav.
+
+Mes 2 — Crecimiento
+Newsletter diario automatizado con Resend o Brevo.
+Explorar API pública con modelo freemium.
+Evaluar expansión a fuentes en portugués.
+
+
+8. Guía de configuración: Google Custom Search
+Estos son los pasos exactos para obtener las credenciales necesarias para el nuevo pipeline:
+
+Ir a https://console.cloud.google.com y crear un nuevo proyecto llamado 'EduNews'.
+En 'APIs y servicios' → 'Biblioteca', buscar 'Custom Search API' y habilitarla.
+Ir a 'Credenciales' → 'Crear credenciales' → 'Clave de API'. Copiar el valor como GOOGLE_CSE_KEY.
+Ir a https://cse.google.com y crear un nuevo motor de búsqueda.
+En 'Sitios para buscar', poner '*' (asterisco) para buscar en toda la web.
+En Configuración → Básico, activar la opción 'Búsqueda en toda la web'.
+Copiar el ID del motor (campo 'ID de motor de búsqueda') como GOOGLE_CSE_ID.
+Agregar ambos valores al archivo .env.local del proyecto.
+
+Plan gratuito de Google CSE
+100 búsquedas por día sin costo.
+Si el volumen de artículos supera ese límite, implementar fallback al pipeline de fuente única.
+El plan pago comienza en USD 5 por cada 1000 búsquedas adicionales.
+
+
+EduNews · Documento generado en Junio 2026

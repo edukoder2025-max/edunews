@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { fetchRssFeed } from '@/lib/rss';
 import { rewriteNews } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
+import { findAlternativeSources } from '@/lib/googleCSE';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -102,7 +103,8 @@ export async function GET(request: Request) {
         }
 
         // Reescribir con Gemini
-        const rewritten = await rewriteNews(article.title, article.content);
+        const alternatives = await findAlternativeSources(article.title, article.link);
+        const rewritten = await rewriteNews(article.title, article.content, alternatives);
         
         if (!rewritten || rewritten.error) {
           errors.push(`Error al reescribir: ${article.title}. Razón: ${rewritten?.error || 'Desconocida'}`);
@@ -110,19 +112,39 @@ export async function GET(request: Request) {
         }
 
         // Guardar en Supabase
-        const { error: dbError } = await supabase
+        const insertPayload: any = {
+          original_title: article.title,
+          ai_title: rewritten.new_title,
+          original_content: article.content,
+          ai_content: rewritten.new_content,
+          category: rewritten.category || 'General',
+          image_url: article.imageUrl,
+          source_url: article.link,
+          source_name: article.sourceName,
+          published_at: article.pubDate ? new Date(article.pubDate) : new Date(),
+          bias_detected: rewritten.bias_detected || null,
+          bias_score: rewritten.bias_score || null,
+          sources_used: rewritten.sources_used || (alternatives.length > 0 ? alternatives.map((a: any) => a.source) : [article.sourceName])
+        };
+
+        let { error: dbError } = await supabase
           .from('news_articles')
-          .insert({
-            original_title: article.title,
-            ai_title: rewritten.new_title,
-            original_content: article.content,
-            ai_content: rewritten.new_content,
-            category: rewritten.category || 'General',
-            image_url: article.imageUrl,
-            source_url: article.link,
-            source_name: article.sourceName,
-            published_at: article.pubDate ? new Date(article.pubDate) : new Date()
-          });
+          .insert(insertPayload);
+
+        // Fallback si no existen las columnas de sesgo en Supabase
+        if (dbError && (dbError.message?.includes('column') || dbError.code === 'PGRST204')) {
+          console.warn("Supabase columns for bias analysis missing. Retrying insert with standard columns...");
+          const fallbackPayload = { ...insertPayload };
+          delete fallbackPayload.bias_detected;
+          delete fallbackPayload.bias_score;
+          delete fallbackPayload.sources_used;
+
+          const { error: fallbackError } = await supabase
+            .from('news_articles')
+            .insert(fallbackPayload);
+          
+          dbError = fallbackError;
+        }
 
         if (dbError) {
           errors.push(`Error en BD para: ${article.title} - ${dbError.message}`);
