@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import WeatherWidget from "@/components/WeatherWidget";
 import CryptoTickerWidget from "@/components/CryptoTickerWidget";
+import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
 
 const inter = Inter({ 
@@ -142,6 +143,7 @@ export default async function RootLayout({
               <Link href="/category/Cultura" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-general hover:border-cat-general transition-all">
                 Cultura
               </Link>
+              <SearchInput />
             </nav>
           </header>
 
