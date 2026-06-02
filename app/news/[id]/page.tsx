@@ -6,6 +6,7 @@ import { Metadata } from 'next';
 import ShareButtons from '@/components/ShareButtons';
 import AiTransparencyPanel from '@/components/AiTransparencyPanel';
 import { Calendar, ChevronLeft, Shield, Eye, Flame, Compass } from 'lucide-react';
+import SafeImage from '@/components/SafeImage';
 
 export const revalidate = 3600; // Revalidar cada hora
 
@@ -139,8 +140,9 @@ export default async function ArticlePage({ params }: { params: { id: string } }
           {/* Image */}
           {article.image_url && (
             <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-              <img
-                src={article.image_url || getCategoryFallbackImage(article.category)}
+              <SafeImage
+                src={article.image_url}
+                fallbackSrc={getCategoryFallbackImage(article.category)}
                 alt={article.ai_title || "Imagen del artículo"}
                 className="object-cover w-full h-full"
                 loading="eager"
@@ -176,8 +178,9 @@ export default async function ArticlePage({ params }: { params: { id: string } }
                 {relatedArticles.map(rel => (
                   <Link key={rel.id} href={`/news/${rel.id}`} className="group block space-y-3">
                     <div className="relative aspect-video rounded-xl overflow-hidden border border-white/5 group-hover:border-primary/20 transition-all duration-300">
-                      <img 
-                        src={rel.image_url || getCategoryFallbackImage(rel.category)} 
+                      <SafeImage 
+                        src={rel.image_url} 
+                        fallbackSrc={getCategoryFallbackImage(rel.category)}
                         alt={rel.ai_title} 
                         className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
                       />
@@ -227,8 +230,9 @@ export default async function ArticlePage({ params }: { params: { id: string } }
                   {relatedArticles.slice(0, 3).map(rel => (
                     <Link key={rel.id} href={`/news/${rel.id}`} className="flex gap-4 group">
                       <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-white/10">
-                        <img 
-                          src={rel.image_url || getCategoryFallbackImage(rel.category)} 
+                        <SafeImage 
+                          src={rel.image_url} 
+                          fallbackSrc={getCategoryFallbackImage(rel.category)}
                           alt={rel.ai_title} 
                           className="object-cover w-full h-full" 
                         />

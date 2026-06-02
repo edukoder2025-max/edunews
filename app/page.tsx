@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Sparkles, Calendar, ArrowRight, Eye, ShieldAlert, Cpu } from 'lucide-react';
+import SafeImage from '@/components/SafeImage';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -144,8 +145,9 @@ export default async function Home() {
           {featuredArticle && (
             <article className="group space-y-6 pb-8 border-b border-white/5">
               <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 shadow-2xl transition-all duration-500">
-                <img 
-                  src={featuredArticle.image_url || getCategoryFallbackImage(featuredArticle.category)} 
+                <SafeImage 
+                  src={featuredArticle.image_url} 
+                  fallbackSrc={getCategoryFallbackImage(featuredArticle.category)}
                   alt={featuredArticle.ai_title || "Destacada"}
                   className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
                   loading="eager"
@@ -196,8 +198,9 @@ export default async function Home() {
             {secondaryNews.map((article) => (
               <article key={article.id} className="group flex flex-col space-y-4 border-b md:border-b-0 border-white/5 pb-6 md:pb-0">
                 <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden border border-white/5 group-hover:border-primary/20 transition-all duration-300">
-                  <img 
-                    src={article.image_url || getCategoryFallbackImage(article.category)} 
+                  <SafeImage 
+                    src={article.image_url} 
+                    fallbackSrc={getCategoryFallbackImage(article.category)}
                     alt={article.ai_title || "Secundaria"}
                     className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"

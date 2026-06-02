@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, FolderOpen, Calendar, ArrowRight } from 'lucide-react';
+import SafeImage from '@/components/SafeImage';
 
 export const revalidate = 60;
 
@@ -115,8 +116,9 @@ export default async function CategoryPage({ params }: { params: { slug: string 
                 href={`/news/${article.id}`} 
                 className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 block shadow-lg transition-all duration-300"
               >
-                <img 
-                  src={article.image_url || getCategoryFallbackImage(article.category)} 
+                <SafeImage 
+                  src={article.image_url} 
+                  fallbackSrc={getCategoryFallbackImage(article.category)}
                   alt={article.ai_title || "Noticia"} 
                   className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
