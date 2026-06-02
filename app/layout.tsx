@@ -8,6 +8,7 @@ import WeatherWidget from "@/components/WeatherWidget";
 import CryptoWidget from "@/components/CryptoWidget";
 import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
+import NewsletterForm from "@/components/NewsletterForm";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -184,6 +185,9 @@ export default async function RootLayout({
           {/* Footer */}
           <footer className="border-t border-white/5 bg-slate-950 mt-auto">
             <div className="max-w-7xl mx-auto px-6 py-12">
+              <div className="mb-12 border-b border-white/5 pb-12">
+                <NewsletterForm />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div className="md:col-span-2 space-y-4">
                   <h3 className="text-lg font-bold text-white font-serif">EduNews</h3>
