@@ -1,0 +1,24 @@
+name: Daily news and newsletter
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Ajusta esta hora según UTC.
+  workflow_dispatch:
+
+jobs:
+  run-daily-tasks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run news fetch
+        run: |
+          set -e
+          echo "Llamando a /api/fetch-news..."
+          curl --fail -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ultimo-news2026.vercel.app/api/fetch-news"
+
+      - name: Run newsletter send
+        run: |
+          set -e
+          echo "Llamando a /api/send-daily-newsletter..."
+          curl --fail -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ultimo-news2026.vercel.app/api/send-daily-newsletter"

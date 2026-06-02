@@ -157,28 +157,39 @@ export async function sendNewsletterCampaign(subject: string, htmlContent: strin
 
     // 1. Crear la campaña de email
     const campaignName = `EduNews Digest - ${new Date().toLocaleDateString('es-ES')}`;
+    const campaignPayload = {
+      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+      name: campaignName,
+      subject: subject,
+      htmlContent: htmlContent,
+      recipients: {
+        listIds: [listId],
+      },
+    };
+
+    console.log('Brevo campaign payload (sender):', campaignPayload.sender, '| listId:', listId);
+
     const createCampaignRes = await fetch('https://api.brevo.com/v3/emailCampaigns', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({
-        tag: 'newsletter',
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        name: campaignName,
-        subject: subject,
-        htmlContent: htmlContent,
-        recipients: {
-          listIds: [listId],
-        },
-      }),
+      body: JSON.stringify(campaignPayload),
     });
 
     if (!createCampaignRes.ok) {
-      const errorData = await createCampaignRes.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error creando campaña: HTTP ${createCampaignRes.status}`);
+      const errorText = await createCampaignRes.text();
+      let errorData: any = {};
+      try { errorData = JSON.parse(errorText); } catch {}
+      // Log completo para diagnóstico
+      console.error(`Brevo createCampaign HTTP ${createCampaignRes.status}:`, errorText);
+      throw new Error(
+        errorData.message || errorData.error || 
+        `Error creando campaña: HTTP ${createCampaignRes.status} — ${errorText.slice(0, 300)}`
+      );
     }
 
     const campaignData = await createCampaignRes.json();
     const campaignId = campaignData.id;
+    console.log('Brevo campaign created, id:', campaignId);
 
     // 2. Enviar la campaña de forma inmediata
     const sendCampaignRes = await fetch(`https://api.brevo.com/v3/emailCampaigns/${campaignId}/sendNow`, {
@@ -187,8 +198,11 @@ export async function sendNewsletterCampaign(subject: string, htmlContent: strin
     });
 
     if (!sendCampaignRes.ok) {
-      const errorData = await sendCampaignRes.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error enviando campaña: HTTP ${sendCampaignRes.status}`);
+      const errorText = await sendCampaignRes.text();
+      let errorData: any = {};
+      try { errorData = JSON.parse(errorText); } catch {}
+      console.error(`Brevo sendNow HTTP ${sendCampaignRes.status}:`, errorText);
+      throw new Error(errorData.message || `Error enviando campaña: HTTP ${sendCampaignRes.status} — ${errorText.slice(0, 300)}`);
     }
 
     return { success: true, campaignId };

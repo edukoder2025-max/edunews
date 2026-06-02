@@ -1,12 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/fetch-news",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/send-daily-newsletter",
-      "schedule": "0 11 * * *"
-    }
-  ]
-}
+{}
