@@ -2,11 +2,7 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'edukoder2025@gmail.com';
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'EduNews';
 
-interface BrevoHeaders extends HeadersInit {
-  'api-key': string;
-  'Content-Type': string;
-  'Accept': string;
-}
+type BrevoHeaders = Record<string, string>;
 
 function getHeaders(): BrevoHeaders {
   if (!BREVO_API_KEY) {

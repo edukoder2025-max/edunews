@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
-import Image from 'next/image';
+import { buildArticleUrl, getArticleImage } from '@/lib/articleUtils';
 import Link from 'next/link';
+import SafeImage from '@/components/SafeImage';
 import { ArrowLeft, Eye, Calendar } from 'lucide-react';
 
 export const revalidate = 60;
@@ -15,7 +16,7 @@ interface NewsArticle {
   original_title: string;
   ai_content: string;
   category: string;
-  featured_image: string;
+  image_url?: string;
   published_at: string;
   views: number;
 }
@@ -168,17 +169,17 @@ export default async function SearchPage({
           {results.map((article) => (
             <Link
               key={article.id}
-              href={`/news/${article.id}`}
+              href={buildArticleUrl(article.id, article.ai_title || article.original_title)}
               className="group flex flex-col overflow-hidden rounded-xl border border-white/10 hover:border-primary/40 bg-slate-900/30 hover:bg-slate-900/60 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
             >
               {/* Imagen */}
               <div className="relative overflow-hidden bg-slate-800 h-48 flex-shrink-0">
-                <Image
-                  src={article.featured_image || getCategoryFallbackImage(article.category)}
+                <SafeImage
+                  src={getArticleImage(article)}
+                  fallbackSrc={getCategoryFallbackImage(article.category)}
                   alt={article.ai_title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>

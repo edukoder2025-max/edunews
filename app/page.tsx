@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { buildArticleUrl, getArticleImage } from '@/lib/articleUtils';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Sparkles, Calendar, ArrowRight, Eye, ShieldAlert, Cpu } from 'lucide-react';
@@ -121,7 +122,7 @@ export default async function Home() {
                     </span>
                   </div>
                   <h3 className="text-sm font-bold text-white group-hover:text-primary transition-colors leading-tight font-sans">
-                    <Link href={`/news/${article.id}`}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h3>
@@ -146,7 +147,7 @@ export default async function Home() {
             <article className="group space-y-6 pb-8 border-b border-white/5">
               <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 shadow-2xl transition-all duration-500">
                 <SafeImage 
-                  src={featuredArticle.image_url} 
+                  src={getArticleImage(featuredArticle)} 
                   fallbackSrc={getCategoryFallbackImage(featuredArticle.category)}
                   alt={featuredArticle.ai_title || "Destacada"}
                   className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
@@ -166,7 +167,7 @@ export default async function Home() {
 
               <div className="space-y-4">
                 <h2 className="text-3xl md:text-5xl font-black text-white font-serif leading-[1.05] tracking-tight group-hover:text-primary transition-colors duration-300">
-                  <Link href={`/news/${featuredArticle.id}`}>
+                  <Link href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title)}>
                     {featuredArticle.ai_title || featuredArticle.original_title}
                   </Link>
                 </h2>
@@ -182,7 +183,7 @@ export default async function Home() {
                     {new Date(featuredArticle.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                   </span>
                   <Link 
-                    href={`/news/${featuredArticle.id}`}
+                    href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title)}
                     className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:text-white uppercase tracking-wider transition-colors"
                   >
                     Leer Reporte IA
@@ -199,7 +200,7 @@ export default async function Home() {
               <article key={article.id} className="group flex flex-col space-y-4 border-b md:border-b-0 border-white/5 pb-6 md:pb-0">
                 <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden border border-white/5 group-hover:border-primary/20 transition-all duration-300">
                   <SafeImage 
-                    src={article.image_url} 
+                    src={getArticleImage(article)} 
                     fallbackSrc={getCategoryFallbackImage(article.category)}
                     alt={article.ai_title || "Secundaria"}
                     className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
@@ -215,7 +216,7 @@ export default async function Home() {
                 <div className="space-y-2 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
                     <h3 className="text-lg font-black font-serif text-white leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                      <Link href={`/news/${article.id}`}>
+                      <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
                         {article.ai_title || article.original_title}
                       </Link>
                     </h3>
@@ -228,7 +229,7 @@ export default async function Home() {
                     <span>
                       {new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                     </span>
-                    <Link href={`/news/${article.id}`} className="text-primary hover:text-white transition-colors">
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)} className="text-primary hover:text-white transition-colors">
                       Leer más +
                     </Link>
                   </div>
@@ -302,7 +303,7 @@ export default async function Home() {
                     {article.category || 'Mundo'}
                   </span>
                   <h3 className="text-sm font-black font-serif text-white leading-tight group-hover:text-primary transition-colors">
-                    <Link href={`/news/${article.id}`}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h3>

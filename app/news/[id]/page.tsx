@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { buildArticleUrl, extractArticleId, getArticleImage } from '@/lib/articleUtils';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -23,7 +24,8 @@ async function getArticle(id: string) {
 
 // SEO Dinámico: Genera el título y descripción únicos para Google
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const article = await getArticle(params.id);
+  const articleId = extractArticleId(params.id);
+  const article = await getArticle(articleId);
   if (!article) return { title: 'Noticia no encontrada' };
 
   const cleanText = (article.ai_content || article.original_content || '')
@@ -36,7 +38,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     openGraph: {
       title: article.ai_title || article.original_title,
       description: 'Periodismo Ético e Independiente impulsado por Inteligencia Artificial.',
-      images: [article.image_url || ''],
+      images: [getArticleImage(article)],
     },
   };
 }
@@ -79,7 +81,8 @@ function getCategoryColor(category: string) {
 }
 
 export default async function ArticlePage({ params }: { params: { id: string } }) {
-  const article = await getArticle(params.id);
+  const articleId = extractArticleId(params.id);
+  const article = await getArticle(articleId);
 
   if (!article) {
     notFound();
@@ -133,22 +136,20 @@ export default async function ArticlePage({ params }: { params: { id: string } }
 
           {/* Social Share Buttons */}
           <ShareButtons
-            url={`https://ultimo-news2026.vercel.app/news/${article.id}`}
+            url={`https://ultimo-news2026.vercel.app${buildArticleUrl(article.id, article.ai_title || article.original_title)}`}
             title={article.ai_title || article.original_title}
           />
 
           {/* Image */}
-          {article.image_url && (
-            <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-              <SafeImage
-                src={article.image_url}
-                fallbackSrc={getCategoryFallbackImage(article.category)}
-                alt={article.ai_title || "Imagen del artículo"}
-                className="object-cover w-full h-full"
-                loading="eager"
-              />
-            </div>
-          )}
+          <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+            <SafeImage
+              src={getArticleImage(article)}
+              fallbackSrc={getCategoryFallbackImage(article.category)}
+              alt={article.ai_title || "Imagen del artículo"}
+              className="object-cover w-full h-full"
+              loading="eager"
+            />
+          </div>
 
           {/* Interactive AI Transparency Panel */}
           <AiTransparencyPanel
@@ -176,10 +177,10 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {relatedArticles.map(rel => (
-                  <Link key={rel.id} href={`/news/${rel.id}`} className="group block space-y-3">
+                  <Link key={rel.id} href={buildArticleUrl(rel.id, rel.ai_title || rel.original_title)} className="group block space-y-3">
                     <div className="relative aspect-video rounded-xl overflow-hidden border border-white/5 group-hover:border-primary/20 transition-all duration-300">
                       <SafeImage 
-                        src={rel.image_url} 
+                        src={getArticleImage(rel)} 
                         fallbackSrc={getCategoryFallbackImage(rel.category)}
                         alt={rel.ai_title} 
                         className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
@@ -228,10 +229,10 @@ export default async function ArticlePage({ params }: { params: { id: string } }
                 </h3>
                 <div className="space-y-4">
                   {relatedArticles.slice(0, 3).map(rel => (
-                    <Link key={rel.id} href={`/news/${rel.id}`} className="flex gap-4 group">
+                    <Link key={rel.id} href={buildArticleUrl(rel.id, rel.ai_title || rel.original_title)} className="flex gap-4 group">
                       <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-white/10">
                         <SafeImage 
-                          src={rel.image_url} 
+                          src={getArticleImage(rel)} 
                           fallbackSrc={getCategoryFallbackImage(rel.category)}
                           alt={rel.ai_title} 
                           className="object-cover w-full h-full" 

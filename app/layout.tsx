@@ -4,6 +4,7 @@ import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { buildArticleUrl } from "@/lib/articleUtils";
 import WeatherWidget from "@/components/WeatherWidget";
 import CryptoWidget from "@/components/CryptoWidget";
 import SearchInput from "@/components/SearchInput";
@@ -157,14 +158,14 @@ export default async function RootLayout({
               <div className="flex overflow-hidden w-full relative items-center ml-4">
                 <div className="animate-ticker flex gap-12 text-xs font-bold text-slate-300">
                   {tickerNews.map((news, i) => (
-                    <Link key={`${news.id}-${i}`} href={`/news/${news.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
+                    <Link key={`${news.id}-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title)} className="hover:text-primary transition-colors flex items-center gap-2">
                       <span className="text-primary font-black">•</span>
                       {news.ai_title || news.original_title}
                     </Link>
                   ))}
                   {/* Duplicate for infinite loop */}
                   {tickerNews.map((news, i) => (
-                    <Link key={`${news.id}-dup-${i}`} href={`/news/${news.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
+                    <Link key={`${news.id}-dup-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title)} className="hover:text-primary transition-colors flex items-center gap-2">
                       <span className="text-primary font-black">•</span>
                       {news.ai_title || news.original_title}
                     </Link>

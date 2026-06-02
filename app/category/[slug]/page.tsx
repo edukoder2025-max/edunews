@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { buildArticleUrl, getArticleImage } from '@/lib/articleUtils';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, FolderOpen, Calendar, ArrowRight } from 'lucide-react';
@@ -113,11 +114,11 @@ export default async function CategoryPage({ params }: { params: { slug: string 
           {news.map((article) => (
             <article key={article.id} className="group flex flex-col space-y-4">
               <Link 
-                href={`/news/${article.id}`} 
+                href={buildArticleUrl(article.id, article.ai_title || article.original_title)} 
                 className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 block shadow-lg transition-all duration-300"
               >
                 <SafeImage 
-                  src={article.image_url} 
+                  src={getArticleImage(article)} 
                   fallbackSrc={getCategoryFallbackImage(article.category)}
                   alt={article.ai_title || "Noticia"} 
                   className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
@@ -134,7 +135,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
               <div className="space-y-2 flex-1 flex flex-col justify-between">
                 <div className="space-y-1">
                   <h2 className="text-xl font-black font-serif text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
-                    <Link href={`/news/${article.id}`}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h2>
@@ -149,7 +150,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
                     {new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                   </span>
                   <Link 
-                    href={`/news/${article.id}`} 
+                    href={buildArticleUrl(article.id, article.ai_title || article.original_title)} 
                     className="text-primary hover:text-white transition-colors"
                   >
                     Leer Reporte IA +

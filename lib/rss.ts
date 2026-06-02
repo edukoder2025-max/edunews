@@ -1,13 +1,16 @@
 import Parser from 'rss-parser';
+import { isValidImageUrl } from '@/lib/articleUtils';
 
 type CustomItem = {
   content?: string;
   'content:encoded'?: string;
   description?: string;
-  enclosure?: { url: string };
+  enclosure?: any;
   'media:content'?: any;
   'media:group'?: any;
   'media:thumbnail'?: any;
+  itunes?: any;
+  image?: any;
   link?: string;
   [key: string]: any;
 };
@@ -25,80 +28,78 @@ const parser = new Parser<any, CustomItem>({
       'content:encoded',
       'media:content',
       'media:group',
+      'media:thumbnail',
+      'itunes:image',
+      'image',
     ],
   },
 });
+
+function normalizeImageUrl(url: string, baseUrl: string) {
+  let normalized = String(url || '').trim();
+  if (!normalized) return '';
+
+  normalized = normalized.replace(/^['"]+|['"]+$/g, '');
+  normalized = normalized.replace(/&amp;/g, '&');
+  normalized = normalized.replace(/\s+/g, '');
+
+  if (normalized.startsWith('//')) {
+    normalized = `https:${normalized}`;
+  }
+
+  if (normalized.startsWith('/')) {
+    try {
+      normalized = new URL(normalized, baseUrl).href;
+    } catch {
+      return '';
+    }
+  }
+
+  return normalized;
+}
+
+function pickUrlFromField(field: any): string {
+  if (!field) return '';
+  if (typeof field === 'string') return field;
+  if (Array.isArray(field)) {
+    for (const item of field) {
+      const candidate = pickUrlFromField(item);
+      if (candidate) return candidate;
+    }
+    return '';
+  }
+  if (typeof field === 'object') {
+    return field.url || field.href || field?.['$']?.url || '';
+  }
+  return '';
+}
 
 export async function fetchRssFeed(feedUrl: string) {
   try {
     const feed = await parser.parseURL(feedUrl);
 
     const articles = feed.items.map((item: any) => {
-      // Búsqueda exhaustiva de imágenes
       let imageUrl = '';
-      
-      // 1. Intentar con enclosure (estándar)
-      if (item.enclosure?.url) {
-        imageUrl = item.enclosure.url;
-      } 
-      // 2. Intentar con media:content (estándar extendido)
-      else if (item['media:content']?.$?.url) {
-        imageUrl = item['media:content'].$.url;
-      }
-      else if (Array.isArray(item['media:content'])) {
-        imageUrl = item['media:content'][0]?.$?.url;
-      }
-      // 3. Intentar con media:group (común en YouTube y algunos diarios)
-      else if (item['media:group']?.['media:content']?.$?.url) {
-        imageUrl = item['media:group']['media:content'].$.url;
-      }
-      else if (Array.isArray(item['media:group']?.['media:content'])) {
-        imageUrl = item['media:group']['media:content'][0]?.$?.url;
-      }
-      // 4. Intentar con media:thumbnail
-      else if (item['media:thumbnail']?.$?.url) {
-        imageUrl = item['media:thumbnail'].$.url;
-      }
-      // 5. Búsqueda por Regex en el contenido (HTML)
-      else {
+
+      imageUrl = pickUrlFromField(item.enclosure) ||
+        pickUrlFromField(item['media:content']) ||
+        pickUrlFromField(item['media:group']?.['media:content']) ||
+        pickUrlFromField(item['media:thumbnail']) ||
+        pickUrlFromField(item.itunes?.image) ||
+        pickUrlFromField(item.image);
+
+      if (!imageUrl) {
         const fullContent = (item['content:encoded'] || item.content || item.description || '');
-        // Regex mejorado para soportar comillas simples y evitar capturar trackers de 1px
-        const imgMatch = fullContent.match(/<img[^>]+src=["']([^"'>]+\.(?:jpg|jpeg|gif|png|webp|avif)(?:\?[^"'>]*)?)["']/i);
+        const imgMatch = fullContent.match(/<img[^>]+src=["']([^"'>]+\.(?:jpg|jpeg|gif|png|webp|avif|svg)(?:\?[^"'>]*)?)["']/i);
         if (imgMatch && imgMatch[1]) {
           imageUrl = imgMatch[1];
         }
       }
 
-      // Sanitizar la URL de la imagen: ignorar videos o reproductores incrustados
       if (imageUrl) {
-        // Manejar rutas relativas (ej: /imagen.jpg) convirtiéndolas en absolutas
-        if (imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
-          try {
-            const base = new URL(feedUrl).origin;
-            imageUrl = `${base}${imageUrl}`;
-          } catch (e) {
-            // Error al procesar URL base
-          }
-        }
-
-        // Normalizar protocolos y entidades
-        if (imageUrl.startsWith('//')) {
-          imageUrl = `https:${imageUrl}`;
-        }
-        
-        // Decodificar entidades HTML comunes en URLs
-        imageUrl = imageUrl.replace(/&amp;/g, '&');
-
-        const lowerUrl = imageUrl.toLowerCase();
-        if (
-          lowerUrl.includes('/embed/') || 
-          lowerUrl.includes('vodgc.net') || 
-          lowerUrl.includes('player') || 
-          lowerUrl.includes('youtube.com') || 
-          lowerUrl.includes('vimeo.com') || 
-          lowerUrl.includes('video')
-        ) {
-          imageUrl = ''; 
+        imageUrl = normalizeImageUrl(imageUrl, feedUrl);
+        if (!isValidImageUrl(imageUrl)) {
+          imageUrl = '';
         }
       }
 
@@ -107,8 +108,8 @@ export async function fetchRssFeed(feedUrl: string) {
         link: item.link || '',
         content: item['content:encoded'] || item.content || item.description || '',
         pubDate: item.pubDate || '',
-        imageUrl: imageUrl,
-        sourceName: feed.title || 'Unknown Source'
+        imageUrl,
+        sourceName: feed.title || 'Unknown Source',
       };
     });
 

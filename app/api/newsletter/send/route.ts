@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     5. Listado de noticias:
        - Muestra cada una de las noticias en tarjetas ordenadas.
        - Incluye la categoría en mayúsculas como un badge con su color respectivo (p. ej., Economía: verde, Deportes: naranja, Tecnología: magenta, Argentina: celeste, Mundo: rojo).
-       - El título del artículo debe ser un enlace que apunte a "https://edunews2.vercel.app/news/[ID_DE_LA_NOTICIA]".
+       - El título del artículo debe ser un enlace que apunte a "https://edunews2.vercel.app/news/[ID_DE_LA_NOTICIA]-[SLUG]" o la forma SEO-friendly equivalente.
        - Muestra el resumen neutralizado.
     6. Pie de página: Añadir información sobre la misión del sitio (periodismo objetivo con IA) y el enlace de contacto edukoder2025@gmail.com.
     7. Compatibilidad: Asegúrate de usar estilos CSS en línea (inline-styles) y tablas si es necesario, de modo que se renderice a la perfección tanto en dispositivos móviles como en Gmail, Outlook, Apple Mail, etc.

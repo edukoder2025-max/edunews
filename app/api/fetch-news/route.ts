@@ -118,7 +118,7 @@ export async function GET(request: Request) {
           original_content: article.content,
           ai_content: rewritten.new_content,
           category: rewritten.category || 'General',
-          image_url: article.imageUrl,
+          image_url: article.imageUrl || null,
           source_url: article.link,
           source_name: article.sourceName,
           published_at: article.pubDate ? new Date(article.pubDate) : new Date(),

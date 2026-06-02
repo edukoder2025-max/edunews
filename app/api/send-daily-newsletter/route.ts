@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { buildArticleUrl } from '@/lib/articleUtils';
 import { sendNewsletterCampaign } from '@/lib/brevo';
 
 export const dynamic = 'force-dynamic';
@@ -67,7 +68,7 @@ async function handleRequest(request: Request) {
         
       const title = art.ai_title || art.original_title || 'Noticia sin título';
       const category = art.category || 'General';
-      const link = `https://edunews2.vercel.app/news/${art.id}`;
+      const link = buildArticleUrl(art.id, title, 'https://edunews2.vercel.app');
 
       return `
         <div class="news-item">
