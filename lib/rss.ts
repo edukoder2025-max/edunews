@@ -20,6 +20,7 @@ const parser = new Parser<any, CustomItem>({
     item: [
       'content:encoded',
       'media:content',
+      'media:group',
     ],
   },
 });
@@ -43,15 +44,22 @@ export async function fetchRssFeed(feedUrl: string) {
       else if (Array.isArray(item['media:content'])) {
         imageUrl = item['media:content'][0]?.$?.url;
       }
-      // 3. Intentar con media:thumbnail
+      // 3. Intentar con media:group (común en YouTube y algunos diarios)
+      else if (item['media:group']?.['media:content']?.$?.url) {
+        imageUrl = item['media:group']['media:content'].$.url;
+      }
+      else if (Array.isArray(item['media:group']?.['media:content'])) {
+        imageUrl = item['media:group']['media:content'][0]?.$?.url;
+      }
+      // 4. Intentar con media:thumbnail
       else if (item['media:thumbnail']?.$?.url) {
         imageUrl = item['media:thumbnail'].$.url;
       }
-      // 4. Búsqueda por Regex en el contenido (HTML)
+      // 5. Búsqueda por Regex en el contenido (HTML)
       else {
         const fullContent = (item['content:encoded'] || item.content || item.description || '');
-        // Buscamos la primera etiqueta <img> que tenga una URL absoluta
-        const imgMatch = fullContent.match(/<img[^>]+src="([^">]+)"/);
+        // Regex mejorado para soportar comillas simples y evitar capturar trackers de 1px
+        const imgMatch = fullContent.match(/<img[^>]+src=["']([^"'>]+\.(?:jpg|jpeg|gif|png|webp|avif)(?:\?[^"'>]*)?)["']/i);
         if (imgMatch && imgMatch[1]) {
           imageUrl = imgMatch[1];
         }
@@ -59,6 +67,14 @@ export async function fetchRssFeed(feedUrl: string) {
 
       // Sanitizar la URL de la imagen: ignorar videos o reproductores incrustados
       if (imageUrl) {
+        // Normalizar protocolos y entidades
+        if (imageUrl.startsWith('//')) {
+          imageUrl = `https:${imageUrl}`;
+        }
+        
+        // Decodificar entidades HTML comunes en URLs
+        imageUrl = imageUrl.replace(/&amp;/g, '&');
+
         const lowerUrl = imageUrl.toLowerCase();
         if (
           lowerUrl.includes('/embed/') || 
