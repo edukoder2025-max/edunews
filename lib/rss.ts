@@ -5,7 +5,11 @@ type CustomItem = {
   'content:encoded'?: string;
   description?: string;
   enclosure?: { url: string };
-  'media:content'?: { $: { url: string } };
+  'media:content'?: any;
+  'media:group'?: any;
+  'media:thumbnail'?: any;
+  link?: string;
+  [key: string]: any;
 };
 
 const parser = new Parser<any, CustomItem>({
@@ -67,6 +71,16 @@ export async function fetchRssFeed(feedUrl: string) {
 
       // Sanitizar la URL de la imagen: ignorar videos o reproductores incrustados
       if (imageUrl) {
+        // Manejar rutas relativas (ej: /imagen.jpg) convirtiéndolas en absolutas
+        if (imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
+          try {
+            const base = new URL(feedUrl).origin;
+            imageUrl = `${base}${imageUrl}`;
+          } catch (e) {
+            // Error al procesar URL base
+          }
+        }
+
         // Normalizar protocolos y entidades
         if (imageUrl.startsWith('//')) {
           imageUrl = `https:${imageUrl}`;

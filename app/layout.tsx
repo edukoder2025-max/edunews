@@ -5,7 +5,7 @@ import CookieBanner from "@/components/CookieBanner";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import WeatherWidget from "@/components/WeatherWidget";
-import CryptoTickerWidget from "@/components/CryptoTickerWidget";
+import CryptoWidget from "@/components/CryptoWidget";
 import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
 
@@ -173,8 +173,8 @@ export default async function RootLayout({
             </div>
           )}
 
-          {/* Crypto Market Ticker - TradingView Widget */}
-          <CryptoTickerWidget />
+          {/* Live Crypto Market Ticker con Sparklines */}
+          <CryptoWidget />
 
           {/* Main Content */}
           <main className="flex-1 w-full">
