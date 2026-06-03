@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase';
-import { buildArticleUrl, extractArticleId, getArticleImage } from '@/lib/articleUtils';
+import { buildArticleUrl, extractArticleId, getArticleImage, slugify } from '@/lib/articleUtils';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import ShareButtons from '@/components/ShareButtons';
 import AiTransparencyPanel from '@/components/AiTransparencyPanel';
@@ -86,6 +86,13 @@ export default async function ArticlePage({ params }: { params: { id: string } }
 
   if (!article) {
     notFound();
+  }
+
+  // Verificar si la URL contiene el slug correcto, si no redirigir
+  const cleanSlug = slugify(article.ai_title || article.original_title);
+  const expectedParam = `${article.id}${cleanSlug ? `-${cleanSlug}` : ''}`;
+  if (params.id !== expectedParam) {
+    redirect(buildArticleUrl(article.id, article.ai_title || article.original_title));
   }
 
   const relatedArticles = await getRelatedArticles(article.category || '', article.id);

@@ -3,6 +3,7 @@ import { fetchRssFeed } from '@/lib/rss';
 import { rewriteNews } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
 import { findAlternativeSources } from '@/lib/googleCSE';
+import { fetchRelevantImage } from '@/lib/imageFetcher';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -111,6 +112,16 @@ export async function GET(request: Request) {
           continue;
         }
 
+        // Obtener imagen relevante si no viene en el feed RSS
+        let finalImageUrl = article.imageUrl || null;
+        if (!finalImageUrl) {
+          try {
+            finalImageUrl = await fetchRelevantImage(article.title, article.link);
+          } catch (imgErr) {
+            console.error("Error fetching relevant image:", imgErr);
+          }
+        }
+
         // Guardar en Supabase
         const insertPayload: any = {
           original_title: article.title,
@@ -118,7 +129,7 @@ export async function GET(request: Request) {
           original_content: article.content,
           ai_content: rewritten.new_content,
           category: rewritten.category || 'General',
-          image_url: article.imageUrl || null,
+          image_url: finalImageUrl,
           source_url: article.link,
           source_name: article.sourceName,
           published_at: article.pubDate ? new Date(article.pubDate) : new Date(),

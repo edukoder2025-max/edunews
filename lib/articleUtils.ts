@@ -35,6 +35,30 @@ function normalizePotentialImageUrl(url: string, baseUrl?: string) {
   return normalized;
 }
 
+// Known CDN / image domains that serve images without file extensions
+const TRUSTED_IMAGE_DOMAINS = [
+  'ichef.bbci.co.uk',
+  'media.ambito.com',
+  'infobae.com',
+  'clarin.com',
+  'pagina12.com.ar',
+  'lanacion.com.ar',
+  'cronista.com',
+  'telam.com.ar',
+  'lavoz.com.ar',
+  'elcomercio.pe',
+  'eluniversal.com',
+  'elpais.com',
+  'elmundo.es',
+  'cdn.cnn.com',
+  'static01.nyt.com',
+  'upload.wikimedia.org',
+  'images.bbc.com',
+  'scontent',       // Facebook CDN
+  'pbs.twimg.com',  // Twitter CDN
+  'i.imgur.com',
+];
+
 export function isValidImageUrl(url: string) {
   const normalized = normalizePotentialImageUrl(url);
   if (!normalized) return false;
@@ -56,7 +80,22 @@ export function isValidImageUrl(url: string) {
     return false;
   }
 
-  return /^https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|gif|webp|avif|svg)(\?.*)?$/i.test(lowerUrl);
+  // Accept URLs with known image extensions
+  if (/^https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|gif|webp|avif|svg)(\?.*)?$/i.test(lowerUrl)) {
+    return true;
+  }
+
+  // Accept URLs from trusted image CDN / news domains even without explicit extension
+  try {
+    const urlObj = new URL(normalized);
+    if (TRUSTED_IMAGE_DOMAINS.some(d => urlObj.hostname.includes(d))) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
 }
 
 export function buildArticleUrl(articleId: string, title: string, baseUrl?: string) {
