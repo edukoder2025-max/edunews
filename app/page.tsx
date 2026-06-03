@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Sparkles, Calendar, ArrowRight, Eye, ShieldAlert, Cpu } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
+import ProductsCarousel from '@/components/ProductsCarousel';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -286,6 +287,8 @@ export default async function Home() {
               </div>
             </div>
           </div>
+
+          <ProductsCarousel />
 
           {/* Sección de Análisis Profundo / Opinión */}
           <div className="space-y-5">
