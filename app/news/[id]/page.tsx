@@ -146,7 +146,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
               src={getArticleImage(article)}
               fallbackSrc={getCategoryFallbackImage(article.category)}
               alt={article.ai_title || "Imagen del artículo"}
-              className="object-cover w-full h-full"
+              className="absolute inset-0 object-cover w-full h-full"
               loading="eager"
             />
           </div>
@@ -183,7 +183,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
                         src={getArticleImage(rel)} 
                         fallbackSrc={getCategoryFallbackImage(rel.category)}
                         alt={rel.ai_title} 
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
+                        className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
                       />
                     </div>
                     <div className="space-y-1">

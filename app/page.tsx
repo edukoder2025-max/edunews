@@ -150,7 +150,7 @@ export default async function Home() {
                   src={getArticleImage(featuredArticle)} 
                   fallbackSrc={getCategoryFallbackImage(featuredArticle.category)}
                   alt={featuredArticle.ai_title || "Destacada"}
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
+                  className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
                   loading="eager"
                 />
                 
@@ -203,7 +203,7 @@ export default async function Home() {
                     src={getArticleImage(article)} 
                     fallbackSrc={getCategoryFallbackImage(article.category)}
                     alt={article.ai_title || "Secundaria"}
-                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                    className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
                   <div className="absolute top-2 left-2">

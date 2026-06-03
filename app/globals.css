@@ -4,10 +4,14 @@
 
 @layer base {
   body {
-    @apply text-slate-200 antialiased selection:bg-primary/30 font-sans;
+    @apply text-slate-200 antialiased font-sans;
     background-color: #050811;
     background-image: radial-gradient(circle at top, #0d162d 0%, #050811 60%, #010307 100%);
     background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-primary/30;
   }
   
   h1, h2, h3, h4, h5, h6 {
