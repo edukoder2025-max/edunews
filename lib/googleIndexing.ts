@@ -42,7 +42,15 @@ function buildJwt(serviceAccount: GoogleIndexingServiceAccount, scope: string) {
   signer.update(unsignedJwt);
   signer.end();
 
-  const signature = signer.sign(serviceAccount.private_key, 'base64');
+  let signature: string;
+  try {
+    signature = signer.sign(serviceAccount.private_key, 'base64');
+  } catch (error) {
+    throw new Error(
+      `Invalid Google service account private_key value. Ensure the JSON contains a valid PEM private key with proper newlines and no placeholder text. (${(error as Error).message})`
+    );
+  }
+
   const encodedSignature = signature
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
