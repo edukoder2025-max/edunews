@@ -1,10 +1,11 @@
-export async function submitSitemapToSearchConsole(siteUrl: string, sitemapUrl: string, apiKey: string) {
+export async function submitSitemapToSearchConsole(siteUrl: string, sitemapUrl: string, accessToken: string) {
   const siteId = encodeURIComponent(siteUrl.replace(/\/$/, ''));
-  const endpoint = `https://www.googleapis.com/webmasters/v3/sites/${siteId}/sitemaps/${encodeURIComponent(sitemapUrl)}?key=${encodeURIComponent(apiKey)}`;
+  const endpoint = `https://www.googleapis.com/webmasters/v3/sites/${siteId}/sitemaps/${encodeURIComponent(sitemapUrl)}`;
 
   const response = await fetch(endpoint, {
     method: 'PUT',
     headers: {
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/xml',
     },
   });

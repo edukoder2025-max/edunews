@@ -19,7 +19,7 @@ function base64UrlEncode(value: string) {
     .replace(/=+$/, '');
 }
 
-function buildJwt(serviceAccount: GoogleIndexingServiceAccount) {
+function buildJwt(serviceAccount: GoogleIndexingServiceAccount, scope: string) {
   const header = {
     alg: 'RS256',
     typ: 'JWT',
@@ -28,7 +28,7 @@ function buildJwt(serviceAccount: GoogleIndexingServiceAccount) {
   const now = Math.floor(Date.now() / 1000);
   const claims = {
     iss: serviceAccount.client_email,
-    scope: INDEXING_SCOPE,
+    scope,
     aud: serviceAccount.token_uri,
     exp: now + 3600,
     iat: now,
@@ -61,13 +61,13 @@ export function parseServiceAccount(rawValue?: string) {
   }
 }
 
-export async function fetchGoogleIndexingAccessToken(serviceAccountJson: string) {
+export async function fetchGoogleAccessToken(serviceAccountJson: string, scope: string) {
   const serviceAccount = parseServiceAccount(serviceAccountJson);
   if (!serviceAccount) {
     throw new Error('Invalid Google service account JSON.');
   }
 
-  const jwt = buildJwt(serviceAccount);
+  const jwt = buildJwt(serviceAccount, scope);
   const body = new URLSearchParams({
     grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
     assertion: jwt,
@@ -91,6 +91,10 @@ export async function fetchGoogleIndexingAccessToken(serviceAccountJson: string)
   }
 
   return payload.access_token as string;
+}
+
+export async function fetchGoogleIndexingAccessToken(serviceAccountJson: string) {
+  return fetchGoogleAccessToken(serviceAccountJson, INDEXING_SCOPE);
 }
 
 export async function publishIndexingUrl(url: string, type: 'URL_UPDATED' | 'URL_DELETED', accessToken: string) {

@@ -9,8 +9,10 @@ This project supports server-side Search Console sitemap submission and Google I
 ### Environment variables
 
 - `NEXT_PUBLIC_SITE_URL` - your production site URL, e.g. `https://elironico.com`
-- `GOOGLE_SEARCH_CONSOLE_API_KEY` - Search Console API key for `sitemaps.submit`
 - `GOOGLE_SEARCH_CONSOLE_SITE_URL` - Search Console property URL, typically the same as `NEXT_PUBLIC_SITE_URL`
+- `GOOGLE_SEARCH_CONSOLE_SERVICE_ACCOUNT` - service account JSON string for Search Console API sitemap submission
+- `GOOGLE_SEARCH_CONSOLE_SERVICE_ACCOUNT_BASE64` - optional base64-encoded Search Console service account JSON
+- `GOOGLE_SEARCH_CONSOLE_API_KEY` - optional API key, but note: Search Console sitemap submission requires OAuth2 / service account credentials for this route
 - `GOOGLE_INDEXING_SERVICE_ACCOUNT` - service account JSON string for the Indexing API
 - `GOOGLE_INDEXING_SERVICE_ACCOUNT_BASE64` - optional base64-encoded service account JSON
 
