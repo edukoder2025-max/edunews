@@ -43,6 +43,11 @@
     border-top: 4px double rgba(255, 255, 255, 0.2);
   }
 
+  .ad-container {
+    min-height: 250px;
+    width: 100%;
+  }
+
   /* Drop-cap for the editorial newspaper look */
   .editorial-drop-cap::first-letter {
     float: left;

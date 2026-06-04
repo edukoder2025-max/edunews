@@ -104,7 +104,7 @@ export default async function Home() {
       </section>
       {/* Top Advertisement Banner */}
       {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-        <div className="mb-8 p-4 bg-slate-900/50 rounded-lg border border-white/5">
+        <div className="mb-8 p-4 bg-slate-900/50 rounded-lg border border-white/5 ad-container">
           <AdSense 
             slot={AD_SLOTS.HOMEPAGE_TOP} 
             format="auto"
@@ -168,12 +168,14 @@ export default async function Home() {
           {featuredArticle && (
             <article className="group space-y-6 pb-8 border-b border-white/5">
               <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 shadow-2xl transition-all duration-500">
-                <SafeImage 
-                  src={getArticleImage(featuredArticle)} 
-                  fallbackSrc={getCategoryFallbackImage(featuredArticle.category)}
+                <Image
+                  src={getArticleImage(featuredArticle)}
                   alt={featuredArticle.ai_title || "Destacada"}
+                  fill
+                  sizes="100vw"
+                  priority
+                  fetchPriority="high"
                   className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
-                  loading="eager"
                 />
                 
                 {/* Image Overlay */}

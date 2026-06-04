@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { buildArticleUrl, extractArticleId, getArticleImage, normalizeCategorySlug, slugify } from '@/lib/articleUtils';
 import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords } from '@/lib/seoUtils';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound, redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import ShareButtons from '@/components/ShareButtons';
@@ -158,12 +159,14 @@ export default async function ArticlePage({ params }: { params: { category: stri
           />
 
           <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-            <SafeImage
+            <Image
               src={getArticleImage(article)}
-              fallbackSrc={getCategoryFallbackImage(article.category)}
               alt={article.ai_title || 'Imagen del artículo'}
+              fill
+              sizes="100vw"
+              priority
+              fetchPriority="high"
               className="absolute inset-0 object-cover w-full h-full"
-              loading="eager"
             />
           </div>
 
@@ -181,7 +184,7 @@ export default async function ArticlePage({ params }: { params: { category: stri
           />
 
           {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-            <div className="my-10 p-6 bg-slate-900/50 rounded-lg border border-white/5 text-center">
+            <div className="my-10 p-6 bg-slate-900/50 rounded-lg border border-white/5 text-center ad-container">
               <span className="text-[9px] font-black uppercase tracking-wider text-slate-600 block mb-4">Publicidad</span>
               <AdSense slot={AD_SLOTS.ARTICLE_MIDDLE} format="auto" className="w-full" />
             </div>
@@ -270,7 +273,7 @@ export default async function ArticlePage({ params }: { params: { category: stri
             )}
 
             {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-              <div className="w-full bg-slate-950/60 border border-white/5 rounded-2xl overflow-hidden">
+              <div className="w-full bg-slate-950/60 border border-white/5 rounded-2xl overflow-hidden ad-container">
                 <div className="px-6 py-4 border-b border-white/5">
                   <span className="text-[9px] font-black uppercase tracking-wider text-slate-600 block">Publicidad</span>
                 </div>
