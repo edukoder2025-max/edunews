@@ -11,6 +11,7 @@ import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
 import NewsletterForm from "@/components/NewsletterForm";
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -251,6 +252,7 @@ export default async function RootLayout({
           <CookieBanner />
         </div>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
