@@ -27,6 +27,11 @@ export const metadata: Metadata = {
   title: "El Irónico | Noticias de Argentina y el Mundo sin Sesgo - Periodismo IA",
   description: "El Irónico es un periódico digital 100% impulsado por IA que neutraliza noticias de Argentina, Mundo, Tecnología, Economía, Deportes y Ciencia. Periodismo ético, libre de sesgos políticos.",
   keywords: "noticias, periodismo, Argentina, mundo, tecnología, economía, inteligencia artificial, noticias sin sesgo, periodismo neutral",
+  other: process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID
+    ? {
+        "google-adsense-account": process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID,
+      }
+    : {},
   openGraph: {
     title: "El Irónico | Noticias Neutrales de Argentina y el Mundo",
     description: "Periodismo impulsado por IA - Noticias neutralizadas sin intereses políticos",
