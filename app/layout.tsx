@@ -38,6 +38,9 @@ export const metadata: Metadata = {
     url: "https://elironico.com",
     siteName: "El Irónico",
     type: "website",
+    images: [
+      "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop",
+    ],
   },
 };
 
@@ -45,7 +48,7 @@ async function getTickerNews() {
   try {
     const { data, error } = await supabase
       .from('news_articles')
-      .select('id, ai_title, original_title')
+      .select('id, ai_title, original_title, category')
       .order('published_at', { ascending: false })
       .limit(8);
     if (error) {
@@ -146,25 +149,25 @@ export default async function RootLayout({
               <Link href="/como-funciona" className="py-1 border-b-2 border-transparent text-primary hover:text-white hover:border-white transition-all font-bold flex items-center gap-1">
                 Cómo Funciona <span className="text-[10px]">🤖</span>
               </Link>
-              <Link href="/category/Mundo" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-mundo hover:border-cat-mundo transition-all">
+              <Link href="/categoria/mundo" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-mundo hover:border-cat-mundo transition-all">
                 Mundo
               </Link>
-              <Link href="/category/Argentina" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-argentina hover:border-cat-argentina transition-all">
+              <Link href="/categoria/argentina" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-argentina hover:border-cat-argentina transition-all">
                 Argentina
               </Link>
-              <Link href="/category/Tecnología" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-tecnologia hover:border-cat-tecnologia transition-all">
+              <Link href="/categoria/tecnologia" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-tecnologia hover:border-cat-tecnologia transition-all">
                 Tecnología
               </Link>
-              <Link href="/category/Economía" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-economia hover:border-cat-economia transition-all">
+              <Link href="/categoria/economia" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-economia hover:border-cat-economia transition-all">
                 Economía
               </Link>
-              <Link href="/category/Ciencia" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-cultura hover:border-cat-cultura transition-all">
+              <Link href="/categoria/ciencia" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-cultura hover:border-cat-cultura transition-all">
                 Ciencia
               </Link>
-              <Link href="/category/Deportes" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-deportes hover:border-cat-deportes transition-all">
+              <Link href="/categoria/deportes" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-deportes hover:border-cat-deportes transition-all">
                 Deportes
               </Link>
-              <Link href="/category/Cultura" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-general hover:border-cat-general transition-all">
+              <Link href="/categoria/cultura" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-general hover:border-cat-general transition-all">
                 Cultura
               </Link>
               <SearchInput />
@@ -180,14 +183,14 @@ export default async function RootLayout({
               <div className="flex overflow-hidden w-full relative items-center ml-4">
                 <div className="animate-ticker flex gap-12 text-xs font-bold text-slate-300">
                   {tickerNews.map((news, i) => (
-                    <Link key={`${news.id}-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title)} className="hover:text-primary transition-colors flex items-center gap-2">
+                    <Link key={`${news.id}-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title, news.category)} className="hover:text-primary transition-colors flex items-center gap-2">
                       <span className="text-primary font-black">•</span>
                       {news.ai_title || news.original_title}
                     </Link>
                   ))}
                   {/* Duplicate for infinite loop */}
                   {tickerNews.map((news, i) => (
-                    <Link key={`${news.id}-dup-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title)} className="hover:text-primary transition-colors flex items-center gap-2">
+                    <Link key={`${news.id}-dup-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title, news.category)} className="hover:text-primary transition-colors flex items-center gap-2">
                       <span className="text-primary font-black">•</span>
                       {news.ai_title || news.original_title}
                     </Link>

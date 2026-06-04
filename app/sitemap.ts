@@ -8,12 +8,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Obtener todas las noticias para el sitemap
   const { data: articles } = await supabase
     .from('news_articles')
-    .select('id, published_at, ai_title, original_title')
+    .select('id, published_at, category, ai_title, original_title')
     .order('published_at', { ascending: false })
     .limit(1000);
 
   const articleEntries = (articles || []).map((article) => ({
-    url: buildArticleUrl(article.id, article.ai_title || article.original_title || article.id, baseUrl),
+    url: buildArticleUrl(article.id, article.ai_title || article.original_title || article.id, article.category, baseUrl),
     lastModified: new Date(article.published_at),
     changeFrequency: 'daily' as const,
     priority: 0.7,
@@ -27,43 +27,43 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
-      url: `${baseUrl}/category/Mundo`,
+      url: `${baseUrl}/categoria/mundo`,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/category/Argentina`,
+      url: `${baseUrl}/categoria/argentina`,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/category/Tecnología`,
+      url: `${baseUrl}/categoria/tecnologia`,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/category/Economía`,
+      url: `${baseUrl}/categoria/economia`,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/category/Ciencia`,
+      url: `${baseUrl}/categoria/ciencia`,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/category/Deportes`,
+      url: `${baseUrl}/categoria/deportes`,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/category/Cultura`,
+      url: `${baseUrl}/categoria/cultura`,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 0.8,

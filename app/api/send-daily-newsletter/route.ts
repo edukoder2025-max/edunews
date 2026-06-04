@@ -68,7 +68,7 @@ async function handleRequest(request: Request) {
         
       const title = art.ai_title || art.original_title || 'Noticia sin título';
       const category = art.category || 'General';
-      const link = buildArticleUrl(art.id, title, 'https://elironico.com');
+      const link = buildArticleUrl(art.id, title, category, 'https://elironico.com');
 
       return `
         <div class="news-item">
@@ -641,9 +641,9 @@ async function handleRequest(request: Request) {
       <div class="footer-logo">Edu<span>News</span></div>
       <div class="footer-links">
         <a href="https://elironico.com/">Portada</a>
-        <a href="https://elironico.com/category/Argentina">Argentina</a>
-        <a href="https://elironico.com/category/Mundo">Mundo</a>
-        <a href="https://elironico.com/category/Economía">Economía</a>
+        <a href="https://elironico.com/categoria/argentina">Argentina</a>
+        <a href="https://elironico.com/categoria/mundo">Mundo</a>
+        <a href="https://elironico.com/categoria/economia">Economía</a>
         <a href="https://elironico.com/nosotros">Quiénes Somos</a>
       </div>
       <hr class="footer-divider">

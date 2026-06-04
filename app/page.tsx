@@ -94,6 +94,14 @@ export default async function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <section className="mb-10 text-center">
+        <h1 className="text-4xl md:text-5xl font-black text-white leading-tight tracking-tight">
+          Noticias Argentina sin sesgo y periodismo IA neutral 24/7
+        </h1>
+        <p className="mt-3 text-slate-400 max-w-2xl mx-auto text-sm md:text-base">
+          Información verificada y reescrita por IA para lectores exigentes que buscan noticias objetivas, claras y bien fundamentadas.
+        </p>
+      </section>
       {/* Top Advertisement Banner */}
       {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
         <div className="mb-8 p-4 bg-slate-900/50 rounded-lg border border-white/5">
@@ -136,7 +144,7 @@ export default async function Home() {
                     </span>
                   </div>
                   <h3 className="text-sm font-bold text-white group-hover:text-primary transition-colors leading-tight font-sans">
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h3>
@@ -181,7 +189,7 @@ export default async function Home() {
 
               <div className="space-y-4">
                 <h2 className="text-3xl md:text-5xl font-black text-white font-serif leading-[1.05] tracking-tight group-hover:text-primary transition-colors duration-300">
-                  <Link href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title)}>
+                  <Link href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title, featuredArticle.category)}>
                     {featuredArticle.ai_title || featuredArticle.original_title}
                   </Link>
                 </h2>
@@ -197,7 +205,7 @@ export default async function Home() {
                     {new Date(featuredArticle.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                   </span>
                   <Link 
-                    href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title)}
+                    href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title, featuredArticle.category)}
                     className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:text-white uppercase tracking-wider transition-colors"
                   >
                     Leer Reporte IA
@@ -230,7 +238,7 @@ export default async function Home() {
                 <div className="space-y-2 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
                     <h3 className="text-lg font-black font-serif text-white leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                      <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
+                      <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
                         {article.ai_title || article.original_title}
                       </Link>
                     </h3>
@@ -243,7 +251,7 @@ export default async function Home() {
                     <span>
                       {new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                     </span>
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)} className="text-primary hover:text-white transition-colors">
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)} className="text-primary hover:text-white transition-colors">
                       Leer más +
                     </Link>
                   </div>
@@ -319,7 +327,7 @@ export default async function Home() {
                     {article.category || 'Mundo'}
                   </span>
                   <h3 className="text-sm font-black font-serif text-white leading-tight group-hover:text-primary transition-colors">
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h3>
