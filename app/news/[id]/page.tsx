@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { buildArticleUrl, extractArticleId, getArticleImage, slugify } from '@/lib/articleUtils';
+import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords } from '@/lib/seoUtils';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -28,16 +29,30 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const article = await getArticle(articleId);
   if (!article) return { title: 'Noticia no encontrada' };
 
-  const cleanText = (article.ai_content || article.original_content || '')
-    .substring(0, 160)
-    .replace(/<[^>]*>/g, '') + '...';
+  const title = generateArticleTitle(article.ai_title || article.original_title, article.category || 'Noticias');
+  const description = generateArticleDescription(
+    article.ai_title || article.original_title,
+    article.ai_content || article.original_content || '',
+    article.category || ''
+  );
+  const keywords = generateCategoryKeywords(article.category || '');
 
   return {
-    title: `${article.ai_title || article.original_title} | El Irónico`,
-    description: cleanText,
+    title,
+    description,
+    keywords: `${keywords}, ${(article.ai_title || article.original_title).substring(0, 50)}`,
     openGraph: {
       title: article.ai_title || article.original_title,
-      description: 'Periodismo Ético e Independiente impulsado por Inteligencia Artificial.',
+      description: `${article.category || 'Noticia'} | Escrita sin sesgos por IA`,
+      type: 'article',
+      images: [getArticleImage(article)],
+      publishedTime: article.published_at,
+      authors: ['El Irónico'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.ai_title || article.original_title,
+      description,
       images: [getArticleImage(article)],
     },
   };

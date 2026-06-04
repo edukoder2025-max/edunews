@@ -24,8 +24,16 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "El Irónico - Periodismo Ético con IA",
-  description: "El primer periódico digital impulsado por IA enfocado en el periodismo ético, libre de intereses políticos.",
+  title: "El Irónico | Noticias de Argentina y el Mundo sin Sesgo - Periodismo IA",
+  description: "El Irónico es un periódico digital 100% impulsado por IA que neutraliza noticias de Argentina, Mundo, Tecnología, Economía, Deportes y Ciencia. Periodismo ético, libre de sesgos políticos.",
+  keywords: "noticias, periodismo, Argentina, mundo, tecnología, economía, inteligencia artificial, noticias sin sesgo, periodismo neutral",
+  openGraph: {
+    title: "El Irónico | Noticias Neutrales de Argentina y el Mundo",
+    description: "Periodismo impulsado por IA - Noticias neutralizadas sin intereses políticos",
+    url: "https://elironico.com",
+    siteName: "El Irónico",
+    type: "website",
+  },
 };
 
 async function getTickerNews() {
