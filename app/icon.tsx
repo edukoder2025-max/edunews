@@ -15,7 +15,7 @@ export default function Icon() {
           <stop offset="100%" stop-color="#ff9f43" />
         </linearGradient>
       </defs>
-      <!-- Fondo redondeado con gradiente de marca EduNews -->
+      <!-- Fondo redondeado con gradiente de marca El Irónico -->
       <rect x="0" y="0" width="32" height="32" rx="7" fill="url(#brandGrad)" />
       <!-- Isotipo: Esfera blanca minimalista central -->
       <circle cx="16" cy="16" r="5" fill="white" />

@@ -50,7 +50,7 @@ export default function MetodologiaPage() {
           Metodología <span className="text-gradient">Editorial</span>
         </h1>
         <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          Explicación detallada de cómo funciona el motor de inteligencia artificial de EduNews para asegurar noticias neutrales y balanceadas.
+          Explicación detallada de cómo funciona el motor de inteligencia artificial de El Irónico para asegurar noticias neutrales y balanceadas.
         </p>
       </header>
 

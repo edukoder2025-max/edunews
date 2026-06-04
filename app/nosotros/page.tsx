@@ -10,7 +10,7 @@ export default function Nosotros() {
           La Identidad Detrás del Algoritmo
         </span>
         <h1 className="text-4xl md:text-6xl font-black text-white font-serif tracking-tight uppercase italic">
-          Sobre <span className="text-gradient">EduNews</span>
+          Sobre <span className="text-gradient">El Irónico</span>
         </h1>
         <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
           Un proyecto independiente nacido para combatir la desinformación, el sensacionalismo y la polarización sistemática de los medios de prensa modernos.
@@ -28,7 +28,7 @@ export default function Nosotros() {
             En un ecosistema informativo donde los grandes medios responden a agendas comerciales, corporativas o intereses políticos particulares, la verdad suele quedar sepultada bajo capas de adjetivos emotivos y manipulación ideológica.
           </p>
           <p>
-            <strong>EduNews</strong> nació en 2026 de la mano de un pequeño grupo de periodistas y desarrolladores de software independientes como un experimento de código abierto. Nuestra pregunta fue simple: <em>¿Qué ocurre si eliminamos la opinión, los sesgos y el lenguaje cargado, y presentamos únicamente los hechos empíricos y datos objetivos?</em>
+            <strong>El Irónico</strong> nació en 2026 de la mano de un pequeño grupo de periodistas y desarrolladores de software independientes como un experimento de código abierto. Nuestra pregunta fue simple: <em>¿Qué ocurre si eliminamos la opinión, los sesgos y el lenguaje cargado, y presentamos únicamente los hechos empíricos y datos objetivos?</em>
           </p>
           <p>
             El resultado es este periódico digital 100% automatizado, que monitoriza los principales canales de noticias de Argentina y el mundo, y los procesa con inteligencia artificial bajo una serie de directrices editoriales estrictas antes de publicarlos.
@@ -67,7 +67,7 @@ export default function Nosotros() {
           <div className="space-y-4">
             <h3 className="font-bold text-white flex items-center gap-1.5">
               <CheckCircle2 size={16} className="text-secondary" />
-              Lo que EduNews promete
+              Lo que El Irónico promete
             </h3>
             <ul className="space-y-2 list-none pl-0">
               <li className="flex gap-2 items-start">
@@ -88,7 +88,7 @@ export default function Nosotros() {
           <div className="space-y-4">
             <h3 className="font-bold text-white flex items-center gap-1.5">
               <CheckCircle2 size={16} className="text-red-500" />
-              Lo que EduNews NO promete
+              Lo que El Irónico NO promete
             </h3>
             <ul className="space-y-2 list-none pl-0">
               <li className="flex gap-2 items-start">
@@ -97,7 +97,7 @@ export default function Nosotros() {
               </li>
               <li className="flex gap-2 items-start">
                 <span className="text-red-500 font-black">•</span>
-                <span><strong>Opinión propia:</strong> EduNews no tiene opinión política, editorial ni de partido. Tampoco emitimos editoriales firmadas con criterio subjetivo.</span>
+                <span><strong>Opinión propia:</strong> El Irónico no tiene opinión política, editorial ni de partido. Tampoco emitimos editoriales firmadas con criterio subjetivo.</span>
               </li>
               <li className="flex gap-2 items-start">
                 <span className="text-red-500 font-black">•</span>
@@ -109,7 +109,7 @@ export default function Nosotros() {
 
         <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
           <div>Proyecto de Código Abierto e Independiente</div>
-          <div className="text-slate-300 italic">El Equipo de EduNews</div>
+          <div className="text-slate-300 italic">El Equipo de El Irónico</div>
         </div>
       </section>
 
@@ -120,7 +120,7 @@ export default function Nosotros() {
           <HeartHandshake className="text-primary" size={32} />
           <h3 className="text-lg font-black font-serif text-white uppercase tracking-tight">Financiación Ética</h3>
           <p className="text-xs text-slate-400 leading-relaxed font-sans">
-            EduNews no vende espacio editorial ni favorece a anunciantes corporativos. Mostramos anuncios a través de Google AdSense de forma puramente programática y estandarizada para costear el servidor en Vercel y el consumo de la API de inteligencia artificial. No priorizamos noticias por clics sensacionalistas, ya que todos nuestros titulares son neutralizados por diseño.
+            El Irónico no vende espacio editorial ni favorece a anunciantes corporativos. Mostramos anuncios a través de Google AdSense de forma puramente programática y estandarizada para costear el servidor en Vercel y el consumo de la API de inteligencia artificial. No priorizamos noticias por clics sensacionalistas, ya que todos nuestros titulares son neutralizados por diseño.
           </p>
         </div>
 

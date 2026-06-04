@@ -24,7 +24,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "EduNews - Periodismo Ético con IA",
+  title: "El Irónico - Periodismo Ético con IA",
   description: "El primer periódico digital impulsado por IA enfocado en el periodismo ético, libre de intereses políticos.",
 };
 
@@ -92,7 +92,7 @@ export default async function RootLayout({
                 INDEPENDIENTE & OBJETIVO
               </span>
               <h1 className="text-6xl md:text-8xl font-black font-serif italic tracking-tighter text-white select-none">
-                Edu<span className="text-primary group-hover:text-secondary transition-colors duration-500">News</span>
+                El<span className="text-primary group-hover:text-secondary transition-colors duration-500"> Irónico</span>
               </h1>
               <p className="text-[10px] tracking-widest text-slate-400 uppercase font-bold mt-1 max-w-md hidden md:block">
                 Información neutralizada y reescrita mediante Inteligencia Artificial
@@ -191,7 +191,7 @@ export default async function RootLayout({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div className="md:col-span-2 space-y-4">
-                  <h3 className="text-lg font-bold text-white font-serif">EduNews</h3>
+                  <h3 className="text-lg font-bold text-white font-serif">El Irónico</h3>
                   <p className="text-sm text-slate-400 max-w-md leading-relaxed">
                     El primer periódico digital impulsado por IA diseñado para evitar noticias sesgadas por intereses partidarios o políticos. Promovemos un periodismo ético, transparente y correcto.
                   </p>
@@ -217,7 +217,7 @@ export default async function RootLayout({
                 </div>
               </div>
               <div className="pt-8 border-t border-white/5 text-center text-slate-500 text-xs flex flex-col md:flex-row justify-between items-center gap-4">
-                <p>© {new Date().getFullYear()} EduNews. Todos los derechos reservados.</p>
+                <p>© {new Date().getFullYear()} El Irónico. Todos los derechos reservados.</p>
                 <p>Las noticias generadas por IA son extraídas de fuentes públicas y reescritas bajo principios de neutralidad.</p>
               </div>
             </div>

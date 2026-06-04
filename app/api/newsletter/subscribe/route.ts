@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: result.message || 'Te has suscrito con éxito al boletín de EduNews.'
+      message: result.message || 'Te has suscrito con éxito al boletín de El Irónico.'
     });
 
   } catch (error: any) {

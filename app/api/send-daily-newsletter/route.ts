@@ -68,7 +68,7 @@ async function handleRequest(request: Request) {
         
       const title = art.ai_title || art.original_title || 'Noticia sin título';
       const category = art.category || 'General';
-      const link = buildArticleUrl(art.id, title, 'https://edunews2.vercel.app');
+      const link = buildArticleUrl(art.id, title, 'https://elironico.com');
 
       return `
         <div class="news-item">
@@ -94,7 +94,7 @@ async function handleRequest(request: Request) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>EduNews – Resumen Diario</title>
+  <title>El Irónico – Resumen Diario</title>
   <!--[if mso]>
   <noscript>
     <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
@@ -567,7 +567,7 @@ async function handleRequest(request: Request) {
       <div class="edition-label">Editorial del día</div>
       <div class="intro-headline">Las noticias que importan, sin la retórica que sobra</div>
       <p class="intro-body">
-        Bienvenido a tu resumen diario de EduNews. Esta edición reúne las cinco noticias más relevantes procesadas por nuestra IA con Gemini para eliminar el lenguaje sesgado y entregarte únicamente los hechos verificados. Sin clickbait, sin agenda política.
+        Bienvenido a tu resumen diario de El Irónico. Esta edición reúne las cinco noticias más relevantes procesadas por nuestra IA con Gemini para eliminar el lenguaje sesgado y entregarte únicamente los hechos verificados. Sin clickbait, sin agenda política.
       </p>
     </td>
   </tr>
@@ -591,8 +591,8 @@ async function handleRequest(request: Request) {
       <div class="ornament">— ✦ —</div>
       <div class="quote-section">
         <div class="quote-label">Cita de la semana</div>
-        <p class="quote-text">"El periodismo es el primer borrador de la historia. EduNews se asegura de que ese borrador no esté contaminado por el interés de quien lo escribe."</p>
-        <div class="quote-source">— Redacción EduNews</div>
+        <p class="quote-text">"El periodismo es el primer borrador de la historia. El Irónico se asegura de que ese borrador no esté contaminado por el interés de quien lo escribe."</p>
+        <div class="quote-source">— Redacción El Irónico</div>
       </div>
     </td>
   </tr>
@@ -629,9 +629,9 @@ async function handleRequest(request: Request) {
     <td class="cta-section">
       <div class="cta-title">¿Sabías que podés auditar cada nota?</div>
       <p class="cta-body">
-        En cada artículo de EduNews podés comparar el texto neutralizado con la fuente original y ver exactamente qué cambió nuestra IA. Transparencia radical, sin letra chica.
+        En cada artículo de El Irónico podés comparar el texto neutralizado con la fuente original y ver exactamente qué cambió nuestra IA. Transparencia radical, sin letra chica.
       </p>
-      <a href="https://edunews2.vercel.app/como-funciona" class="cta-button">Ver cómo funciona la IA</a>
+      <a href="https://elironico.com/como-funciona" class="cta-button">Ver cómo funciona la IA</a>
     </td>
   </tr>
 
@@ -640,16 +640,16 @@ async function handleRequest(request: Request) {
     <td class="footer">
       <div class="footer-logo">Edu<span>News</span></div>
       <div class="footer-links">
-        <a href="https://edunews2.vercel.app/">Portada</a>
-        <a href="https://edunews2.vercel.app/category/Argentina">Argentina</a>
-        <a href="https://edunews2.vercel.app/category/Mundo">Mundo</a>
-        <a href="https://edunews2.vercel.app/category/Economía">Economía</a>
-        <a href="https://edunews2.vercel.app/nosotros">Quiénes Somos</a>
+        <a href="https://elironico.com/">Portada</a>
+        <a href="https://elironico.com/category/Argentina">Argentina</a>
+        <a href="https://elironico.com/category/Mundo">Mundo</a>
+        <a href="https://elironico.com/category/Economía">Economía</a>
+        <a href="https://elironico.com/nosotros">Quiénes Somos</a>
       </div>
       <hr class="footer-divider">
       <div class="footer-legal">
-        Estás recibiendo este email porque te suscribiste en <a href="https://edunews2.vercel.app">edunews2.vercel.app</a><br>
-        © 2026 EduNews · Todos los derechos reservados<br>
+        Estás recibiendo este email porque te suscribiste en <a href="https://elironico.com">elironico.com</a><br>
+        © 2026 El Irónico · Todos los derechos reservados<br>
         Las noticias son extraídas de fuentes públicas y reescritas bajo principios de neutralidad por IA.
       </div>
       <div class="unsubscribe">
@@ -666,7 +666,7 @@ async function handleRequest(request: Request) {
 </html>`;
 
     // 6. Enviar campaña a través de Brevo
-    const subject = `EduNews – Resumen Diario: ${capitalizedDate}`;
+    const subject = `El Irónico – Resumen Diario: ${capitalizedDate}`;
     const result = await sendNewsletterCampaign(subject, htmlTemplate);
 
     if (!result.success) {

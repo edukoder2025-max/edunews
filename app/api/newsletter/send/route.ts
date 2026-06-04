@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     }));
 
     const prompt = `
-    Eres el Redactor Jefe del portal EduNews. Tu tarea es compilar las últimas noticias neutralizadas en un boletín diario de email marketing para nuestros suscriptores.
+    Eres el Redactor Jefe del portal El Irónico. Tu tarea es compilar las últimas noticias neutralizadas en un boletín diario de email marketing para nuestros suscriptores.
     
     Noticias del día a incluir:
     ${JSON.stringify(articlesData, null, 2)}
@@ -43,19 +43,19 @@ export async function POST(request: Request) {
     Lineamientos de diseño del correo:
     1. Fondo oscuro: usa un color gris oscuro para el fondo general del email (#0b0f19) y un panel interno un poco más claro (#131924) para el cuerpo del mensaje.
     2. Colores de acento: Rojo brillante (#ff3838) y Cyan eléctrico (#00d2d3).
-    3. Cabecera: Incluir el título grande "EduNews" (estilo periódico, elegante) con el subtítulo "Boletín Diario · Periodismo sin Sesgos".
+    3. Cabecera: Incluir el título grande "El Irónico" (estilo periódico, elegante) con el subtítulo "Boletín Diario · Periodismo sin Sesgos".
     4. Introducción: Un saludo breve, inteligente y neutral que invite a la lectura fáctica del día.
     5. Listado de noticias:
        - Muestra cada una de las noticias en tarjetas ordenadas.
        - Incluye la categoría en mayúsculas como un badge con su color respectivo (p. ej., Economía: verde, Deportes: naranja, Tecnología: magenta, Argentina: celeste, Mundo: rojo).
-       - El título del artículo debe ser un enlace que apunte a "https://edunews2.vercel.app/news/[ID_DE_LA_NOTICIA]-[SLUG]" o la forma SEO-friendly equivalente.
+       - El título del artículo debe ser un enlace que apunte a "https://elironico.com/news/[ID_DE_LA_NOTICIA]-[SLUG]" o la forma SEO-friendly equivalente.
        - Muestra el resumen neutralizado.
     6. Pie de página: Añadir información sobre la misión del sitio (periodismo objetivo con IA) y el enlace de contacto edukoder2025@gmail.com.
     7. Compatibilidad: Asegúrate de usar estilos CSS en línea (inline-styles) y tablas si es necesario, de modo que se renderice a la perfección tanto en dispositivos móviles como en Gmail, Outlook, Apple Mail, etc.
     
     Responde estrictamente en formato JSON con la siguiente estructura:
     {
-      "subject": "Boletín Diario EduNews: Resumen del [Fecha de Hoy en español]",
+      "subject": "Boletín Diario El Irónico: Resumen del [Fecha de Hoy en español]",
       "htmlContent": "código HTML completo del correo"
     }
     `;

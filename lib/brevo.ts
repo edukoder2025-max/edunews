@@ -1,6 +1,6 @@
 const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'edukoder2025@gmail.com';
-const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'EduNews';
+const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'El Irónico';
 
 type BrevoHeaders = Record<string, string>;
 
@@ -42,7 +42,7 @@ export async function subscribeContact(email: string) {
       throw new Error(errorData.message || `HTTP error ${response.status}`);
     }
 
-    return { success: true, message: 'Suscripción exitosa. ¡Bienvenido a EduNews!' };
+    return { success: true, message: 'Suscripción exitosa. ¡Bienvenido a El Irónico!' };
   } catch (error: any) {
     console.error('Error subscribing contact to Brevo:', error);
     return { success: false, error: error.message || 'Error al procesar la suscripción.' };
@@ -109,7 +109,7 @@ export async function getDefaultListId(): Promise<number | null> {
         const createFolderRes = await fetch('https://api.brevo.com/v3/contacts/folders', {
           method: 'POST',
           headers: getHeaders(),
-          body: JSON.stringify({ name: 'EduNews Marketing' }),
+          body: JSON.stringify({ name: 'El Irónico Marketing' }),
         });
         if (createFolderRes.ok) {
           const newFolder = await createFolderRes.json();
@@ -123,7 +123,7 @@ export async function getDefaultListId(): Promise<number | null> {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({
-        name: 'Boletín EduNews',
+        name: 'Boletín El Irónico',
         folderId: folderId,
       }),
     });
@@ -152,7 +152,7 @@ export async function sendNewsletterCampaign(subject: string, htmlContent: strin
     }
 
     // 1. Crear la campaña de email
-    const campaignName = `EduNews Digest - ${new Date().toLocaleDateString('es-ES')}`;
+    const campaignName = `El Irónico Digest - ${new Date().toLocaleDateString('es-ES')}`;
     const campaignPayload = {
       sender: { name: SENDER_NAME, email: SENDER_EMAIL },
       name: campaignName,

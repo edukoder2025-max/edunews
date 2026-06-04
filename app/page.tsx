@@ -255,7 +255,7 @@ export default async function Home() {
                   <Cpu size={14} className="animate-pulse" />
                 </div>
                 <h3 className="text-xs font-black uppercase tracking-wider text-white">
-                  EduNews AI Engine
+                  El Irónico AI Engine
                 </h3>
               </div>
               
@@ -314,7 +314,7 @@ export default async function Home() {
                     {(article.ai_content || article.original_content).replace(/<[^>]*>/g, '').substring(0, 100)}...
                   </p>
                   <div className="pt-1 flex items-center justify-between text-[9px] text-slate-500 font-medium">
-                    <span className="italic">Redacción EduNews</span>
+                    <span className="italic">Redacción El Irónico</span>
                     <span>{new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
                   </div>
                 </article>

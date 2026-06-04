@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     .replace(/<[^>]*>/g, '') + '...';
 
   return {
-    title: `${article.ai_title || article.original_title} | EduNews`,
+    title: `${article.ai_title || article.original_title} | El Irónico`,
     description: cleanText,
     openGraph: {
       title: article.ai_title || article.original_title,
@@ -122,7 +122,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
                 {article.category || 'Mundo'}
               </span>
               <span className="text-slate-600">•</span>
-              <span className="text-slate-400">Redacción EduNews</span>
+              <span className="text-slate-400">Redacción El Irónico</span>
               <span className="text-slate-600">•</span>
               <span className="text-slate-400 flex items-center gap-1">
                 <Calendar size={12} />
@@ -143,7 +143,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
 
           {/* Social Share Buttons */}
           <ShareButtons
-            url={`https://ultimo-news2026.vercel.app${buildArticleUrl(article.id, article.ai_title || article.original_title)}`}
+            url={`https://elironico.com${buildArticleUrl(article.id, article.ai_title || article.original_title)}`}
             title={article.ai_title || article.original_title}
           />
 
@@ -216,7 +216,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             <div className="bg-gradient-to-br from-slate-950 to-slate-900 border border-white/5 rounded-2xl p-5 space-y-4">
               <div className="flex items-center gap-2 border-b border-white/5 pb-3">
                 <Shield size={16} className="text-secondary" />
-                <h3 className="text-xs font-black uppercase tracking-widest text-white">Código Ético EduNews</h3>
+                <h3 className="text-xs font-black uppercase tracking-widest text-white">Código Ético El Irónico</h3>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed font-sans">
                 Garantizamos que todos nuestros artículos se generan reescribiendo fuentes legítimas mediante inteligencia artificial con el único fin de eliminar calificativos partidistas, manipulaciones emocionales o titulares engañosos.

@@ -20,8 +20,8 @@ def docx_to_text(path):
 
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    docx_path = os.path.join(current_dir, "EduNews_Documento_Tecnico.docx")
-    txt_path = os.path.join(current_dir, "EduNews_Documento_Tecnico.txt")
+    docx_path = os.path.join(current_dir, "ElIronico_Documento_Tecnico.docx")
+    txt_path = os.path.join(current_dir, "ElIronico_Documento_Tecnico.txt")
     
     print(f"Leyendo: {docx_path}")
     try:
