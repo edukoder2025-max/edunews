@@ -72,28 +72,6 @@ export default async function RootLayout({
 
   return (
     <html lang="es" className="dark">
-      <head>
-        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-          <meta
-            name="google-adsense-account"
-            content={process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}
-          />
-        )}
-        {process.env.NEXT_PUBLIC_ADSENSE_SITE_VERIFICATION && (
-          <meta
-            name="google-site-verification"
-            content={process.env.NEXT_PUBLIC_ADSENSE_SITE_VERIFICATION}
-          />
-        )}
-        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-          <Script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
-            crossOrigin="anonymous"
-            strategy="afterInteractive"
-          />
-        )}
-      </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans bg-background text-slate-200 antialiased`}>
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
           <Script
