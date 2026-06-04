@@ -74,12 +74,21 @@ export default async function RootLayout({
     <html lang="es" className="dark">
       <body className={`${inter.variable} ${playfair.variable} font-sans bg-background text-slate-200 antialiased`}>
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-          <Script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
-            crossOrigin="anonymous"
-            strategy="afterInteractive"
-          />
+          <>
+            <Script
+              async
+              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
+              crossOrigin="anonymous"
+              strategy="afterInteractive"
+            />
+            <Script
+              id="adsense-init"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
+              }}
+            />
+          </>
         )}
         <div className="min-h-screen flex flex-col">
           {/* Top Info Bar */}

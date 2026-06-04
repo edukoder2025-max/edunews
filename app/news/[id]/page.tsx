@@ -7,6 +7,8 @@ import { notFound, redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import ShareButtons from '@/components/ShareButtons';
 import AiTransparencyPanel from '@/components/AiTransparencyPanel';
+import AdSense from '@/components/AdSense';
+import { AD_SLOTS } from '@/lib/adSlots';
 import { Calendar, ChevronLeft, Shield, Eye, Flame, Compass } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
 
@@ -186,7 +188,17 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             biasScore={article.bias_score}
             sourcesUsed={article.sources_used}
           />
-
+          {/* Mid-Article Advertisement */}
+          {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
+            <div className="my-10 p-6 bg-slate-900/50 rounded-lg border border-white/5 text-center">
+              <span className="text-[9px] font-black uppercase tracking-wider text-slate-600 block mb-4">Publicidad</span>
+              <AdSense 
+                slot={AD_SLOTS.ARTICLE_MIDDLE}
+                format="auto"
+                className="w-full"
+              />
+            </div>
+          )}
           {/* Related Articles in footer of column */}
           <footer className="mt-16 pt-10 border-t border-white/10 space-y-6">
             <h3 className="text-xl font-black font-serif text-white uppercase tracking-tight flex items-center gap-2">
@@ -275,13 +287,20 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             )}
 
             {/* Sidebar Ad Placeholder (AdSense compatible styling) */}
-            <div className="w-full bg-slate-950/60 border border-white/5 rounded-2xl p-6 text-center space-y-4">
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-600 block">Publicidad</span>
-              <div className="w-full h-48 bg-white/5 border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center p-4">
-                <span className="text-[10px] text-slate-500 font-bold uppercase">Espacio AdSense</span>
-                <span className="text-[9px] text-slate-600 mt-1 font-medium leading-relaxed italic">Anuncio recomendado adaptado al lector</span>
+            {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
+              <div className="w-full bg-slate-950/60 border border-white/5 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-white/5">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-600 block">Publicidad</span>
+                </div>
+                <div className="p-4">
+                  <AdSense 
+                    slot={AD_SLOTS.ARTICLE_BOTTOM}
+                    format="vertical"
+                    className="flex justify-center"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
         </aside>

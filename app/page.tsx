@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Sparkles, Calendar, ArrowRight, Eye, ShieldAlert, Cpu } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
 import ProductsCarousel from '@/components/ProductsCarousel';
+import AdSense from '@/components/AdSense';
+import { AD_SLOTS } from '@/lib/adSlots';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -92,6 +94,17 @@ export default async function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Top Advertisement Banner */}
+      {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
+        <div className="mb-8 p-4 bg-slate-900/50 rounded-lg border border-white/5">
+          <AdSense 
+            slot={AD_SLOTS.HOMEPAGE_TOP} 
+            format="auto"
+            className="w-full"
+          />
+        </div>
+      )}
+
       {/* 3-Column Newspaper Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
