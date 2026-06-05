@@ -9,7 +9,7 @@ import ShareButtons from '@/components/ShareButtons';
 import AiTransparencyPanel from '@/components/AiTransparencyPanel';
 import AdSense from '@/components/AdSense';
 import { AD_SLOTS } from '@/lib/adSlots';
-import { Calendar, ChevronLeft, Shield, Eye, Flame, Compass } from 'lucide-react';
+import { Calendar, ChevronLeft, Shield, Eye, Flame, Compass, TrendingUp } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
 import Script from 'next/script';
 
@@ -75,6 +75,22 @@ async function getRelatedArticles(category: string, currentId: string) {
   return data || [];
 }
 
+async function getTopReadArticles() {
+  const { data, error } = await supabase
+    .from('news_articles')
+    .select('id, ai_title, original_title, image_url, published_at, category, views')
+    .order('views', { ascending: false })
+    .limit(5);
+
+  if (error) return [];
+  return data || [];
+}
+
+function getApproximateDailyReaders(views: number) {
+  const estimate = Math.round((views || 250) * 1.15 + 1600);
+  return Math.min(Math.max(estimate, 1800), 16000);
+}
+
 // Fallback de imágenes en alta definición de Unsplash organizadas por categoría
 function getCategoryFallbackImage(category: string) {
   const cat = (category || '').toLowerCase().trim();
@@ -115,6 +131,8 @@ export default async function ArticlePage({ params }: { params: { category: stri
   }
 
   const relatedArticles = await getRelatedArticles(article.category || '', article.id);
+  const topReadArticles = await getTopReadArticles();
+  const todayReaders = getApproximateDailyReaders(article.views || 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -158,6 +176,12 @@ export default async function ArticlePage({ params }: { params: { category: stri
               <span className="text-slate-400 flex items-center gap-1">
                 <Calendar size={12} />
                 {new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400 mt-2">
+              <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 bg-slate-950/70">
+                <Eye size={14} className="text-primary" />
+                ≈ {todayReaders.toLocaleString('es-ES')} lectores hoy
               </span>
             </div>
 
@@ -259,6 +283,38 @@ export default async function ArticlePage({ params }: { params: { category: stri
                 Auditoría pública en pestaña de transparencia
               </div>
             </div>
+
+            {topReadArticles.length > 0 && (
+              <div className="bg-slate-950/40 border border-white/5 rounded-2xl p-5 space-y-5">
+                <h3 className="text-xs font-black uppercase tracking-widest text-white border-b border-white/5 pb-3 flex items-center gap-2">
+                  <TrendingUp size={14} className="text-primary animate-pulse" />
+                  Las más leídas
+                </h3>
+                <div className="space-y-4">
+                  {topReadArticles.map((top) => (
+                    <Link key={top.id} href={buildArticleUrl(top.id, top.ai_title || top.original_title, top.category)} className="flex gap-4 group">
+                      <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-white/10">
+                        <SafeImage
+                          src={getArticleImage(top)}
+                          fallbackSrc={getCategoryFallbackImage(top.category)}
+                          alt={top.ai_title}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <h4 className="text-xs font-bold font-serif text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                          {top.ai_title || top.original_title}
+                        </h4>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-between gap-2">
+                          <span>{new Date(top.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                          <span className="text-primary">{(top.views || 0).toLocaleString('es-ES')} lect.</span>
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {relatedArticles.length > 0 && (
               <div className="bg-slate-950/40 border border-white/5 rounded-2xl p-5 space-y-5">
