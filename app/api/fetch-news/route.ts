@@ -4,6 +4,7 @@ import { rewriteNews } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
 import { findAlternativeSources } from '@/lib/googleCSE';
 import { fetchRelevantImage } from '@/lib/imageFetcher';
+import { buildArticleUrl } from '@/lib/articleUtils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -138,9 +139,11 @@ export async function GET(request: Request) {
           sources_used: rewritten.sources_used || (alternatives.length > 0 ? alternatives.map((a: any) => a.source) : [article.sourceName])
         };
 
-        let { error: dbError } = await supabase
+        let { data: insertedRow, error: dbError } = await supabase
           .from('news_articles')
-          .insert(insertPayload);
+          .insert(insertPayload)
+          .select('id')
+          .single();
 
         // Fallback si no existen las columnas de sesgo en Supabase
         if (dbError && (dbError.message?.includes('column') || dbError.code === 'PGRST204')) {
@@ -150,17 +153,36 @@ export async function GET(request: Request) {
           delete fallbackPayload.bias_score;
           delete fallbackPayload.sources_used;
 
-          const { error: fallbackError } = await supabase
+          const { data: fallbackRow, error: fallbackError } = await supabase
             .from('news_articles')
-            .insert(fallbackPayload);
-          
+            .insert(fallbackPayload)
+            .select('id')
+            .single();
+
           dbError = fallbackError;
+          if (!dbError) insertedRow = fallbackRow;
         }
 
         if (dbError) {
           errors.push(`Error en BD para: ${article.title} - ${dbError.message}`);
         } else {
           processedCount++;
+
+          // Ping IndexNow (silencioso — no bloquea ni rompe el flujo)
+          if (insertedRow?.id) {
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.elironico.com';
+            const articleUrl = buildArticleUrl(
+              insertedRow.id,
+              rewritten.new_title || article.title,
+              rewritten.category || 'General',
+              siteUrl
+            );
+            fetch(`${siteUrl}/api/indexnow`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: articleUrl }),
+            }).catch((err) => console.warn('[IndexNow] Ping failed (non-blocking):', err?.message));
+          }
         }
       }
     }
