@@ -11,6 +11,8 @@ import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
 import NewsletterForm from "@/components/NewsletterForm";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import Image from "next/image";
+
 
 
 const inter = Inter({ 
@@ -148,6 +150,14 @@ export default async function RootLayout({
               {/* Logotipo Central (Ocupa 2 columnas de la grilla) */}
               <div className="col-span-1 md:col-span-2 flex flex-col items-center text-center">
                 <Link href="/" className="group flex flex-col items-center gap-1.5 hover:opacity-95 transition-opacity">
+                  <Image
+                    src="/logo-rect.png"
+                    alt="El Irónico"
+                    width={230}
+                    height={98}
+                    className="mb-2 object-contain filter drop-shadow-[0_0_15px_rgba(200,100,50,0.15)]"
+                    priority
+                  />
                   <span className="text-[9px] bg-primary/10 text-primary border border-primary/25 px-2 py-0.5 rounded-full font-black tracking-widest uppercase">
                     INDEPENDIENTE & OBJETIVO
                   </span>
@@ -276,7 +286,16 @@ export default async function RootLayout({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div className="md:col-span-2 space-y-4">
-                  <h3 className="text-lg font-bold text-white font-serif">El Irónico</h3>
+                  <div className="flex items-center gap-2.5">
+                    <Image
+                      src="/logo-square.png"
+                      alt="El Irónico Logo"
+                      width={32}
+                      height={32}
+                      className="object-contain"
+                    />
+                    <h3 className="text-lg font-bold text-white font-serif">El Irónico</h3>
+                  </div>
                   <p className="text-sm text-slate-400 max-w-md leading-relaxed">
                     El primer periódico digital impulsado por IA diseñado para evitar noticias sesgadas por intereses partidarios o políticos. Promovemos un periodismo ético, transparente y correcto.
                   </p>
