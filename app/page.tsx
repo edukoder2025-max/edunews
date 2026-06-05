@@ -94,24 +94,7 @@ export default async function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <section className="mb-10 text-center">
-        <h1 className="text-4xl md:text-5xl font-black text-white leading-tight tracking-tight">
-          Noticias Argentina sin sesgo y periodismo IA neutral 24/7
-        </h1>
-        <p className="mt-3 text-slate-400 max-w-2xl mx-auto text-sm md:text-base">
-          Información verificada y reescrita por IA para lectores exigentes que buscan noticias objetivas, claras y bien fundamentadas.
-        </p>
-      </section>
-      {/* Top Advertisement Banner */}
-      {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-        <div className="mb-8 p-4 bg-slate-900/50 rounded-lg border border-white/5 ad-container">
-          <AdSense 
-            slot={AD_SLOTS.HOMEPAGE_TOP} 
-            format="auto"
-            className="w-full"
-          />
-        </div>
-      )}
+
 
       {/* 3-Column Newspaper Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -352,6 +335,17 @@ export default async function Home() {
         </aside>
 
       </div>
+
+      {/* AdSense relocated from top banner to homepage bottom */}
+      {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
+        <div className="mt-12 p-4 bg-slate-900/50 rounded-lg border border-white/5 ad-container">
+          <AdSense 
+            slot={AD_SLOTS.HOMEPAGE_TOP} 
+            format="auto"
+            className="w-full"
+          />
+        </div>
+      )}
     </div>
   );
 }

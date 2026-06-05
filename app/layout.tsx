@@ -91,33 +91,56 @@ export default async function RootLayout({
           />
         )}
         <div className="min-h-screen flex flex-col">
-          {/* Top Info Bar */}
-          <div className="bg-slate-950/80 border-b border-white/5 text-[10px] font-bold uppercase tracking-wider py-2 px-6 flex items-center justify-between text-slate-500">
-            <div>Edición Digital Estándar</div>
-            <div className="flex gap-4">
-              <Link href="/nosotros" className="hover:text-white transition-colors">Quiénes Somos</Link>
-              <span>•</span>
-              <Link href="/contacto" className="hover:text-white transition-colors">Contacto</Link>
-            </div>
-          </div>
+
 
           {/* Centered Newspaper Masthead */}
-          <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 flex flex-col items-center">
-            {/* Logo/Name */}
-            <Link href="/" className="group flex flex-col items-center gap-1 hover:opacity-95 transition-opacity text-center">
-              <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded font-black tracking-widest uppercase">
-                INDEPENDIENTE & OBJETIVO
-              </span>
-              <h1 className="text-6xl md:text-8xl font-black font-serif italic tracking-tighter text-white select-none">
-                El<span className="text-primary group-hover:text-secondary transition-colors duration-500"> Irónico</span>
-              </h1>
-              <p className="text-[10px] tracking-widest text-slate-400 uppercase font-bold mt-1 max-w-md hidden md:block">
-                Información neutralizada y reescrita mediante Inteligencia Artificial
-              </p>
-            </Link>
+          <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 flex flex-col items-center">
+            
+            {/* Grilla Superior: Oreja Izquierda | Logotipo Central | Oreja Derecha */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-6 items-center justify-between pb-6 border-b border-white/5">
+              
+              {/* Oreja Izquierda: Datos Técnicos y Lema Clásico */}
+              <div className="hidden md:flex flex-col text-left text-[9px] text-slate-500 font-bold uppercase tracking-wider space-y-1">
+                <div>REGISTRO N.º 48.910</div>
+                <div className="flex gap-2 text-slate-400">
+                  <Link href="/nosotros" className="hover:text-primary transition-colors">Quiénes Somos</Link>
+                  <span>•</span>
+                  <Link href="/contacto" className="hover:text-primary transition-colors">Contacto</Link>
+                </div>
+                <div className="text-primary/70 font-serif italic text-xs tracking-normal normal-case font-bold mt-0.5">
+                  “Veritas et Libertas”
+                </div>
+              </div>
+
+              {/* Logotipo Central (Ocupa 2 columnas de la grilla) */}
+              <div className="col-span-1 md:col-span-2 flex flex-col items-center text-center">
+                <Link href="/" className="group flex flex-col items-center gap-1.5 hover:opacity-95 transition-opacity">
+                  <span className="text-[9px] bg-primary/10 text-primary border border-primary/25 px-2 py-0.5 rounded-full font-black tracking-widest uppercase">
+                    INDEPENDIENTE & OBJETIVO
+                  </span>
+                  <h1 className="text-6xl sm:text-7xl md:text-8xl font-black font-serif italic tracking-tighter text-white select-none leading-none">
+                    El<span className="text-primary group-hover:text-secondary transition-colors duration-500"> Irónico</span>
+                  </h1>
+                  <p className="text-[9px] tracking-widest text-slate-400 uppercase font-bold mt-2 max-w-md">
+                    Información neutralizada y reescrita mediante Inteligencia Artificial
+                  </p>
+                </Link>
+              </div>
+
+              {/* Oreja Derecha: Selector de Idioma e Información */}
+              <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-2 text-right">
+                <div className="hidden md:block text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                  EDICIÓN DIGITAL ESTÁNDAR
+                </div>
+                <div className="flex items-center gap-2.5 bg-slate-950/40 p-1.5 px-3 rounded-full border border-white/5">
+                  <LanguageSwitcher />
+                </div>
+              </div>
+
+            </div>
 
             {/* Newspaper Metadata Sub-header with double borders */}
-            <div className="w-full border-newspaper-double py-2.5 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+            <div className="w-full border-newspaper-double py-2 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
               <div className="flex items-center gap-2 text-primary font-black">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -128,43 +151,53 @@ export default async function RootLayout({
               <div className="text-slate-300 font-medium font-serif italic text-center sm:text-left">
                 {formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}
               </div>
-              <div className="flex items-center gap-4">
-                <LanguageSwitcher />
-                <span className="text-slate-700">|</span>
+              <div className="flex items-center gap-2">
                 <WeatherWidget />
               </div>
             </div>
 
+            {/* Principal Editorial Banner (Headline/Lema) */}
+            <div className="w-full text-center py-4 border-b border-white/5">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-serif text-white tracking-normal leading-tight">
+                Noticias Argentina sin sesgo y periodismo IA neutral 24/7
+              </h2>
+              <p className="text-[10px] sm:text-xs text-slate-400 max-w-2xl mx-auto mt-1 font-medium leading-relaxed">
+                Información verificada y neutralizada automáticamente mediante Inteligencia Artificial para una lectura objetiva y transparente.
+              </p>
+            </div>
+
             {/* Navigation links styled as sections */}
-            <nav className="w-full mt-4 flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs font-black uppercase tracking-widest border-b border-white/5 pb-4">
-              <Link href="/" className="py-1 border-b-2 border-transparent text-white hover:text-primary hover:border-primary transition-all">
+            <nav className="w-full mt-4 flex flex-wrap justify-center items-center text-xs font-black uppercase tracking-widest border-b border-white/5 pb-4">
+              <Link href="/" className="px-4 py-2 border-r border-white/5 text-white hover:text-primary transition-all">
                 Portada
               </Link>
-              <Link href="/como-funciona" className="py-1 border-b-2 border-transparent text-primary hover:text-white hover:border-white transition-all font-bold flex items-center gap-1">
+              <Link href="/como-funciona" className="px-4 py-2 border-r border-white/5 text-primary hover:text-white transition-all font-bold flex items-center gap-1">
                 Cómo Funciona <span className="text-[10px]">🤖</span>
               </Link>
-              <Link href="/categoria/mundo" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-mundo hover:border-cat-mundo transition-all">
+              <Link href="/categoria/mundo" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-mundo transition-all">
                 Mundo
               </Link>
-              <Link href="/categoria/argentina" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-argentina hover:border-cat-argentina transition-all">
+              <Link href="/categoria/argentina" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-argentina transition-all">
                 Argentina
               </Link>
-              <Link href="/categoria/tecnologia" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-tecnologia hover:border-cat-tecnologia transition-all">
+              <Link href="/categoria/tecnologia" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-tecnologia transition-all">
                 Tecnología
               </Link>
-              <Link href="/categoria/economia" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-economia hover:border-cat-economia transition-all">
+              <Link href="/categoria/economia" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-economia transition-all">
                 Economía
               </Link>
-              <Link href="/categoria/ciencia" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-cultura hover:border-cat-cultura transition-all">
+              <Link href="/categoria/ciencia" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-cultura transition-all">
                 Ciencia
               </Link>
-              <Link href="/categoria/deportes" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-deportes hover:border-cat-deportes transition-all">
+              <Link href="/categoria/deportes" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-deportes transition-all">
                 Deportes
               </Link>
-              <Link href="/categoria/cultura" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-general hover:border-cat-general transition-all">
+              <Link href="/categoria/cultura" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-general transition-all">
                 Cultura
               </Link>
-              <SearchInput />
+              <div className="pl-4 py-1">
+                <SearchInput />
+              </div>
             </nav>
           </header>
 

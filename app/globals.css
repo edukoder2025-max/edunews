@@ -31,16 +31,16 @@
   /* Newspaper specific styling */
   .border-newspaper-double {
     border-style: double;
-    border-width: 4px 0;
-    @apply border-white/20;
+    border-width: 6px 0;
+    @apply border-slate-700/60;
   }
   
   .border-newspaper-double-b {
-    border-bottom: 4px double rgba(255, 255, 255, 0.2);
+    border-bottom: 6px double rgba(100, 116, 139, 0.4);
   }
 
   .border-newspaper-double-t {
-    border-top: 4px double rgba(255, 255, 255, 0.2);
+    border-top: 6px double rgba(100, 116, 139, 0.4);
   }
 
   .ad-container {
