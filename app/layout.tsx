@@ -83,6 +83,39 @@ export default async function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`${inter.variable} ${playfair.variable} font-sans bg-background text-slate-200 antialiased`}>
+        {/* SVG Filter: Chalk-on-Blackboard turbulence effect — usado por .chalk-title */}
+        <svg
+          style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
+          aria-hidden="true"
+          focusable="false"
+        >
+          <defs>
+            <filter id="chalk-rough" x="-5%" y="-5%" width="110%" height="110%" colorInterpolationFilters="sRGB">
+              {/* Genera ruido fractal que simula la textura granulosa de la tiza */}
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.65 0.75"
+                numOctaves="4"
+                seed="8"
+                stitchTiles="stitch"
+                result="noise"
+              />
+              {/* Desplaza los píxeles del texto según el ruido generado */}
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="noise"
+                scale="2.5"
+                xChannelSelector="R"
+                yChannelSelector="G"
+                result="roughened"
+              />
+              {/* Mezcla suave: el resultado áspero a 90% + original suave a 10% */}
+              <feBlend in="roughened" in2="SourceGraphic" mode="normal" result="blended" />
+              <feComposite in="blended" in2="SourceGraphic" operator="in" />
+            </filter>
+          </defs>
+        </svg>
+
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
           <Script
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
@@ -118,8 +151,8 @@ export default async function RootLayout({
                   <span className="text-[9px] bg-primary/10 text-primary border border-primary/25 px-2 py-0.5 rounded-full font-black tracking-widest uppercase">
                     INDEPENDIENTE & OBJETIVO
                   </span>
-                  <h1 className="text-6xl sm:text-7xl md:text-8xl font-black font-serif italic tracking-tighter text-white select-none leading-none">
-                    El<span className="text-primary group-hover:text-secondary transition-colors duration-500"> Irónico</span>
+                  <h1 className="text-6xl sm:text-7xl md:text-8xl font-black font-serif italic tracking-tighter select-none leading-none chalk-title">
+                    El<span className="chalk-title-accent group-hover:opacity-100 transition-opacity duration-500"> Irónico</span>
                   </h1>
                   <p className="text-[9px] tracking-widest text-slate-400 uppercase font-bold mt-2 max-w-md">
                     Información neutralizada y reescrita mediante Inteligencia Artificial

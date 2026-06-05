@@ -5,13 +5,17 @@
 @layer base {
   body {
     @apply text-slate-200 antialiased font-sans;
-    background-color: #050811;
-    background-image: radial-gradient(circle at top, #0d162d 0%, #050811 60%, #010307 100%);
+    /* Ink & Coal: tinta de imprenta profunda con gradiente cálido hacia los bordes */
+    background-color: #0B0E14;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34, 20, 20, 0.6) 0%, transparent 70%),
+      radial-gradient(ellipse 100% 100% at 50% 100%, rgba(11, 14, 20, 1) 0%, #0B0E14 100%);
     background-attachment: fixed;
   }
 
   ::selection {
-    @apply bg-primary/30;
+    background-color: rgba(223, 32, 50, 0.25); /* Rojo bermellón suave */
+    color: #f8f4ef;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -28,24 +32,72 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-secondary;
   }
   
-  /* Newspaper specific styling */
+  /* === Ink & Coal — Líneas de Regla Clásicas de Imprenta === */
   .border-newspaper-double {
     border-style: double;
     border-width: 6px 0;
-    @apply border-slate-700/60;
+    /* Tono bermellón muy tenue — evoca el rojo de las marcas editoriales históricas */
+    border-color: rgba(223, 32, 50, 0.25);
   }
   
   .border-newspaper-double-b {
-    border-bottom: 6px double rgba(100, 116, 139, 0.4);
+    border-bottom: 6px double rgba(223, 32, 50, 0.2);
   }
 
   .border-newspaper-double-t {
-    border-top: 6px double rgba(100, 116, 139, 0.4);
+    border-top: 6px double rgba(223, 32, 50, 0.2);
   }
 
   .ad-container {
     min-height: 250px;
     width: 100%;
+  }
+
+  /* =====================================================
+     CHALK-ON-BLACKBOARD TITLE EFFECT
+     Combina SVG turbulence filter + text-shadow en capas
+     para simular tiza real sobre pizarrón oscuro.
+     ===================================================== */
+  .chalk-title {
+    /* Tiza nunca es blanco puro — es un blanco polvoriento y cálido */
+    color: #f0ece0;
+
+    /* Múltiples sombras de polvo de tiza en diferentes radios y opacidades */
+    text-shadow:
+      /* Halo suave de polvo blanco disperso */
+      0 0 6px rgba(240, 238, 225, 0.18),
+      0 0 12px rgba(240, 238, 225, 0.1),
+      /* Micro-desplazamientos que simulan la aplicación irregular de la tiza */
+      1px  1px  0px rgba(255, 255, 245, 0.2),
+      -1px -1px  0px rgba(200, 198, 180, 0.15),
+       2px -1px  1px rgba(240, 238, 225, 0.08),
+      -2px  1px  1px rgba(240, 238, 225, 0.08),
+      /* Sombra de profundidad del pizarrón debajo de la tiza */
+      0 3px 6px rgba(0, 0, 0, 0.5);
+
+    /* Borde de trazo grueso opaco que simula la acumulación de tiza en los bordes */
+    -webkit-text-stroke: 1.5px rgba(255, 255, 248, 0.12);
+
+    /* Aplica el filtro SVG de turbulencia registrado en el DOM */
+    filter: url('#chalk-rough');
+
+    /* Opacidad ligeramente menor que 100% — la tiza nunca es perfectamente opaca */
+    opacity: 0.92;
+  }
+
+  /* ===== Variante para el span rojo "Irónico" ===== */
+  .chalk-title-accent {
+    /* Tiza roja — ligeramente más saturada para mantener el color pero con polvo */
+    color: #e8403a;
+    -webkit-text-stroke: 1.5px rgba(223, 50, 40, 0.15);
+    text-shadow:
+      0 0 8px rgba(223, 50, 40, 0.2),
+      0 0 16px rgba(223, 50, 40, 0.1),
+      1px  1px 0px rgba(255, 120, 100, 0.2),
+      -1px -1px 0px rgba(160, 30, 30, 0.15),
+      0 3px 6px rgba(0, 0, 0, 0.5);
+    filter: url('#chalk-rough');
+    opacity: 0.93;
   }
 
   /* Drop-cap for the editorial newspaper look */
@@ -92,20 +144,20 @@
   50% { opacity: .7; }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — Ink & Coal */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #050811; 
+  background: #0B0E14;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b; 
-  border-radius: 4px;
+  background: #2a1a1a;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff3838; 
+  background: #DF2032; /* Rojo bermellón al hacer hover */
 }
 
 /* Google Translate Custom Theme overrides */
