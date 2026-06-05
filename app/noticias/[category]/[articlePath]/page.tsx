@@ -3,6 +3,7 @@ import { buildArticleUrl, extractArticleId, getArticleImage, normalizeCategorySl
 import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords } from '@/lib/seoUtils';
 import Link from 'next/link';
 import Image from 'next/image';
+import Script from 'next/script';
 import { notFound, redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import ShareButtons from '@/components/ShareButtons';
