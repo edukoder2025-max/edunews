@@ -87,7 +87,7 @@ export async function rewriteNews(
   {
     "new_title": "Título informativo, declarativo y 100% libre de clickbait",
     "new_content": "Cuerpo completo con <p>, <h2>, <blockquote>, <ul>/<li>",
-    "category": "Categoría (Mundo, Argentina, Tecnología, Ciencia, Economía, Deportes o Cultura)",
+    "category": "Categoría del artículo (Debe ser ESTRICTAMENTE una de las siguientes opciones: Argentina, Ciencia, Cultura, Deportes, Economía, Educación, España, General, Mundo, Política, Política y Economía o Tecnología. No inventes ninguna otra y respeta las tildes exactas)",
     "bias_detected": "Breve análisis y descripción de los sesgos, adjetivos removidos y diferencias encontradas entre las fuentes",
     "bias_score": {
       "original": 75,

@@ -4,7 +4,18 @@ import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { buildArticleUrl } from "@/lib/articleUtils";
+import { buildArticleUrl, normalizeCategorySlug } from "@/lib/articleUtils";
+
+function getCategoryHoverClass(category: string) {
+  const cat = (category || '').toLowerCase().trim();
+  if (cat.includes('mundo')) return 'hover:text-cat-mundo';
+  if (cat.includes('argentina')) return 'hover:text-cat-argentina';
+  if (cat.includes('tecnolog')) return 'hover:text-cat-tecnologia';
+  if (cat.includes('econom')) return 'hover:text-cat-economia';
+  if (cat.includes('deport')) return 'hover:text-cat-deportes';
+  if (cat.includes('ciencia') || cat.includes('cultur') || cat.includes('ciencias')) return 'hover:text-cat-cultura';
+  return 'hover:text-primary';
+}
 import WeatherWidget from "@/components/WeatherWidget";
 import CryptoWidget from "@/components/CryptoWidget";
 import SearchInput from "@/components/SearchInput";
@@ -75,6 +86,16 @@ export default async function RootLayout({
   const tickerNews = Array.from(
     new Map(rawTickerNews.map(news => [news.id, news])).values()
   );
+  
+  // Fetch active categories dynamically
+  const { data: categoriesData } = await supabase
+    .from('news_articles')
+    .select('category');
+  
+  const activeCategories = Array.from(
+    new Set(categoriesData?.map(item => item.category?.trim()).filter(Boolean) || [])
+  ).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
   const formattedDate = new Date().toLocaleDateString('es-ES', { 
     weekday: 'long', 
     day: 'numeric', 
@@ -217,27 +238,15 @@ export default async function RootLayout({
               <Link href="/como-funciona" className="px-4 py-2 border-r border-white/5 text-primary hover:text-white transition-all font-bold flex items-center gap-1">
                 Cómo Funciona <span className="text-[10px]">🤖</span>
               </Link>
-              <Link href="/categoria/mundo" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-mundo transition-all">
-                Mundo
-              </Link>
-              <Link href="/categoria/argentina" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-argentina transition-all">
-                Argentina
-              </Link>
-              <Link href="/categoria/tecnologia" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-tecnologia transition-all">
-                Tecnología
-              </Link>
-              <Link href="/categoria/economia" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-economia transition-all">
-                Economía
-              </Link>
-              <Link href="/categoria/ciencia" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-cultura transition-all">
-                Ciencia
-              </Link>
-              <Link href="/categoria/deportes" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-deportes transition-all">
-                Deportes
-              </Link>
-              <Link href="/categoria/cultura" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-cat-general transition-all">
-                Cultura
-              </Link>
+              {activeCategories.map((cat) => (
+                <Link
+                  key={cat}
+                  href={`/categoria/${normalizeCategorySlug(cat)}`}
+                  className={`px-4 py-2 border-r border-white/5 text-slate-400 ${getCategoryHoverClass(cat)} transition-all`}
+                >
+                  {cat}
+                </Link>
+              ))}
               <div className="pl-4 py-1">
                 <SearchInput />
               </div>
