@@ -19,7 +19,18 @@ export default function AdSense({
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
-        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+        const adsbygoogle = (window as any).adsbygoogle || [];
+        // Esperamos un momento a que el DOM se asiente
+        const timer = setTimeout(() => {
+          const insElements = document.querySelectorAll(`ins.adsbygoogle[data-ad-slot="${slot}"]`);
+          insElements.forEach((el) => {
+            // Si el elemento ins no tiene el atributo data-adsbygoogle-status, hacemos push
+            if (!el.getAttribute('data-adsbygoogle-status')) {
+              adsbygoogle.push({});
+            }
+          });
+        }, 150);
+        return () => clearTimeout(timer);
       }
     } catch (err) {
       console.log('AdSense error:', err);

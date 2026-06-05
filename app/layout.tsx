@@ -10,6 +10,8 @@ import CryptoWidget from "@/components/CryptoWidget";
 import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
 import NewsletterForm from "@/components/NewsletterForm";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -82,20 +84,11 @@ export default async function RootLayout({
     <html lang="es" className="dark">
       <body className={`${inter.variable} ${playfair.variable} font-sans bg-background text-slate-200 antialiased`}>
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-          <>
-            <Script
-              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
-              crossOrigin="anonymous"
-              strategy="lazyOnload"
-            />
-            <Script
-              id="adsense-init"
-              strategy="lazyOnload"
-              dangerouslySetInnerHTML={{
-                __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
-              }}
-            />
-          </>
+          <Script
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
+            crossOrigin="anonymous"
+            strategy="lazyOnload"
+          />
         )}
         <div className="min-h-screen flex flex-col">
           {/* Top Info Bar */}
@@ -135,7 +128,9 @@ export default async function RootLayout({
               <div className="text-slate-300 font-medium font-serif italic text-center sm:text-left">
                 {formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
+                <LanguageSwitcher />
+                <span className="text-slate-700">|</span>
                 <WeatherWidget />
               </div>
             </div>
