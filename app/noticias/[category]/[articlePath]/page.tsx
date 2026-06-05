@@ -11,6 +11,8 @@ import AdSense from '@/components/AdSense';
 import { AD_SLOTS } from '@/lib/adSlots';
 import { Calendar, ChevronLeft, Shield, Eye, Flame, Compass } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
+import Script from 'next/script';
+
 
 export const revalidate = 3600; // Revalidar cada hora
 
@@ -116,6 +118,23 @@ export default async function ArticlePage({ params }: { params: { category: stri
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Sincronización con Google Publisher Center / Subscribe with Google */}
+      <Script
+        src="https://news.google.com/swg/js/v1/swg-basic.js"
+        strategy="afterInteractive"
+      />
+      <Script id="google-swg-init" strategy="afterInteractive">
+        {`
+          (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+            basicSubscriptions.init({
+              type: "NewsArticle",
+              isPartOfType: ["Product"],
+              isPartOfProductId: "CAowndDgCw:openaccess",
+              clientOptions: { theme: "light", lang: "es-419" },
+            });
+          });
+        `}
+      </Script>
       <div className="mb-6">
         <Link
           href="/"
