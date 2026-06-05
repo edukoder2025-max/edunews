@@ -1,9 +1,25 @@
 import Link from 'next/link';
+import Script from 'next/script';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function SubscribePage() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-24">
+      <Script
+        src="https://news.google.com/swg/js/v1/swg-basic.js"
+        strategy="afterInteractive"
+        async
+      />
+      <Script id="google-swg-init" strategy="afterInteractive">
+        {`(self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+          basicSubscriptions.init({
+            type: "NewsArticle",
+            isPartOfType: ["Product"],
+            isPartOfProductId: "CAowg7u3DA:openaccess",
+            clientOptions: { theme: "light", lang: "es-419" },
+          });
+        });`}
+      </Script>
       <div className="bg-slate-950/60 border border-white/10 rounded-[2rem] p-10 lg:p-14 shadow-2xl shadow-black/40">
         <header className="max-w-3xl mx-auto text-center space-y-6">
           <p className="text-xs uppercase tracking-[0.35em] text-primary font-black">Suscripción El Irónico</p>
@@ -54,6 +70,19 @@ export default function SubscribePage() {
               <Link href="/" className="inline-flex items-center justify-center w-full rounded-full border border-white/10 bg-white/5 px-6 py-4 text-sm font-semibold text-slate-200 transition hover:bg-white/10">
                 Volver a la portada
               </Link>
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-primary/20 bg-primary/5 p-6 text-center">
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-primary mb-3">Botón de contribución</p>
+              <p className="text-sm text-slate-300 mb-6">
+                Este botón abre el CTA de contribución de Google directamente en la página.
+              </p>
+              <button
+                swg-standard-button="contribution"
+                className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-black uppercase tracking-[0.2em] text-slate-950 transition hover:bg-primary/90"
+              >
+                Contribuí con Google
+              </button>
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
