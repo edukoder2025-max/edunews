@@ -19,24 +19,36 @@ function getHeaders(): BrevoHeaders {
  * Suscribe un correo electrónico al boletín.
  * Si el contacto ya existe, actualiza su estado.
  */
-export async function subscribeContact(email: string) {
+export async function subscribeContact(
+  email: string,
+  meta?: { name?: string; planInterest?: string }
+) {
   try {
     const listId = await getDefaultListId();
-    
+
+    const body: any = {
+      email,
+      updateEnabled: true,
+      listIds: listId ? [listId] : undefined,
+    };
+
+    if (meta) {
+      // Map metadata to Brevo attributes (keys can be adjusted in Brevo UI)
+      body.attributes = {};
+      if (meta.name) body.attributes.FIRSTNAME = meta.name;
+      if (meta.planInterest) body.attributes.PLAN_INTEREST = meta.planInterest;
+    }
+
     const response = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({
-        email,
-        updateEnabled: true,
-        listIds: listId ? [listId] : undefined,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      // Si el código es 200/204 o ya existe y se actualizó, Brevo a veces devuelve errores específicos
-      if (response.status === 400 && errorData.message?.includes('already exist')) {
+      // If contact already exists, Brevo may return a 400 with message including 'already exist'
+      if (response.status === 400 && (errorData.message || '').includes('already exist')) {
         return { success: true, message: 'Ya estás suscrito al boletín.' };
       }
       throw new Error(errorData.message || `HTTP error ${response.status}`);

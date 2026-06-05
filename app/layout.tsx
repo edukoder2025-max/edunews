@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
+// import { SWGInitializer } from "@/components/SWGInitializer"; // OCULTO: Temporalmente deshabilitado
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { buildArticleUrl, normalizeCategorySlug } from "@/lib/articleUtils";
@@ -20,8 +21,10 @@ import WeatherWidget from "@/components/WeatherWidget";
 import CryptoWidget from "@/components/CryptoWidget";
 import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
-import NewsletterForm from "@/components/NewsletterForm";
+import NewsletterForm from "@/components/NewsletterForm"; // ✅ ACTIVO: Newsletter gratuito funciona
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+// import ContributionCTABanner from "@/components/ContributionCTABanner"; // OCULTO: Temporalmente deshabilitado
+// import ContributionButton from "@/components/ContributionButton"; // OCULTO: Temporalmente deshabilitado
 import Image from "next/image";
 
 
@@ -146,7 +149,17 @@ export default async function RootLayout({
             strategy="lazyOnload"
           />
         )}
+        
+        {/* OCULTO: Google Subscribe with Google SDK - Temporalmente deshabilitado */}
+        {/* <Script
+          src="https://news.google.com/swg/js/v1/swg-basic.js"
+          strategy="afterInteractive"
+          async
+        /> */}
+        
         <div className="min-h-screen flex flex-col">
+          {/* OCULTO: Initialize SWG - Temporalmente deshabilitado */}
+          {/* <SWGInitializer /> */}
 
 
           {/* Centered Newspaper Masthead */}
@@ -238,9 +251,10 @@ export default async function RootLayout({
               <Link href="/como-funciona" className="px-4 py-2 border-r border-white/5 text-primary hover:text-white transition-all font-bold flex items-center gap-1">
                 Cómo Funciona <span className="text-[10px]">🤖</span>
               </Link>
-              <Link href="/suscribite" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-primary transition-all">
+              {/* OCULTO: Suscribite - Temporalmente deshabilitado */}
+              {/* <Link href="/suscribite" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-primary transition-all">
                 Suscribite
-              </Link>
+              </Link> */}
               {activeCategories.map((cat) => (
                 <Link
                   key={cat}
@@ -285,6 +299,9 @@ export default async function RootLayout({
           {/* Live Crypto Market Ticker con Sparklines */}
           <CryptoWidget />
 
+          {/* OCULTO: ContributionCTABanner - Temporalmente deshabilitado */}
+          {/* <ContributionCTABanner /> */}
+
           {/* Main Content */}
           <main className="flex-1 w-full">
             {children}
@@ -292,10 +309,19 @@ export default async function RootLayout({
 
           {/* Footer */}
           <footer className="border-t border-white/5 bg-slate-950 mt-auto">
-            <div className="max-w-7xl mx-auto px-6 py-12">
+            <div className="max-w-7xl mx-auto px-6 py-12 space-y-10">
+              {/* 
+                OCULTO: Sección de Contribución - Temporalmente deshabilitada
+                <div className="rounded-[2rem] border border-primary/20 bg-primary/10 p-8 shadow-lg shadow-primary/10">
+                  ...contenido oculto...
+                </div>
+              */}
+
+              {/* ✅ ACTIVO: Newsletter Gratuito - Sigue funcionando */}
               <div className="mb-12 border-b border-white/5 pb-12">
                 <NewsletterForm />
               </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div className="md:col-span-2 space-y-4">
                   <div className="flex items-center gap-2.5">

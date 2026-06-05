@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "renew-subscriptions": "node scripts/renew-subscriptions.js",
+    "sync-brevo-subscriptions": "node scripts/sync-brevo-subscriptions.js",
+    "cleanup-expired-subscriptions": "node scripts/cleanup-expired-subscriptions.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

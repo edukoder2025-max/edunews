@@ -1,0 +1,29 @@
+name: Deploy to Vercel (optional)
+
+'on':
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Deploy to Vercel (if token present)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            npm install -g vercel
+            vercel --prod --token "$VERCEL_TOKEN" --confirm
+          else
+            echo "VERCEL_TOKEN not set; skipping deploy"
+          fi

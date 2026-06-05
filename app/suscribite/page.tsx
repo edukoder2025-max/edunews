@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import Script from 'next/script';
 import { ArrowRight, CheckCircle } from 'lucide-react';
+import ContributionButton from '@/components/ContributionButton';
+import PlanCard from '@/components/PlanCard';
+import WaitlistForm from '@/components/WaitlistForm';
 
 export default function SubscribePage() {
   return (
@@ -60,6 +63,7 @@ export default function SubscribePage() {
               <p className="text-slate-400 leading-relaxed">
                 Dejá tu correo o escribinos y te avisamos apenas esté listo el muro de pago. Mientras tanto, podés seguirnos y leer todas las noticias gratis.
               </p>
+              <WaitlistForm />
             </div>
 
             <div className="space-y-4">
@@ -77,21 +81,68 @@ export default function SubscribePage() {
               <p className="text-sm text-slate-300 mb-6">
                 Este botón abre el CTA de contribución de Google directamente en la página.
               </p>
-              <button
-                swg-standard-button="contribution"
-                className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-black uppercase tracking-[0.2em] text-slate-950 transition hover:bg-primary/90"
-              >
-                Contribuí con Google
-              </button>
+              <ContributionButton />
+              <p className="text-xs text-slate-400 mt-3">Usa esta página como destino del botón de tu CTA: así la experiencia de usuario ya está lista cuando actives el muro de pago.</p>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
-              <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-bold mb-3">Consejo rápido</p>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                Usa esta página como destino del botón de tu CTA: así la experiencia de usuario ya está lista cuando actives el muro de pago.
-              </p>
+            <div className="mt-6">
+              <h4 className="text-sm font-black uppercase tracking-[0.2em] text-primary mb-3">Planes (placeholder)</h4>
+              <div className="grid grid-cols-1 gap-4">
+                <p className="text-sm text-slate-400">A continuación aparecen los planes y sus IDs externos tal como figuran en Reader Revenue Manager. "Una vez" indica un pago de por vida.</p>
+              </div>
             </div>
           </aside>
+
+          {/* Planes completos debajo del contenido principal */}
+          <div className="col-span-1 lg:col-span-1 w-full mt-8 lg:mt-0 lg:col-start-1 lg:col-end-3">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <h3 className="text-2xl font-black text-white mb-4">Planes disponibles (placeholder)</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <PlanCard
+                  title="Plan Mensual - Básico"
+                  price="ARS 2.000"
+                  billing="Mensual"
+                  bullets={["📰 Newsletter semanal", "🙅 Sin anuncios"]}
+                  productId="SWGPD.5733-3925-7955-85083"
+                />
+                <PlanCard
+                  title="Plan Mensual - Plus"
+                  price="ARS 8.000"
+                  billing="Mensual"
+                  bullets={["📰 Newsletter especial", "📚 Acceso completo a artículos", "🙅 Sin anuncios"]}
+                  productId="SWGPD.8127-6310-7908-87558"
+                />
+                <PlanCard
+                  title="Plan Mensual - Pro"
+                  price="ARS 12.000"
+                  billing="Mensual"
+                  bullets={["📰 Newsletter premium", "📚 Acceso completo", "🙅 Sin anuncios"]}
+                  productId="SWGPD.6475-3335-7339-51942"
+                />
+                <PlanCard
+                  title="Acceso Lifetime"
+                  price="ARS 5.000"
+                  billing="Una sola vez"
+                  bullets={["♾️ Acceso de por vida", "📰 Newsletter semanal", "🙅 Sin anuncios"]}
+                  productId="SWGPD.3524-7125-9967-63960"
+                />
+                <PlanCard
+                  title="Acceso Lifetime Plus"
+                  price="ARS 10.000"
+                  billing="Una sola vez"
+                  bullets={["♾️ Acceso de por vida", "📰 Newsletter especial", "📚 Acceso completo", "🙅 Sin anuncios"]}
+                  productId="SWGPD.4052-8733-6638-17843"
+                />
+                <PlanCard
+                  title="Acceso Lifetime Premium"
+                  price="ARS 15.000"
+                  billing="Una sola vez"
+                  bullets={["♾️ Acceso de por vida", "📰 Newsletter premium", "📚 Acceso completo", "🙅 Sin anuncios"]}
+                  productId="SWGPD.6766-5588-5806-80332"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

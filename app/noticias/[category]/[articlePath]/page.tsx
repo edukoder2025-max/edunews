@@ -11,7 +11,7 @@ import AdSense from '@/components/AdSense';
 import { AD_SLOTS } from '@/lib/adSlots';
 import { Calendar, ChevronLeft, Shield, Eye, Flame, Compass, TrendingUp } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
-import Script from 'next/script';
+import ContributionCTABanner from '@/components/ContributionCTABanner';
 
 
 export const revalidate = 3600; // Revalidar cada hora
@@ -195,6 +195,8 @@ export default async function ArticlePage({ params }: { params: { category: stri
               </p>
             )}
           </header>
+
+          <ContributionCTABanner />
 
           <ShareButtons
             url={`https://elironico.com${buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}`}

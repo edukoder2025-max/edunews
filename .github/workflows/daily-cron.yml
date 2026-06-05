@@ -1,6 +1,6 @@
 name: Daily news and newsletter
 
-on:
+'on':
   schedule:
     - cron: '0 6 * * *' # Ajusta esta hora según UTC.
   workflow_dispatch:
