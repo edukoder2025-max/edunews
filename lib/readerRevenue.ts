@@ -96,7 +96,7 @@ export async function applyBenefitsForPurchase(productId: string, email: string,
             description: plan.description,
           },
         },
-      ], { onConflict: ['email', 'product_id'] });
+      ], { onConflict: 'email,product_id' });
     } catch (dbErr) {
       console.warn('Could not persist subscription to Supabase:', dbErr);
       // No bloquear si falla base de datos

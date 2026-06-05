@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { openSWGDialog, isSWGAvailable } from '@/lib/swgClient';
 
-interface ContributionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ContributionButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onError'> {
   productId?: string;
   children?: React.ReactNode;
   variant?: 'primary' | 'compact' | 'secondary';
