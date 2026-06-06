@@ -25,7 +25,7 @@ interface SWGBasic {
   linkAccount: (onSuccess?: () => void, onFailure?: (error: Error) => void) => void;
   updateEligibility: (options: any) => void;
   reset: () => void;
-  openContribution: (request: SWGSubscribeRequest) => void;
+  openContribution: (request: { productId?: string }) => void;
   openDialog: (request?: any) => void;
   showLoginPrompt: () => void;
   showLoginNotification: () => void;
@@ -90,18 +90,23 @@ export function initializeSWG(publicationId: string): void {
  */
 export async function openSWGDialog(productId?: string): Promise<boolean> {
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
+    const deadline = setTimeout(() => {
+      window.removeEventListener('swg-ready', onReady);
       console.warn('⚠️ SWG SDK did not load within 5 seconds');
       resolve(false);
     }, 5000);
 
-    const checkSWG = () => {
-      if (window.SWG_BASIC) {
-        clearTimeout(timeout);
+    const tryOpen = () => {
+      // Verify it's the real SDK object (has methods), not an array
+      if (window.SWG_BASIC && typeof window.SWG_BASIC.openContribution === 'function') {
+        clearTimeout(deadline);
+        window.removeEventListener('swg-ready', onReady);
         try {
           if (productId) {
+            console.log('🚀 Opening SWG contribution with productId:', productId);
             window.SWG_BASIC.openContribution({ productId });
           } else {
+            console.log('🚀 Opening SWG generic dialog');
             window.SWG_BASIC.openDialog();
           }
           resolve(true);
@@ -109,12 +114,16 @@ export async function openSWGDialog(productId?: string): Promise<boolean> {
           console.error('❌ Error opening SWG dialog:', err);
           resolve(false);
         }
-      } else {
-        setTimeout(checkSWG, 100);
       }
     };
 
-    checkSWG();
+    const onReady = () => tryOpen();
+
+    // Listen for the custom event fired by the init script
+    window.addEventListener('swg-ready', onReady);
+
+    // Also try immediately (in case SDK already loaded)
+    tryOpen();
   });
 }
 

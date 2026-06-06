@@ -21,6 +21,9 @@ export default function SubscribePage() {
             isPartOfProductId: "CAowg7u3DA:openaccess",
             clientOptions: { theme: "light", lang: "es-419" },
           });
+          // Expose the instance so swgClient.ts can call methods directly
+          window.SWG_BASIC = basicSubscriptions;
+          window.dispatchEvent(new Event('swg-ready'));
         });`}
       </Script>
 
