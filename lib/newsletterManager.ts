@@ -12,29 +12,29 @@ import type { Plan } from './subscriptionUtils';
  */
 
 interface NewsletterConfig {
-  listId: number; // ID de la lista en Brevo
+  listName: string; // Nombre de la lista en Brevo para buscarla/crearla
   name: string;
   frequency: 'daily' | 'weekly' | 'monthly';
 }
 
 /**
- * Mapeo de newsletters con sus IDs en Brevo
- * NOTA: Estos IDs deben ser reemplazados con los IDs reales de tu cuenta Brevo
+ * Mapeo de newsletters con sus nombres de listas correspondientes en Brevo.
+ * Se buscarán o crearán dinámicamente según estos nombres.
  */
 export const NEWSLETTER_CONFIG: Record<string, NewsletterConfig> = {
   newsletter_basica: {
-    listId: 0, // TODO: Reemplazar con ID real de Brevo
+    listName: 'El Irónico - Plan Básico',
     name: 'Newsletter Básica',
     frequency: 'weekly',
   },
   newsletter_plus: {
-    listId: 0, // TODO: Reemplazar con ID real de Brevo
+    listName: 'El Irónico - Plan Plus',
     name: 'Newsletter Plus',
     frequency: 'weekly',
   },
   newsletter_pro: {
-    listId: 0, // TODO: Reemplazar con ID real de Brevo
-    name: 'Newsletter Pro',
+    listName: 'El Irónico - Plan Premium (Lifetime)',
+    name: 'Newsletter Premium (Lifetime)',
     frequency: 'weekly',
   },
 };
@@ -62,11 +62,23 @@ export async function subscribeToNewsletterByPlan(
     }
 
     const config = NEWSLETTER_CONFIG[newsletterKey];
-    if (!config || !config.listId) {
+    if (!config) {
       return {
         success: false,
         newsletter: newsletterKey,
-        message: `Newsletter no configurada en Brevo: ${newsletterKey}. Contacta al administrador.`,
+        message: `Configuración no encontrada para la newsletter: ${newsletterKey}`,
+      };
+    }
+
+    // Resolver el ID de lista dinámicamente por nombre
+    const { getOrCreateListByName } = await import('./brevo');
+    const listId = await getOrCreateListByName(config.listName);
+
+    if (!listId) {
+      return {
+        success: false,
+        newsletter: newsletterKey,
+        message: `No se pudo obtener o crear la lista "${config.listName}" en Brevo.`,
       };
     }
 
@@ -85,7 +97,7 @@ export async function subscribeToNewsletterByPlan(
           LASTNAME: name?.split(' ').slice(1).join(' ') || '',
           PLAN: plan,
         },
-        listIds: [config.listId], // Agregar a esta lista
+        listIds: [listId], // Agregar a esta lista dinámica
         updateEnabled: true, // Actualizar si ya existe
       }),
     });

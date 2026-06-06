@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import Script from 'next/script';
-import { ArrowRight, CheckCircle } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import ContributionButton from '@/components/ContributionButton';
 import PlanCard from '@/components/PlanCard';
 import WaitlistForm from '@/components/WaitlistForm';
 
 export default function SubscribePage() {
   return (
-    <div className="max-w-5xl mx-auto px-6 py-24">
+    <div className="max-w-6xl mx-auto px-6 py-20">
       <Script
         src="https://news.google.com/swg/js/v1/swg-basic.js"
         strategy="afterInteractive"
@@ -23,124 +23,95 @@ export default function SubscribePage() {
           });
         });`}
       </Script>
-      <div className="bg-slate-950/60 border border-white/10 rounded-[2rem] p-10 lg:p-14 shadow-2xl shadow-black/40">
+
+      <div className="bg-slate-950/60 border border-white/10 rounded-[2.5rem] p-8 md:p-16 shadow-2xl shadow-black/50 space-y-16">
+        {/* Header */}
         <header className="max-w-3xl mx-auto text-center space-y-6">
-          <p className="text-xs uppercase tracking-[0.35em] text-primary font-black">Suscripción El Irónico</p>
-          <h1 className="text-5xl md:text-6xl font-black font-serif text-white leading-tight">Accede a noticias exclusivas y mantén activo el periodismo neutral</h1>
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/10 text-xs font-black uppercase tracking-[0.2em] text-primary">
+            <Sparkles size={12} /> Suscripción El Irónico
+          </span>
+          <h1 className="text-4xl md:text-6xl font-black font-serif text-white leading-tight">
+            Apoyá el Periodismo Libre de Sesgos
+          </h1>
           <p className="text-base md:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Pronto vamos a habilitar el muro de pago para que puedas suscribirte y apoyar el periodismo independiente de El Irónico. Mientras tanto, podés contactarnos directamente para recibir aviso cuando esté disponible.
+            Elegí el plan que mejor se adapte a vos y accedé a toda la información neutralizada con inteligencia artificial, sin publicidad ni manipulaciones emocionales.
           </p>
         </header>
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] items-start">
-          <div className="space-y-8">
-            <section className="rounded-3xl border border-white/10 bg-white/5 p-8 space-y-4">
-              <div className="flex items-center gap-3 text-primary font-black uppercase tracking-[0.2em] text-[10px]">
-                <CheckCircle size={18} /> Beneficios
-              </div>
-              <ul className="space-y-3 text-slate-300 text-sm leading-relaxed">
-                <li>✔️ Noticias neutralizadas por IA sin sesgos políticos.</li>
-                <li>✔️ Acceso anticipado a análisis y resúmenes exclusivos.</li>
-                <li>✔️ Contenidos seleccionados para lectores críticos.</li>
-                <li>✔️ Apoyo directo a un periodismo independiente y transparente.</li>
-              </ul>
-            </section>
-
-            <section className="rounded-3xl border border-white/10 bg-white/5 p-8 space-y-4">
-              <h2 className="text-2xl font-black text-white">¿Qué vas a encontrar aquí?</h2>
-              <p className="text-slate-400 leading-relaxed">
-                Esta página será la base de suscripción de El Irónico. Cuando el paywall esté activo, te permitirá elegir planes, ver beneficios y suscribirte con facilidad.
-              </p>
-              <p className="text-slate-400 leading-relaxed">
-                Por ahora, podés dejar tu contacto y te avisaremos cuando abramos la suscripción. También podés consultar sobre planes personalizados para empresas o lectores frecuentes.
-              </p>
-            </section>
+        {/* Section 1: Planes Disponibles */}
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <PlanCard
+              title="Plan Mensual - Plus"
+              price="ARS 8.000"
+              billing="Mensual"
+              bullets={[
+                "📰 Acceso completo e ilimitado a todos los artículos",
+                "📧 Newsletter especial con análisis semanales",
+                "🙅 Experiencia de lectura 100% libre de anuncios",
+                "✨ Apoyo al periodismo neutral impulsado por IA"
+              ]}
+              productId="SWGPD.8127-6310-7908-87558"
+            />
+            <PlanCard
+              title="Acceso Lifetime Premium"
+              price="ARS 15.000"
+              billing="Una sola vez"
+              bullets={[
+                "♾️ Acceso de por vida a todo el contenido del sitio",
+                "📧 Newsletter premium y análisis exclusivos profundos",
+                "🙅 Experiencia de lectura libre de anuncios para siempre",
+                "✨ Contribución directa para sostener el periodismo independiente"
+              ]}
+              productId="SWGPD.6766-5588-5806-80332"
+            />
           </div>
+        </div>
 
-          <aside className="rounded-3xl border border-white/10 bg-slate-950/70 p-8 space-y-8">
+        {/* Divider */}
+        <div className="border-t border-white/10 w-full" />
+
+        {/* Section 2: Secondary options (2 Columns) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+          {/* Column 1: Waitlist / Contact */}
+          <div className="rounded-3xl border border-white/5 bg-white/3 p-8 space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
-              <h3 className="text-2xl font-black text-white">¿Querés recibir aviso?</h3>
-              <p className="text-slate-400 leading-relaxed">
-                Dejá tu correo o escribinos y te avisamos apenas esté listo el muro de pago. Mientras tanto, podés seguirnos y leer todas las noticias gratis.
+              <h3 className="text-2xl font-black font-serif text-white">
+                ¿Querés recibir novedades?
+              </h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Dejá tu correo para enterarte de nuevos planes, beneficios exclusivos y lanzamientos de nuevas herramientas de transparencia de El Irónico.
               </p>
               <WaitlistForm />
             </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-white/5">
+              <Link href="/contacto" className="inline-flex items-center justify-center rounded-full bg-primary/10 border border-primary/20 px-6 py-3 text-xs font-black uppercase tracking-[0.15em] text-primary hover:bg-primary/20 transition-all w-full text-center">
+                Contactanos
+                <ArrowRight size={14} className="ml-2" />
+              </Link>
+              <Link href="/" className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-6 py-3 text-xs font-semibold text-slate-300 hover:bg-white/10 transition-all w-full text-center">
+                Ir a Portada
+              </Link>
+            </div>
+          </div>
 
+          {/* Column 2: Direct SWG Contribution */}
+          <div className="rounded-3xl border border-white/5 bg-slate-950/45 p-8 flex flex-col justify-between space-y-6">
             <div className="space-y-4">
-              <Link href="/contacto" className="inline-flex items-center justify-center w-full rounded-full bg-primary px-6 py-4 text-sm font-black uppercase tracking-[0.2em] text-slate-950 transition hover:bg-primary/90">
-                Contactanos ahora
-                <ArrowRight size={18} className="ml-3" />
-              </Link>
-              <Link href="/" className="inline-flex items-center justify-center w-full rounded-full border border-white/10 bg-white/5 px-6 py-4 text-sm font-semibold text-slate-200 transition hover:bg-white/10">
-                Volver a la portada
-              </Link>
-            </div>
-
-            <div className="mt-6 rounded-3xl border border-primary/20 bg-primary/5 p-6 text-center">
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-primary mb-3">Botón de contribución</p>
-              <p className="text-sm text-slate-300 mb-6">
-                Este botón abre el CTA de contribución de Google directamente en la página.
+              <h3 className="text-2xl font-black font-serif text-white">
+                Contribución Rápida
+              </h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                ¿Solo querés apoyar nuestro trabajo sin suscribirte a un plan a largo plazo? Podés realizar una contribución única directamente a través del sistema de Google.
               </p>
-              <ContributionButton />
-              <p className="text-xs text-slate-400 mt-3">Usa esta página como destino del botón de tu CTA: así la experiencia de usuario ya está lista cuando actives el muro de pago.</p>
             </div>
-
-            <div className="mt-6">
-              <h4 className="text-sm font-black uppercase tracking-[0.2em] text-primary mb-3">Planes (placeholder)</h4>
-              <div className="grid grid-cols-1 gap-4">
-                <p className="text-sm text-slate-400">A continuación aparecen los planes y sus IDs externos tal como figuran en Reader Revenue Manager. "Una vez" indica un pago de por vida.</p>
-              </div>
-            </div>
-          </aside>
-
-          {/* Planes completos debajo del contenido principal */}
-          <div className="col-span-1 lg:col-span-1 w-full mt-8 lg:mt-0 lg:col-start-1 lg:col-end-3">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <h3 className="text-2xl font-black text-white mb-4">Planes disponibles (placeholder)</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <PlanCard
-                  title="Plan Mensual - Básico"
-                  price="ARS 2.000"
-                  billing="Mensual"
-                  bullets={["📰 Newsletter semanal", "🙅 Sin anuncios"]}
-                  productId="SWGPD.5733-3925-7955-85083"
-                />
-                <PlanCard
-                  title="Plan Mensual - Plus"
-                  price="ARS 8.000"
-                  billing="Mensual"
-                  bullets={["📰 Newsletter especial", "📚 Acceso completo a artículos", "🙅 Sin anuncios"]}
-                  productId="SWGPD.8127-6310-7908-87558"
-                />
-                <PlanCard
-                  title="Plan Mensual - Pro"
-                  price="ARS 12.000"
-                  billing="Mensual"
-                  bullets={["📰 Newsletter premium", "📚 Acceso completo", "🙅 Sin anuncios"]}
-                  productId="SWGPD.6475-3335-7339-51942"
-                />
-                <PlanCard
-                  title="Acceso Lifetime"
-                  price="ARS 5.000"
-                  billing="Una sola vez"
-                  bullets={["♾️ Acceso de por vida", "📰 Newsletter semanal", "🙅 Sin anuncios"]}
-                  productId="SWGPD.3524-7125-9967-63960"
-                />
-                <PlanCard
-                  title="Acceso Lifetime Plus"
-                  price="ARS 10.000"
-                  billing="Una sola vez"
-                  bullets={["♾️ Acceso de por vida", "📰 Newsletter especial", "📚 Acceso completo", "🙅 Sin anuncios"]}
-                  productId="SWGPD.4052-8733-6638-17843"
-                />
-                <PlanCard
-                  title="Acceso Lifetime Premium"
-                  price="ARS 15.000"
-                  billing="Una sola vez"
-                  bullets={["♾️ Acceso de por vida", "📰 Newsletter premium", "📚 Acceso completo", "🙅 Sin anuncios"]}
-                  productId="SWGPD.6766-5588-5806-80332"
-                />
-              </div>
+            
+            <div className="space-y-4 pt-4 border-t border-white/5">
+              <ContributionButton className="w-full" />
+              <p className="text-[11px] text-slate-500 text-center">
+                Seguro y procesado de forma oficial por Google Reader Revenue Manager.
+              </p>
             </div>
           </div>
         </div>

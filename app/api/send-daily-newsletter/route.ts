@@ -27,6 +27,19 @@ async function handleRequest(request: Request) {
       );
     }
 
+    // Obtener el tipo de boletín
+    const { searchParams } = new URL(request.url);
+    let newsletterType = searchParams.get('type') || 'daily';
+
+    if (request.method === 'POST') {
+      try {
+        const body = await request.clone().json().catch(() => ({}));
+        newsletterType = body.type || body.newsletterType || searchParams.get('type') || 'daily';
+      } catch {
+        newsletterType = searchParams.get('type') || 'daily';
+      }
+    }
+
     // 2. Obtener las últimas 5 noticias neutralizadas de Supabase
     const { data: articles, error: dbError } = await supabase
       .from('news_articles')
@@ -47,6 +60,105 @@ async function handleRequest(request: Request) {
         { success: false, error: 'No hay noticias recientes para compilar.' },
         { status: 400 }
       );
+    }
+
+    // Si es tipo premium o plus, usamos la generación con IA y enviamos a la lista correcta
+    if (newsletterType === 'plus' || newsletterType === 'premium') {
+      const { getGeminiModel } = await import('@/lib/gemini');
+      const articlesData = articles.map((art, idx) => ({
+        idx: idx + 1,
+        id: art.id,
+        title: art.ai_title || art.original_title,
+        category: art.category,
+        snippet: (art.ai_content || art.original_content || '').replace(/<[^>]*>/g, '').slice(0, 300) + '...'
+      }));
+
+      let targetListName = 'Boletín El Irónico';
+      let prompt = '';
+
+      if (newsletterType === 'plus') {
+        targetListName = 'El Irónico - Plan Plus';
+        prompt = `
+        Eres el Redactor Jefe del portal El Irónico. Tu tarea es compilar las últimas noticias neutralizadas en nuestro boletín semanal exclusivo "El Irónico - Plus Report" (Plan Plus) en formato HTML responsivo.
+        
+        Noticias de la semana a incluir:
+        ${JSON.stringify(articlesData, null, 2)}
+        
+        Este boletín es PREMIUM (de pago) y tiene un valor de ARS 8.000 mensual. Para justificar este precio, DEBES incluir una sección especial llamada "EXCLUSIVO IA: Análisis de Sesgo Profundo".
+        
+        Lineamientos de contenido y diseño del correo:
+        1. Estilo Visual: Utiliza una estética tecnológica y analítica premium. Fondo muy oscuro (#090d16), panel del cuerpo del mensaje en gris oscuro (#111827) y bordes muy finos en color gris claro o blanco/5%.
+        2. Color de acento: Cian eléctrico (#00e5ff) y azul cobalto (#2979ff). Los botones, badges de categoría y decoraciones deben usar este acento cian.
+        3. Cabecera: Título grande y elegante "EL IRÓNICO // PLUS REPORT" con el subtítulo "Inteligencia Fáctica y Auditoría de Medios".
+        4. Sección "EXCLUSIVO IA: Análisis de Sesgo Profundo":
+           - Analiza cómo las cadenas tradicionales y medios hegemónicos manipularon o sesgaron la cobertura de las noticias de esta semana.
+           - Presenta un desglose detallado (ej: comparando qué palabras cargadas usaron otros medios frente a los hechos puros que publicamos nosotros).
+           - Haz que esta sección sea sumamente reveladora, objetiva y valiosa para el lector.
+        5. Listado de noticias: Muestra cada una de las 5 noticias en formato tarjeta con badge de categoría en cian. Los enlaces de títulos deben apuntar a "https://elironico.com/noticias/[CATEGORIA]/[SLUG]-[ID_DE_LA_NOTICIA]".
+        6. Pie de página: Misión del sitio, contacto (edukoder2025@gmail.com) y enlaces legales.
+        7. Asegúrate de usar estilos CSS en línea (inline-styles) y compatibilidad móvil completa.
+        
+        Responde estrictamente en formato JSON con la siguiente estructura:
+        {
+          "subject": "🔥 El Irónico Plus Report: Análisis de Sesgo y Resumen Semanal",
+          "htmlContent": "código HTML completo del correo"
+        }
+        `;
+      } else {
+        targetListName = 'El Irónico - Plan Premium (Lifetime)';
+        prompt = `
+        Eres el Redactor Jefe de El Irónico. Tu tarea es compilar las últimas noticias neutralizadas en nuestro boletín de élite semanal "El Irónico - Premium Intelligence" (Acceso Lifetime) en formato HTML responsivo.
+        
+        Noticias de la semana a incluir:
+        ${JSON.stringify(articlesData, null, 2)}
+        
+        Este boletín es el de MÁS ALTO VALOR de nuestro portal (de pago, acceso de por vida) y tiene un valor de ARS 15.000. Para justificar este precio premium, DEBES incluir dos secciones de altísimo nivel:
+        1. "EXCLUSIVO IA: Análisis de Sesgo Profundo": Auditoría objetiva del framing manipulador de los medios hegemónicos esta semana.
+        2. "EXCLUSIVO IA: Predicción de Narrativas & Tendencias de Desinformación": Un análisis donde la IA prevé las próximas narrativas mediáticas y focos de propaganda en base al panorama actual, junto con guías de qué detalles auditar en los próximos días.
+        
+        Lineamientos de contenido y diseño del correo:
+        1. Estilo Visual: Estética de editorial tradicional de lujo. Fondo midnight ultra oscuro (#050814), cuerpo en azul marino profundo/grisáceo (#0e1424), tipografía serif de alta alcurnia y detalles dorados (#d4af37 / #aa8010).
+        2. Color de acento: Oro brillante (#d4af37) y blanco roto (#faf8f3) para textos.
+        3. Cabecera: Título imponente "EL IRÓNICO – PREMIUM INTELLIGENCE" con el subtítulo "Análisis Geopolítico & Pronóstico de Narrativas".
+        4. Sección "EXCLUSIVO IA: Análisis de Sesgo Profundo".
+        5. Sección "EXCLUSIVO IA: Predicción de Narrativas & Tendencias de Desinformación".
+        6. Listado de noticias: Con diseño clásico y distinguido. Los enlaces de títulos deben apuntar a "https://elironico.com/noticias/[CATEGORIA]/[SLUG]-[ID_DE_LA_NOTICIA]".
+        7. Pie de página: Misión del sitio, contacto (edukoder2025@gmail.com) y enlaces legales.
+        8. Asegúrate de usar estilos CSS en línea (inline-styles) y compatibilidad móvil completa.
+        
+        Responde estrictamente en formato JSON con la siguiente estructura:
+        {
+          "subject": "✨ El Irónico Premium Intelligence: Predicción de Narrativas y Análisis de Medios",
+          "htmlContent": "código HTML completo del correo"
+        }
+        `;
+      }
+
+      console.log(`🤖 Generando boletín premium (${newsletterType}) con Gemini...`);
+      const model = getGeminiModel(false);
+      const geminiRes = await model.generateContent(prompt);
+      const responseText = geminiRes.response.text();
+      const cleanText = responseText.replace(/```json|```/g, '').trim();
+      const digestData = JSON.parse(cleanText);
+
+      const { getOrCreateListByName } = await import('@/lib/brevo');
+      const listId = await getOrCreateListByName(targetListName);
+      if (!listId) {
+        throw new Error(`No se pudo obtener o crear la lista de Brevo: "${targetListName}"`);
+      }
+
+      console.log(`📤 Enviando campaña de newsletter premium (${newsletterType}) a la lista ID: ${listId}...`);
+      const result = await sendNewsletterCampaign(digestData.subject, digestData.htmlContent, listId);
+      if (!result.success) {
+        throw new Error(result.error || 'Error al enviar la campaña de Brevo.');
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Boletín de noticias premium (${newsletterType}) enviado con éxito.`,
+        campaignId: result.campaignId,
+        type: newsletterType
+      });
     }
 
     // 3. Formatear la fecha actual en español

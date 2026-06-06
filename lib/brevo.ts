@@ -154,6 +154,81 @@ export async function getDefaultListId(): Promise<number | null> {
 }
 
 /**
+ * Busca una lista en Brevo por su nombre (ignorando mayúsculas/minúsculas).
+ * Si no existe, la crea dentro de la primera carpeta disponible (o crea una carpeta si no hay).
+ */
+export async function getOrCreateListByName(listName: string): Promise<number | null> {
+  try {
+    // 1. Obtener listas existentes
+    const response = await fetch('https://api.brevo.com/v3/contacts/lists?limit=50', {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const existingList = data.lists?.find(
+        (l: any) => l.name.toLowerCase() === listName.toLowerCase()
+      );
+      if (existingList) {
+        console.log(`ℹ️ Brevo: Encontrada lista existente "${listName}" con ID ${existingList.id}`);
+        return existingList.id;
+      }
+    } else {
+      console.warn(`⚠️ Brevo: Error consultando listas (${response.status})`);
+    }
+
+    // 2. Si no existe, obtener o crear carpeta para albergar la lista
+    const folderRes = await fetch('https://api.brevo.com/v3/contacts/folders?limit=10', {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    let folderId = 1;
+    if (folderRes.ok) {
+      const folderData = await folderRes.json();
+      if (folderData.folders && folderData.folders.length > 0) {
+        folderId = folderData.folders[0].id;
+      } else {
+        const createFolderRes = await fetch('https://api.brevo.com/v3/contacts/folders', {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ name: 'El Irónico Marketing' }),
+        });
+        if (createFolderRes.ok) {
+          const newFolder = await createFolderRes.json();
+          folderId = newFolder.id;
+        }
+      }
+    }
+
+    // 3. Crear la lista en Brevo
+    console.log(`ℹ️ Brevo: Creando nueva lista "${listName}" en la carpeta ${folderId}...`);
+    const createListRes = await fetch('https://api.brevo.com/v3/contacts/lists', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        name: listName,
+        folderId: folderId,
+      }),
+    });
+
+    if (createListRes.ok) {
+      const newList = await createListRes.json();
+      console.log(`✅ Brevo: Lista "${listName}" creada con ID ${newList.id}`);
+      return newList.id;
+    }
+
+    const errText = await createListRes.text();
+    console.error(`❌ Brevo: Falló la creación de lista (${createListRes.status}): ${errText}`);
+    return null;
+  } catch (error) {
+    console.error(`❌ Error en getOrCreateListByName para "${listName}":`, error);
+    return null;
+  }
+}
+
+/**
  * Crea y envía una campaña de email (boletín) a los suscriptores.
  */
 export async function sendNewsletterCampaign(subject: string, htmlContent: string, customListId?: number) {

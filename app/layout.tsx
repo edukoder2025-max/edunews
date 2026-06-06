@@ -189,18 +189,9 @@ export default async function RootLayout({
                     alt="El Irónico"
                     width={230}
                     height={98}
-                    className="mb-2 object-contain filter drop-shadow-[0_0_15px_rgba(200,100,50,0.15)]"
+                    className="object-contain filter drop-shadow-[0_0_15px_rgba(200,100,50,0.15)]"
                     priority
                   />
-                  <span className="text-[9px] bg-primary/10 text-primary border border-primary/25 px-2 py-0.5 rounded-full font-black tracking-widest uppercase">
-                    INDEPENDIENTE & OBJETIVO
-                  </span>
-                  <h1 className="text-6xl sm:text-7xl md:text-8xl font-black font-serif italic tracking-tighter select-none leading-none chalk-title">
-                    El<span className="chalk-title-accent group-hover:opacity-100 transition-opacity duration-500"> Irónico</span>
-                  </h1>
-                  <p className="text-[9px] tracking-widest text-slate-400 uppercase font-bold mt-2 max-w-md">
-                    Información neutralizada y reescrita mediante Inteligencia Artificial
-                  </p>
                 </Link>
               </div>
 

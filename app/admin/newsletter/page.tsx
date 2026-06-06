@@ -14,6 +14,7 @@ export default function AdminNewsletter() {
   const [testEmail, setTestEmail] = useState('');
   const [previewData, setPreviewData] = useState<{ subject: string; html: string } | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [newsletterType, setNewsletterType] = useState<'daily' | 'plus' | 'premium'>('daily');
 
   useEffect(() => {
     fetchStats();
@@ -43,7 +44,7 @@ export default function AdminNewsletter() {
       const res = await fetch('/api/newsletter/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}), // Sin params = solo previsualización
+        body: JSON.stringify({ newsletterType }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -74,6 +75,7 @@ export default function AdminNewsletter() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           previewEmail: testEmail,
+          newsletterType,
         }),
       });
       const data = await res.json();
@@ -91,7 +93,12 @@ export default function AdminNewsletter() {
 
   const handleSendCampaign = async () => {
     if (!previewData) return;
-    if (!confirm('¿Estás seguro de que deseas enviar este boletín de noticias a todos tus suscriptores de Brevo? Esta acción no se puede deshacer.')) {
+    const listDescription = newsletterType === 'daily' 
+      ? 'Boletín Diario (Lista General)' 
+      : newsletterType === 'plus' 
+        ? 'Boletín Plus (Lista Plan Plus)' 
+        : 'Boletín Premium (Lista Premium Lifetime)';
+    if (!confirm(`¿Estás seguro de que deseas enviar este boletín "${listDescription}" a sus respectivos suscriptores en Brevo? Esta acción no se puede deshacer.`)) {
       return;
     }
 
@@ -103,6 +110,7 @@ export default function AdminNewsletter() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sendToAll: true,
+          newsletterType,
         }),
       });
       const data = await res.json();
@@ -218,13 +226,30 @@ export default function AdminNewsletter() {
             </h3>
 
             {/* Step 1: Generate */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <span className="text-[9px] bg-slate-900 text-primary border border-primary/10 px-2 py-0.5 rounded font-black tracking-widest uppercase">
                 Paso 1
               </span>
-              <h4 className="text-sm font-bold text-white leading-snug">Generar Boletín Diario con IA</h4>
+              <h4 className="text-sm font-bold text-white leading-snug">Configurar Boletín con IA</h4>
+              
+              <div className="space-y-2">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Tipo de Boletín</label>
+                <select
+                  value={newsletterType}
+                  onChange={(e) => {
+                    setNewsletterType(e.target.value as any);
+                    setPreviewData(null); // Reset preview on change
+                  }}
+                  className="w-full h-10 px-3 bg-slate-900 border border-white/10 text-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary/50"
+                >
+                  <option value="daily">Boletín Diario (General)</option>
+                  <option value="plus">Boletín Plus Semanal (Paid)</option>
+                  <option value="premium">Boletín Premium Lifetime (Paid)</option>
+                </select>
+              </div>
+
               <p className="text-xs text-slate-400 leading-relaxed">
-                El sistema recopilará las últimas 5 noticias neutralizadas de Supabase y usará Gemini 2.5 Flash para estructurar el boletín.
+                El sistema recopilará las últimas 5 noticias y compilará la plantilla especial {newsletterType === 'daily' ? 'Diaria' : newsletterType === 'plus' ? 'Plus (Cian)' : 'Premium (Dorado)'} usando Gemini.
               </p>
               <button
                 onClick={handleGeneratePreview}
