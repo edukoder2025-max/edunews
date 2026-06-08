@@ -172,3 +172,66 @@ body {
   top: 0px !important;
 }
 
+/* ─────────────────────────────────────────────
+   Google Reader Revenue Manager — Botón Nativo
+   El SDK de SWG reemplaza el contenido del <button>
+   con su propio markup. Estos estilos envuelven ese
+   contenido con la estética del sitio.
+   ───────────────────────────────────────────── */
+
+.google-rrm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  border-radius: 9999px;
+  overflow: hidden;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.google-rrm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(223, 32, 50, 0.2);
+}
+
+.google-rrm-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Botón de fallback (visible mientras el SDK no cargó) ── */
+.google-rrm-btn .rrm-btn-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #DF2032 0%, #b01826 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+/* Una vez que el SDK adjunta su botón nativo, oculta el fallback */
+.google-rrm-btn > *:not(.rrm-btn-fallback) ~ .rrm-btn-fallback,
+.swg-button ~ .rrm-btn-fallback,
+.swg-button-v2 ~ .rrm-btn-fallback {
+  display: none !important;
+}
+
+/* El botón nativo de Google (SWG) se adapta al contenedor */
+.google-rrm-btn .swg-button,
+.google-rrm-btn .swg-button-v2 {
+  width: 100% !important;
+  border-radius: 9999px !important;
+}
+

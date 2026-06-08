@@ -242,10 +242,10 @@ export default async function RootLayout({
               <Link href="/como-funciona" className="px-4 py-2 border-r border-white/5 text-primary hover:text-white transition-all font-bold flex items-center gap-1">
                 Cómo Funciona <span className="text-[10px]">🤖</span>
               </Link>
-              {/* OCULTO: Suscribite - Temporalmente deshabilitado */}
-              {/* <Link href="/suscribite" className="px-4 py-2 border-r border-white/5 text-slate-400 hover:text-primary transition-all">
-                Suscribite
-              </Link> */}
+              {/* ✅ ACTIVO: Suscribite */}
+              <Link href="/suscribite" className="px-4 py-2 border-r border-white/5 text-primary font-black hover:text-white transition-all">
+                Suscribite ⭐
+              </Link>
               {activeCategories.map((cat) => (
                 <Link
                   key={cat}
