@@ -34,7 +34,6 @@ export default function SubscribePage() {
           basicSubscriptions.init({
             type: "NewsArticle",
             isPartOfType: ["Product"],
-            isPartOfProductId: "${publicationId}:openaccess",
             clientOptions: { theme: "light", lang: "es-419" },
           });
 
