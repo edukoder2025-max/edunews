@@ -20,7 +20,15 @@ export default function SubscribePage() {
         strategy="afterInteractive"
       />
 
-      {/* Init: configura la publicación y habilita los botones nativos */}
+      {/*
+        Init del SDK:
+        - NO declaramos isPartOfProductId aquí porque esta es la página
+          de COMPRA, no un artículo de pago. Si lo declaramos, Google
+          muestra el "regwall" (muro de pago) en lugar del flujo de compra.
+        - Solo configuramos la publicación y el idioma.
+        - Los botones con swg-standard-button="subscription" abren
+          directamente el catálogo de ofertas configurado en Publisher Center.
+      */}
       <Script id="rrm-init" strategy="afterInteractive">{`
         (self.SWG_BASIC = self.SWG_BASIC || []).push(function(basicSubscriptions) {
           basicSubscriptions.init({
@@ -29,7 +37,10 @@ export default function SubscribePage() {
             isPartOfProductId: "${publicationId}:openaccess",
             clientOptions: { theme: "light", lang: "es-419" },
           });
-          console.log('[RRM] SDK inicializado. Publication ID: ${publicationId}');
+
+          // Exponer instancia para debug
+          window._swgBasic = basicSubscriptions;
+          console.log('[RRM] SDK listo. Publication ID: ${publicationId}');
         });
       `}</Script>
 
