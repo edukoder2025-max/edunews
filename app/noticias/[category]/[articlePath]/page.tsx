@@ -116,6 +116,7 @@ function getCategoryColor(category: string) {
 }
 
 export default async function ArticlePage({ params }: { params: { category: string; articlePath: string } }) {
+  const publicationId = process.env.NEXT_PUBLIC_GOOGLE_SWG_PUBLICATION_ID || 'CAowg7u3DA';
   const articleId = extractArticleId(params.articlePath);
   const article = await getArticle(articleId);
 
@@ -143,16 +144,17 @@ export default async function ArticlePage({ params }: { params: { category: stri
         strategy="afterInteractive"
       />
       <Script id="google-swg-init" strategy="afterInteractive">
-        {`
-          (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
-            basicSubscriptions.init({
-              type: "NewsArticle",
-              isPartOfType: ["Product"],
-              isPartOfProductId: "CAowndDgCw:openaccess",
-              clientOptions: { theme: "light", lang: "es-419" },
-            });
+        {`(self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+          basicSubscriptions.init({
+            type: "NewsArticle",
+            isPartOfType: ["Product"],
+            isPartOfProductId: "${publicationId}:openaccess",
+            clientOptions: { theme: "light", lang: "es-419" },
           });
-        `}
+          // Expose the instance so swgClient.ts can call methods directly
+          window.SWG_BASIC = basicSubscriptions;
+          window.dispatchEvent(new Event('swg-ready'));
+        });`}
       </Script>
       <div className="mb-6">
         <Link

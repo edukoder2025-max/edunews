@@ -6,6 +6,7 @@ import PlanCard from '@/components/PlanCard';
 import WaitlistForm from '@/components/WaitlistForm';
 
 export default function SubscribePage() {
+  const publicationId = process.env.NEXT_PUBLIC_GOOGLE_SWG_PUBLICATION_ID || 'CAowg7u3DA';
   return (
     <div className="max-w-6xl mx-auto px-6 py-20">
       <Script
@@ -18,7 +19,7 @@ export default function SubscribePage() {
           basicSubscriptions.init({
             type: "NewsArticle",
             isPartOfType: ["Product"],
-            isPartOfProductId: "CAowg7u3DA:openaccess",
+            isPartOfProductId: "${publicationId}:openaccess",
             clientOptions: { theme: "light", lang: "es-419" },
           });
           // Expose the instance so swgClient.ts can call methods directly

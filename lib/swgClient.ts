@@ -21,18 +21,21 @@ interface SWGBasic {
   attachPendingDialog: () => void;
   detachButtonEl: (element: HTMLElement) => void;
   getEntitlements: (onSuccess: (result: SWGEntitlementResult) => void, onFailure?: (error: Error) => void) => void;
-  init: (publicationId: string) => void;
+  init: (publicationId: string | any) => void;
   linkAccount: (onSuccess?: () => void, onFailure?: (error: Error) => void) => void;
   updateEligibility: (options: any) => void;
   reset: () => void;
-  openContribution: (request: { productId?: string }) => void;
-  openDialog: (request?: any) => void;
+  openContribution?: (request: { productId?: string }) => void;
+  openDialog?: (request?: any) => void;
+  showOffers?: (options?: any) => void;
+  showSubscribeOption?: (options?: any) => void;
+  showAbbrvOffer?: (options?: any) => void;
   showLoginPrompt: () => void;
   showLoginNotification: () => void;
   setOnEntitlementsResponse: (handler: (response: any) => void) => void;
   setOnLinkComplete: (handler: () => void) => void;
   setOnLoginRequest: (handler: () => void) => void;
-  setOnPaymentResponse: (handler: (response: any) => void) => void;
+  setOnPaymentResponse?: (handler: (response: any) => void) => void;
   setOnSubscribeResponse: (handler: (response: any) => void) => void;
 }
 
@@ -53,27 +56,51 @@ export function initializeSWG(publicationId: string): void {
   }
 
   const checkSWGAndInit = () => {
-    if (window.SWG_BASIC) {
+    if (window.SWG_BASIC && typeof window.SWG_BASIC.init === 'function') {
       try {
-        window.SWG_BASIC.init(publicationId);
+        const swg = window.SWG_BASIC;
+        // Check if we are running the classic SDK vs basic SDK
+        if (typeof swg.openContribution === 'function') {
+          // Classic SDK uses init(publicationId: string)
+          swg.init(publicationId);
+          console.log('✅ SWG Classic SDK initialized successfully');
+        } else if (typeof swg.showOffers === 'function') {
+          // Basic SDK: it is initialized via the page scripts with the options object,
+          // so we skip string-based init which might corrupt or reset the configuration.
+          console.log('ℹ️ SWG Basic SDK detected. Skipping string-based initialization.');
+        } else {
+          // Fallback init
+          swg.init(publicationId);
+          console.log('✅ SWG SDK initialized successfully (fallback)');
+        }
         
         // Set up event handlers
-        window.SWG_BASIC.setOnEntitlementsResponse((response: any) => {
-          console.log('📦 Entitlements response:', response);
-          handleEntitlementsResponse(response);
-        });
+        if (typeof swg.setOnEntitlementsResponse === 'function') {
+          swg.setOnEntitlementsResponse((response: any) => {
+            console.log('📦 Entitlements response:', response);
+            handleEntitlementsResponse(response);
+          });
+        }
 
-        window.SWG_BASIC.setOnSubscribeResponse((response: any) => {
-          console.log('✅ Subscribe response:', response);
-          handleSubscribeResponse(response);
-        });
+        if (typeof swg.setOnSubscribeResponse === 'function') {
+          swg.setOnSubscribeResponse((response: any) => {
+            console.log('✅ Subscribe response:', response);
+            handleSubscribeResponse(response);
+          });
+        } else if (typeof swg.setOnPaymentResponse === 'function') {
+          // Fallback or basic SDK alternative
+          swg.setOnPaymentResponse((response: any) => {
+            console.log('✅ Payment response:', response);
+            handleSubscribeResponse(response);
+          });
+        }
 
-        window.SWG_BASIC.setOnLinkComplete(() => {
-          console.log('🔗 Link complete');
-          handleLinkComplete();
-        });
-
-        console.log('✅ SWG SDK initialized successfully');
+        if (typeof swg.setOnLinkComplete === 'function') {
+          swg.setOnLinkComplete(() => {
+            console.log('🔗 Link complete');
+            handleLinkComplete();
+          });
+        }
       } catch (err) {
         console.error('❌ Error initializing SWG:', err);
       }
@@ -97,22 +124,38 @@ export async function openSWGDialog(productId?: string): Promise<boolean> {
     }, 5000);
 
     const tryOpen = () => {
-      // Verify it's the real SDK object (has methods), not an array
-      if (window.SWG_BASIC && typeof window.SWG_BASIC.openContribution === 'function') {
-        clearTimeout(deadline);
-        window.removeEventListener('swg-ready', onReady);
-        try {
-          if (productId) {
-            console.log('🚀 Opening SWG contribution with productId:', productId);
-            window.SWG_BASIC.openContribution({ productId });
-          } else {
-            console.log('🚀 Opening SWG generic dialog');
-            window.SWG_BASIC.openDialog();
+      // Verify it's the SDK object, and has either showOffers (basic) or openContribution (classic)
+      if (window.SWG_BASIC) {
+        const swg = window.SWG_BASIC;
+        const hasShowOffers = typeof swg.showOffers === 'function';
+        const hasOpenContribution = typeof swg.openContribution === 'function';
+
+        if (hasShowOffers || hasOpenContribution) {
+          clearTimeout(deadline);
+          window.removeEventListener('swg-ready', onReady);
+          try {
+            if (hasShowOffers) {
+              if (productId) {
+                console.log('🚀 [swgClient] Calling showOffers with productId:', productId);
+                swg.showOffers!({ skus: [productId], isClosable: true });
+              } else {
+                console.log('🚀 [swgClient] Calling showOffers (generic)');
+                swg.showOffers!({ isClosable: true });
+              }
+            } else if (hasOpenContribution) {
+              if (productId) {
+                console.log('🚀 [swgClient] Calling openContribution with productId:', productId);
+                swg.openContribution!({ productId });
+              } else {
+                console.log('🚀 [swgClient] Calling openDialog');
+                swg.openDialog!();
+              }
+            }
+            resolve(true);
+          } catch (err) {
+            console.error('❌ Error opening SWG dialog:', err);
+            resolve(false);
           }
-          resolve(true);
-        } catch (err) {
-          console.error('❌ Error opening SWG dialog:', err);
-          resolve(false);
         }
       }
     };
