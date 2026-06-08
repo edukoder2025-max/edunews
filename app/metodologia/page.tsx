@@ -10,7 +10,9 @@ export default function MetodologiaPage() {
         { name: "BBC Mundo", type: "Global Centrista", domain: "bbc.co.uk/mundo" },
         { name: "El País", type: "España / Centro-Izquierda", domain: "elpais.com" },
         { name: "El Mundo", type: "España / Centro-Derecha", domain: "elmundo.es" },
-        { name: "RTVE Noticias", type: "España / Pública", domain: "rtve.es" }
+        { name: "RTVE Noticias", type: "España / Pública", domain: "rtve.es" },
+        { name: "Deutsche Welle (DW)", type: "Alemania / Global Pública", domain: "dw.com" },
+        { name: "CNN en Español", type: "EEUU / Global Masivo", domain: "cnnespanol.cnn.com" }
       ]
     },
     {
@@ -20,7 +22,9 @@ export default function MetodologiaPage() {
         { name: "Página 12", type: "Izquierda Nacional", domain: "pagina12.com.ar" },
         { name: "La Izquierda Diario", type: "Socialismo-Marxismo", domain: "laizquierdadiario.com" },
         { name: "Ámbito Financiero", type: "Centro-Izquierda Económica", domain: "ambito.com" },
-        { name: "elDiario.es", type: "España / Progresismo", domain: "eldiario.es" }
+        { name: "elDiario.es", type: "España / Progresismo", domain: "eldiario.es" },
+        { name: "El Destape", type: "Kirchnerismo-Izquierda", domain: "eldestapeweb.com" },
+        { name: "C5N", type: "Oficialismo-Izquierda", domain: "c5n.com" }
       ]
     },
     {
@@ -31,9 +35,12 @@ export default function MetodologiaPage() {
         { name: "Clarín", type: "Centro Comercial", domain: "clarin.com" },
         { name: "La Nación", type: "Conservador-Liberal", domain: "lanacion.com.ar" },
         { name: "Infobae", type: "Centro-Derecha Masivo", domain: "infobae.com" },
+        { name: "El Observador", type: "Centro-Derecha Liberal", domain: "elobservador.com.ar" },
+        { name: "La Prensa", type: "Conservador Tradicional", domain: "laprensa.com.ar" },
         { name: "El Cronista", type: "Negocios y Finanzas", domain: "cronista.com" },
         { name: "Libertad Digital", type: "España / Liberal-Libertario", domain: "libertaddigital.com" },
-        { name: "Perfil", type: "Centrista Analítico", domain: "perfil.com" }
+        { name: "Perfil", type: "Centrista Analítico", domain: "perfil.com" },
+        { name: "El Economista", type: "Análisis Económico", domain: "eleconomista.com.ar" }
       ]
     }
   ];
@@ -50,7 +57,7 @@ export default function MetodologiaPage() {
           Metodología <span className="text-gradient">Editorial</span>
         </h1>
         <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          Explicación detallada de cómo funciona el motor de inteligencia artificial de EduNews para asegurar noticias neutrales y balanceadas.
+          Explicación detallada de cómo funciona el motor de inteligencia artificial de El Irónico para asegurar noticias neutrales y balanceadas.
         </p>
       </header>
 

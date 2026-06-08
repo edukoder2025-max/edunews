@@ -13,21 +13,22 @@ const config: Config = {
         serif: ["var(--font-playfair)", "serif"],
       },
       colors: {
-        background: "#050811", // Deep ink black/navy
-        surface: "rgba(13, 20, 35, 0.7)", // Deep slate surface with opacity
-        primary: "#ff3838", // Vibrant news red/crimson
-        secondary: "#00d2d3", // Electric cyan/teal
-        accent: "#ff9f43", // Warm vibrant orange
+        // === Ink & Coal — Paleta Editorial Premium ===
+        background: "#0B0E14",   // Tinta de imprenta profunda (más cálida que negro puro)
+        surface: "rgba(17, 22, 34, 0.75)", // Superficie tipo papel envejecido oscuro
+        primary: "#DF2032",      // Rojo bermellón — el color histórico de titulares de prensa
+        secondary: "#C8A951",    // Dorado tinta de prensa antigua / sepia dorado
+        accent: "#E07B39",       // Naranja tinta caliente — urgencia editorial
         
-        // Category Specific Colors
+        // === Colores de Categoría — Tintas de Imprenta Curadas ===
         cat: {
-          mundo: "#ef4444", // Crimson Red
-          argentina: "#0ea5e9", // Sky Blue
-          tecnologia: "#d946ef", // Fuchsia Pink
-          economia: "#10b981", // Emerald Green
-          deportes: "#f97316", // Bright Orange
-          cultura: "#14b8a6", // Teal
-          general: "#64748b" // Slate Gray
+          mundo:      "#C0392B", // Rojo imprenta profundo — noticias internacionales críticas
+          argentina:  "#2C7BE5", // Azul acero diplomático — sobrio y confiable
+          tecnologia: "#7C3AED", // Violeta eléctrico — innovación y futuro
+          economia:   "#1A7A4A", // Verde pizarra financiero — dinero y mercados
+          deportes:   "#D95D25", // Naranja óxido — energía y competencia
+          cultura:    "#8B5CF6", // Lavanda artística — creatividad y expresión
+          general:    "#475569"  // Pizarra neutra — contenido diverso
         }
       },
       backgroundImage: {

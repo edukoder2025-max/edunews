@@ -3,7 +3,7 @@ import { subscribeContact } from '@/lib/brevo';
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const { email, name, planInterest } = await request.json();
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await subscribeContact(email);
+    const result = await subscribeContact(email, { name, planInterest });
 
     if (!result.success) {
       return NextResponse.json(
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: result.message || 'Te has suscrito con éxito al boletín de EduNews.'
+      message: result.message || 'Te has suscrito con éxito al boletín de El Irónico.'
     });
 
   } catch (error: any) {

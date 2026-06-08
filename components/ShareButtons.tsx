@@ -1,6 +1,6 @@
 'use client';
 
-import { Share2, Twitter, Facebook, Link2 } from 'lucide-react';
+import { Share2, Twitter, Facebook, Link2, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 
 export default function ShareButtons({ url, title }: { url: string, title: string }) {
@@ -12,6 +12,11 @@ export default function ShareButtons({ url, title }: { url: string, title: strin
 
   const shareOnFacebook = () => {
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+  };
+
+  const shareOnWhatsApp = () => {
+    const message = `${title} — Lee más en El Irónico: ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const copyToClipboard = () => {
@@ -38,6 +43,13 @@ export default function ShareButtons({ url, title }: { url: string, title: strin
         title="Compartir en Facebook"
       >
         <Facebook size={18} />
+      </button>
+      <button 
+        onClick={shareOnWhatsApp}
+        className="p-2 rounded-full bg-white/5 hover:bg-emerald-600 hover:text-white transition-all text-slate-400"
+        title="Compartir en WhatsApp"
+      >
+        <MessageCircle size={18} />
       </button>
       <button 
         onClick={copyToClipboard}

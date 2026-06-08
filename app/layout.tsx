@@ -2,14 +2,32 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
+// import { SWGInitializer } from "@/components/SWGInitializer"; // OCULTO: Temporalmente deshabilitado
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { buildArticleUrl } from "@/lib/articleUtils";
+import { buildArticleUrl, normalizeCategorySlug } from "@/lib/articleUtils";
+
+function getCategoryHoverClass(category: string) {
+  const cat = (category || '').toLowerCase().trim();
+  if (cat.includes('mundo')) return 'hover:text-cat-mundo';
+  if (cat.includes('argentina')) return 'hover:text-cat-argentina';
+  if (cat.includes('tecnolog')) return 'hover:text-cat-tecnologia';
+  if (cat.includes('econom')) return 'hover:text-cat-economia';
+  if (cat.includes('deport')) return 'hover:text-cat-deportes';
+  if (cat.includes('ciencia') || cat.includes('cultur') || cat.includes('ciencias')) return 'hover:text-cat-cultura';
+  return 'hover:text-primary';
+}
 import WeatherWidget from "@/components/WeatherWidget";
 import CryptoWidget from "@/components/CryptoWidget";
 import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
-import NewsletterForm from "@/components/NewsletterForm";
+import NewsletterForm from "@/components/NewsletterForm"; // ✅ ACTIVO: Newsletter gratuito funciona
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+// import ContributionCTABanner from "@/components/ContributionCTABanner"; // OCULTO: Temporalmente deshabilitado
+// import ContributionButton from "@/components/ContributionButton"; // OCULTO: Temporalmente deshabilitado
+import Image from "next/image";
+
+
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -24,15 +42,31 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "EduNews - Periodismo Ético con IA",
-  description: "El primer periódico digital impulsado por IA enfocado en el periodismo ético, libre de intereses políticos.",
+  title: "El Irónico | Noticias de Argentina y el Mundo sin Sesgo - Periodismo IA",
+  description: "El Irónico es un periódico digital 100% impulsado por IA que neutraliza noticias de Argentina, Mundo, Tecnología, Economía, Deportes y Ciencia. Periodismo ético, libre de sesgos políticos.",
+  keywords: "noticias, periodismo, Argentina, mundo, tecnología, economía, inteligencia artificial, noticias sin sesgo, periodismo neutral",
+  other: process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID
+    ? {
+        "google-adsense-account": process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID,
+      }
+    : {},
+  openGraph: {
+    title: "El Irónico | Noticias Neutrales de Argentina y el Mundo",
+    description: "Periodismo impulsado por IA - Noticias neutralizadas sin intereses políticos",
+    url: "https://elironico.com",
+    siteName: "El Irónico",
+    type: "website",
+    images: [
+      "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop",
+    ],
+  },
 };
 
 async function getTickerNews() {
   try {
     const { data, error } = await supabase
       .from('news_articles')
-      .select('id, ai_title, original_title')
+      .select('id, ai_title, original_title, category')
       .order('published_at', { ascending: false })
       .limit(8);
     if (error) {
@@ -55,6 +89,16 @@ export default async function RootLayout({
   const tickerNews = Array.from(
     new Map(rawTickerNews.map(news => [news.id, news])).values()
   );
+  
+  // Fetch active categories dynamically
+  const { data: categoriesData } = await supabase
+    .from('news_articles')
+    .select('category');
+  
+  const activeCategories = Array.from(
+    new Set(categoriesData?.map(item => item.category?.trim()).filter(Boolean) || [])
+  ).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
   const formattedDate = new Date().toLocaleDateString('es-ES', { 
     weekday: 'long', 
     day: 'numeric', 
@@ -65,42 +109,106 @@ export default async function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`${inter.variable} ${playfair.variable} font-sans bg-background text-slate-200 antialiased`}>
+        {/* SVG Filter: Chalk-on-Blackboard turbulence effect — usado por .chalk-title */}
+        <svg
+          style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
+          aria-hidden="true"
+          focusable="false"
+        >
+          <defs>
+            <filter id="chalk-rough" x="-5%" y="-5%" width="110%" height="110%" colorInterpolationFilters="sRGB">
+              {/* Genera ruido fractal que simula la textura granulosa de la tiza */}
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.65 0.75"
+                numOctaves="4"
+                seed="8"
+                stitchTiles="stitch"
+                result="noise"
+              />
+              {/* Desplaza los píxeles del texto según el ruido generado */}
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="noise"
+                scale="2.5"
+                xChannelSelector="R"
+                yChannelSelector="G"
+                result="roughened"
+              />
+              {/* Mezcla suave: el resultado áspero a 90% + original suave a 10% */}
+              <feBlend in="roughened" in2="SourceGraphic" mode="normal" result="blended" />
+              <feComposite in="blended" in2="SourceGraphic" operator="in" />
+            </filter>
+          </defs>
+        </svg>
+
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
           <Script
-            async
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
             crossOrigin="anonymous"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
           />
         )}
+        
+        {/* OCULTO: Google Subscribe with Google SDK - Temporalmente deshabilitado */}
+        {/* <Script
+          src="https://news.google.com/swg/js/v1/swg-basic.js"
+          strategy="afterInteractive"
+          async
+        /> */}
+        
         <div className="min-h-screen flex flex-col">
-          {/* Top Info Bar */}
-          <div className="bg-slate-950/80 border-b border-white/5 text-[10px] font-bold uppercase tracking-wider py-2 px-6 flex items-center justify-between text-slate-500">
-            <div>Edición Digital Estándar</div>
-            <div className="flex gap-4">
-              <Link href="/nosotros" className="hover:text-white transition-colors">Quiénes Somos</Link>
-              <span>•</span>
-              <Link href="/contacto" className="hover:text-white transition-colors">Contacto</Link>
-            </div>
-          </div>
+          {/* OCULTO: Initialize SWG - Temporalmente deshabilitado */}
+          {/* <SWGInitializer /> */}
+
 
           {/* Centered Newspaper Masthead */}
-          <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 flex flex-col items-center">
-            {/* Logo/Name */}
-            <Link href="/" className="group flex flex-col items-center gap-1 hover:opacity-95 transition-opacity text-center">
-              <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded font-black tracking-widest uppercase">
-                INDEPENDIENTE & OBJETIVO
-              </span>
-              <h1 className="text-6xl md:text-8xl font-black font-serif italic tracking-tighter text-white select-none">
-                Edu<span className="text-primary group-hover:text-secondary transition-colors duration-500">News</span>
-              </h1>
-              <p className="text-[10px] tracking-widest text-slate-400 uppercase font-bold mt-1 max-w-md hidden md:block">
-                Información neutralizada y reescrita mediante Inteligencia Artificial
-              </p>
-            </Link>
+          <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 flex flex-col items-center">
+            
+            {/* Grilla Superior: Oreja Izquierda | Logotipo Central | Oreja Derecha */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-6 items-center justify-between pb-6 border-b border-white/5">
+              
+              {/* Oreja Izquierda: Datos Técnicos y Lema Clásico */}
+              <div className="hidden md:flex flex-col text-left text-[9px] text-slate-500 font-bold uppercase tracking-wider space-y-1">
+                <div>REGISTRO N.º 48.910</div>
+                <div className="flex gap-2 text-slate-400">
+                  <Link href="/nosotros" className="hover:text-primary transition-colors">Quiénes Somos</Link>
+                  <span>•</span>
+                  <Link href="/contacto" className="hover:text-primary transition-colors">Contacto</Link>
+                </div>
+                <div className="text-primary/70 font-serif italic text-xs tracking-normal normal-case font-bold mt-0.5">
+                  “Veritas et Libertas”
+                </div>
+              </div>
+
+              {/* Logotipo Central (Ocupa 2 columnas de la grilla) */}
+              <div className="col-span-1 md:col-span-2 flex flex-col items-center text-center">
+                <Link href="/" className="group flex flex-col items-center gap-1.5 hover:opacity-95 transition-opacity">
+                  <Image
+                    src="/logo-rect.png"
+                    alt="El Irónico"
+                    width={230}
+                    height={98}
+                    className="object-contain filter drop-shadow-[0_0_15px_rgba(200,100,50,0.15)]"
+                    priority
+                  />
+                </Link>
+              </div>
+
+              {/* Oreja Derecha: Selector de Idioma e Información */}
+              <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-2 text-right">
+                <div className="hidden md:block text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                  EDICIÓN DIGITAL ESTÁNDAR
+                </div>
+                <div className="flex items-center gap-2.5 bg-slate-950/40 p-1.5 px-3 rounded-full border border-white/5">
+                  <LanguageSwitcher />
+                </div>
+              </div>
+
+            </div>
 
             {/* Newspaper Metadata Sub-header with double borders */}
-            <div className="w-full border-newspaper-double py-2.5 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+            <div className="w-full border-newspaper-double py-2 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
               <div className="flex items-center gap-2 text-primary font-black">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -116,36 +224,40 @@ export default async function RootLayout({
               </div>
             </div>
 
+            {/* Principal Editorial Banner (Headline/Lema) */}
+            <div className="w-full text-center py-4 border-b border-white/5">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-serif text-white tracking-normal leading-tight">
+                Noticias Argentina sin sesgo y periodismo IA neutral 24/7
+              </h2>
+              <p className="text-[10px] sm:text-xs text-slate-400 max-w-2xl mx-auto mt-1 font-medium leading-relaxed">
+                Información verificada y neutralizada automáticamente mediante Inteligencia Artificial para una lectura objetiva y transparente.
+              </p>
+            </div>
+
             {/* Navigation links styled as sections */}
-            <nav className="w-full mt-4 flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs font-black uppercase tracking-widest border-b border-white/5 pb-4">
-              <Link href="/" className="py-1 border-b-2 border-transparent text-white hover:text-primary hover:border-primary transition-all">
+            <nav className="w-full mt-4 flex flex-wrap justify-center items-center text-xs font-black uppercase tracking-widest border-b border-white/5 pb-4">
+              <Link href="/" className="px-4 py-2 border-r border-white/5 text-white hover:text-primary transition-all">
                 Portada
               </Link>
-              <Link href="/como-funciona" className="py-1 border-b-2 border-transparent text-primary hover:text-white hover:border-white transition-all font-bold flex items-center gap-1">
+              <Link href="/como-funciona" className="px-4 py-2 border-r border-white/5 text-primary hover:text-white transition-all font-bold flex items-center gap-1">
                 Cómo Funciona <span className="text-[10px]">🤖</span>
               </Link>
-              <Link href="/category/Mundo" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-mundo hover:border-cat-mundo transition-all">
-                Mundo
+              {/* ✅ ACTIVO: Apoyanos */}
+              <Link href="/suscribite" className="px-4 py-2 border-r border-white/5 text-primary font-black hover:text-white transition-all">
+                Apoyanos ⭐
               </Link>
-              <Link href="/category/Argentina" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-argentina hover:border-cat-argentina transition-all">
-                Argentina
-              </Link>
-              <Link href="/category/Tecnología" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-tecnologia hover:border-cat-tecnologia transition-all">
-                Tecnología
-              </Link>
-              <Link href="/category/Economía" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-economia hover:border-cat-economia transition-all">
-                Economía
-              </Link>
-              <Link href="/category/Ciencia" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-cultura hover:border-cat-cultura transition-all">
-                Ciencia
-              </Link>
-              <Link href="/category/Deportes" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-deportes hover:border-cat-deportes transition-all">
-                Deportes
-              </Link>
-              <Link href="/category/Cultura" className="py-1 border-b-2 border-transparent text-slate-400 hover:text-cat-general hover:border-cat-general transition-all">
-                Cultura
-              </Link>
-              <SearchInput />
+              {activeCategories.map((cat) => (
+                <Link
+                  key={cat}
+                  href={`/categoria/${normalizeCategorySlug(cat)}`}
+                  className={`px-4 py-2 border-r border-white/5 text-slate-400 ${getCategoryHoverClass(cat)} transition-all`}
+                >
+                  {cat}
+                </Link>
+              ))}
+              <div className="pl-4 py-1">
+                <SearchInput />
+              </div>
             </nav>
           </header>
 
@@ -158,14 +270,14 @@ export default async function RootLayout({
               <div className="flex overflow-hidden w-full relative items-center ml-4">
                 <div className="animate-ticker flex gap-12 text-xs font-bold text-slate-300">
                   {tickerNews.map((news, i) => (
-                    <Link key={`${news.id}-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title)} className="hover:text-primary transition-colors flex items-center gap-2">
+                    <Link key={`${news.id}-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title, news.category)} className="hover:text-primary transition-colors flex items-center gap-2">
                       <span className="text-primary font-black">•</span>
                       {news.ai_title || news.original_title}
                     </Link>
                   ))}
                   {/* Duplicate for infinite loop */}
                   {tickerNews.map((news, i) => (
-                    <Link key={`${news.id}-dup-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title)} className="hover:text-primary transition-colors flex items-center gap-2">
+                    <Link key={`${news.id}-dup-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title, news.category)} className="hover:text-primary transition-colors flex items-center gap-2">
                       <span className="text-primary font-black">•</span>
                       {news.ai_title || news.original_title}
                     </Link>
@@ -178,6 +290,9 @@ export default async function RootLayout({
           {/* Live Crypto Market Ticker con Sparklines */}
           <CryptoWidget />
 
+          {/* OCULTO: ContributionCTABanner - Temporalmente deshabilitado */}
+          {/* <ContributionCTABanner /> */}
+
           {/* Main Content */}
           <main className="flex-1 w-full">
             {children}
@@ -185,13 +300,31 @@ export default async function RootLayout({
 
           {/* Footer */}
           <footer className="border-t border-white/5 bg-slate-950 mt-auto">
-            <div className="max-w-7xl mx-auto px-6 py-12">
+            <div className="max-w-7xl mx-auto px-6 py-12 space-y-10">
+              {/* 
+                OCULTO: Sección de Contribución - Temporalmente deshabilitada
+                <div className="rounded-[2rem] border border-primary/20 bg-primary/10 p-8 shadow-lg shadow-primary/10">
+                  ...contenido oculto...
+                </div>
+              */}
+
+              {/* ✅ ACTIVO: Newsletter Gratuito - Sigue funcionando */}
               <div className="mb-12 border-b border-white/5 pb-12">
                 <NewsletterForm />
               </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div className="md:col-span-2 space-y-4">
-                  <h3 className="text-lg font-bold text-white font-serif">EduNews</h3>
+                  <div className="flex items-center gap-2.5">
+                    <Image
+                      src="/logo-square.png"
+                      alt="El Irónico Logo"
+                      width={32}
+                      height={32}
+                      className="object-contain"
+                    />
+                    <h3 className="text-lg font-bold text-white font-serif">El Irónico</h3>
+                  </div>
                   <p className="text-sm text-slate-400 max-w-md leading-relaxed">
                     El primer periódico digital impulsado por IA diseñado para evitar noticias sesgadas por intereses partidarios o políticos. Promovemos un periodismo ético, transparente y correcto.
                   </p>
@@ -217,7 +350,7 @@ export default async function RootLayout({
                 </div>
               </div>
               <div className="pt-8 border-t border-white/5 text-center text-slate-500 text-xs flex flex-col md:flex-row justify-between items-center gap-4">
-                <p>© {new Date().getFullYear()} EduNews. Todos los derechos reservados.</p>
+                <p>© {new Date().getFullYear()} El Irónico. Todos los derechos reservados.</p>
                 <p>Las noticias generadas por IA son extraídas de fuentes públicas y reescritas bajo principios de neutralidad.</p>
               </div>
             </div>

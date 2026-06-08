@@ -1,0 +1,123 @@
+name: Reader Revenue - Monthly Renewal & Sync
+
+'on':
+  schedule:
+    # Ejecuta cada primer día del mes a las 6:00 AM UTC
+    - cron: '0 6 1 * *'
+  workflow_dispatch:  # Permite ejecución manual
+
+jobs:
+  renew-subscriptions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+      BREVO_SENDER_NAME: ${{ secrets.BREVO_SENDER_NAME }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run monthly renewal script
+        run: npm run renew-subscriptions
+        env:
+          NODE_ENV: production
+
+      - name: Send Brevo sync notifications
+        run: npm run sync-brevo-subscriptions
+        continue-on-error: true
+
+      - name: Clean up expired subscriptions
+        run: npm run cleanup-expired-subscriptions
+        continue-on-error: true
+
+      - name: Slack notification on success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "✅ Reader Revenue - Monthly Renewal completed successfully",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Reader Revenue Renewal*\n✅ Monthly renewal completed\n_Executed at: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}_"
+                  }
+                }
+              ]
+            }
+        continue-on-error: true
+
+      - name: Slack notification on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "❌ Reader Revenue - Monthly Renewal FAILED",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Reader Revenue Renewal*\n❌ Monthly renewal failed\n_Check details at: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}_"
+                  }
+                }
+              ]
+            }
+        continue-on-error: true
+
+  webhook-health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Health check webhook endpoint
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST https://www.elironico.com/api/reader-revenue/webhook \
+            -H "Content-Type: application/json" \
+            -H "x-rrm-secret: ${{ secrets.RRM_WEBHOOK_SECRET }}" \
+            -d '{"type":"purchase","productId":"test","customerEmail":"test@test.com","customerName":"Test"}')
+          echo "Webhook health check: $RESPONSE"
+          if [ "$RESPONSE" != "200" ] && [ "$RESPONSE" != "400" ]; then
+            echo "⚠️ Warning: Webhook returned unexpected status code"
+          fi
+
+      - name: Slack notification - Health check
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "⚠️ Reader Revenue Webhook Health Check Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Reader Revenue Webhook*\n⚠️ Health check failed - webhook may be down"
+                  }
+                }
+              ]
+            }
+        continue-on-error: true
