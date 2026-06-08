@@ -6,7 +6,7 @@ export default function ContributionCTABanner() {
       <div className="rounded-[2rem] border border-primary/20 bg-primary/10 p-8 shadow-2xl shadow-primary/10">
         <p className="text-xs uppercase tracking-[0.35em] font-black text-primary mb-3">Apoyá el periodismo neutro</p>
         <h2 className="text-2xl md:text-3xl font-black text-white leading-tight mb-4">
-          Con tu suscripción podemos seguir alimentando a nuestros agentes para que los artículos sean cada vez más neutrales.
+          Con tu contribución podemos seguir alimentando a nuestros agentes para que los artículos sean cada vez más neutrales.
         </h2>
         <p className="text-slate-300 max-w-3xl leading-relaxed mb-6">
           Hacé clic en el botón para abrir el CTA de contribución de Google y ayudarnos a mantener el sitio libre de sesgos.
