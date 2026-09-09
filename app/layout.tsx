@@ -334,6 +334,17 @@ export default async function RootLayout({
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                     Contacto: <a href="mailto:edukoder2025@gmail.com" className="text-primary hover:text-white transition-colors">edukoder2025@gmail.com</a>
                   </p>
+                  <nav aria-label="Redes sociales" className="flex flex-wrap items-center gap-3 text-xs font-black uppercase tracking-wider">
+                    <span className="text-slate-500">Seguinos:</span>
+                    <a
+                      href="https://www.instagram.com/elironico.ars/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-white transition-colors"
+                    >
+                      Instagram @elironico.ars
+                    </a>
+                  </nav>
                 </div>
                 <div>
                   <h3 className="text-sm font-black uppercase tracking-wider text-white mb-4">Legal</h3>
