@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: { params: { category: string;
     article.category,
     getSiteUrl(),
   );
-  const imageUrl = getArticleImage(article);
+  const ogImageUrl = `${canonicalUrl}/opengraph-image`;
 
   return {
     title,
@@ -61,7 +61,12 @@ export async function generateMetadata({ params }: { params: { category: string;
       description: `${article.category || 'Noticia'} | Escrita sin sesgos por IA`,
       url: canonicalUrl,
       type: 'article',
-      images: [imageUrl],
+      images: [{
+        url: ogImageUrl,
+        width: 1200,
+        height: 630,
+        alt: article.ai_title || article.original_title,
+      }],
       publishedTime: article.published_at,
       authors: ['El Irónico'],
     },
@@ -69,7 +74,7 @@ export async function generateMetadata({ params }: { params: { category: string;
       card: 'summary_large_image',
       title: article.ai_title || article.original_title,
       description,
-      images: [imageUrl],
+      images: [ogImageUrl],
     },
   };
 }
