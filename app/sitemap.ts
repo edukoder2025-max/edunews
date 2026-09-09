@@ -4,6 +4,7 @@ import { buildArticleUrl } from '@/lib/articleUtils';
 import { getSiteUrl } from '@/lib/seoUtils';
 import { TOPIC_HUBS } from '@/lib/topicHubs';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
+import { applyEditorialOverride } from '@/lib/editorialOverrides';
 
 export const revalidate = 300;
 
@@ -45,7 +46,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
   const articles = await getAllArticlesForSitemap();
 
-  const articleEntries = articles.map((article) => ({
+  const articleEntries = articles.map((rawArticle) => {
+    const article = applyEditorialOverride(rawArticle);
+    return {
     url: buildArticleUrl(
       article.id,
       article.ai_title || article.original_title || article.id,
@@ -55,7 +58,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(article.published_at || article.created_at || Date.now()),
     changeFrequency: 'daily' as const,
     priority: 0.7,
-  }));
+  };
+  });
 
   return [
     {

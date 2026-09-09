@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { buildArticleUrl, extractArticleId, getArticleImage, normalizeCategorySlug, slugify } from '@/lib/articleUtils';
 import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords, getSiteUrl } from '@/lib/seoUtils';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
+import { applyEditorialOverride } from '@/lib/editorialOverrides';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -26,7 +27,7 @@ async function getArticle(id: string) {
     .single();
 
   if (error || !data) return null;
-  return data;
+  return applyEditorialOverride(data);
 }
 
 // SEO Dinámico: Genera el título y descripción únicos para Google
