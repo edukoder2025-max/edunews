@@ -7,6 +7,7 @@ import SafeImage from '@/components/SafeImage';
 import ProductsCarousel from '@/components/ProductsCarousel';
 import AdSense from '@/components/AdSense';
 import { AD_SLOTS } from '@/lib/adSlots';
+import { NEWS_SOURCES } from '@/lib/newsSources';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -94,7 +95,15 @@ export default async function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-
+      <header className="mb-5 sm:mb-8 border-b border-white/10 pb-4 sm:pb-5">
+        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-primary">Edición digital</p>
+        <h1 className="text-2xl sm:text-4xl font-black font-serif text-white leading-tight mt-2">
+          Noticias de Argentina y el mundo
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-2xl">
+          Actualidad, contexto y análisis con fuentes públicas y asistencia de inteligencia artificial.
+        </p>
+      </header>
 
       {/* 3-Column Newspaper Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
@@ -266,29 +275,29 @@ export default async function Home() {
               </div>
               
               <h4 className="text-base font-black font-serif text-white leading-snug">
-                Periodismo Libre de Sesgo Partidario
+                Análisis con criterios de neutralidad
               </h4>
               
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-                Este portal procesa automáticamente noticias de diversas fuentes, aplicando Inteligencia Artificial con <strong>Gemini 2.5 Flash</strong> para neutralizar el lenguaje sesgado, eliminar clickbaits y estructurar la información con total objetividad y transparencia.
+                Este portal procesa noticias de diversas fuentes con asistencia de <strong>Gemini 2.5 Flash</strong> para reducir lenguaje valorativo, evitar clickbait y estructurar la información con criterios de neutralidad y transparencia.
               </p>
 
               {/* Stats panel */}
               <div className="bg-black/40 border border-white/5 rounded-xl p-3 grid grid-cols-2 gap-2 text-center text-xs">
                 <div className="space-y-0.5 border-r border-white/5">
-                  <div className="text-[9px] text-slate-500 font-bold uppercase">Sesgo Reducido</div>
-                  <div className="text-base font-black text-secondary">95.8%</div>
+                  <div className="text-[9px] text-slate-500 font-bold uppercase">Fuentes activas</div>
+                  <div className="text-base font-black text-secondary">{NEWS_SOURCES.filter((source) => source.enabled).length} RSS</div>
                 </div>
                 <div className="space-y-0.5">
-                  <div className="text-[9px] text-slate-500 font-bold uppercase">Procesamiento</div>
-                  <div className="text-base font-black text-primary">100% IA</div>
+                  <div className="text-[9px] text-slate-500 font-bold uppercase">Proceso editorial</div>
+                  <div className="text-base font-black text-primary">Asistido por IA</div>
                 </div>
               </div>
 
               <div className="pt-2 flex items-center justify-center">
                 <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-1.5">
                   <Sparkles size={10} className="text-primary animate-spin" />
-                  Verificación de Neutralidad Activa
+                  Control editorial activo
                 </span>
               </div>
             </div>
