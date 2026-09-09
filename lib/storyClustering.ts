@@ -22,10 +22,6 @@ function getTokens(title: string) {
   );
 }
 
-export function getStoryFingerprint(title: string) {
-  return [...getTokens(title)].sort().join('-');
-}
-
 /**
  * Detecta títulos que probablemente describen el mismo hecho sin exigir una
  * coincidencia literal. Solo devuelve true con suficientes palabras útiles.
