@@ -61,7 +61,7 @@ export async function POST(request: Request) {
          - Analiza cómo las cadenas tradicionales y medios hegemónicos manipularon o sesgaron la cobertura de las noticias de esta semana.
          - Presenta un desglose detallado (ej: comparando qué palabras cargadas usaron otros medios frente a los hechos puros que publicamos nosotros).
          - Haz que esta sección sea sumamente reveladora, objetiva y valiosa para el lector.
-      5. Listado de noticias: Muestra cada una de las 5 noticias en formato tarjeta con badge de categoría en cian. Usá exactamente el campo `url` de cada noticia para sus enlaces; ya contiene el enlace canónico y sus etiquetas de campaña.
+      5. Listado de noticias: Muestra cada una de las 5 noticias en formato tarjeta con badge de categoría en cian. Usá exactamente el campo 'url' de cada noticia para sus enlaces; ya contiene el enlace canónico y sus etiquetas de campaña.
       6. Pie de página: Misión del sitio, contacto (edukoder2025@gmail.com) y enlaces legales.
       7. Asegúrate de usar estilos CSS en línea (inline-styles) y compatibilidad móvil completa.
       
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       3. Cabecera: Título imponente \"EL IRÓNICO – PREMIUM INTELLIGENCE\" con el subtítulo \"Análisis Geopolítico & Pronóstico de Narrativas\".
       4. Sección \"EXCLUSIVO IA: Análisis de Sesgo Profundo\".
       5. Sección \"EXCLUSIVO IA: Predicción de Narrativas & Tendencias de Desinformación\".
-      6. Listado de noticias: Con diseño clásico y distinguido. Usá exactamente el campo `url` de cada noticia para sus enlaces; ya contiene el enlace canónico y sus etiquetas de campaña.
+      6. Listado de noticias: Con diseño clásico y distinguido. Usá exactamente el campo 'url' de cada noticia para sus enlaces; ya contiene el enlace canónico y sus etiquetas de campaña.
       7. Pie de página: Misión del sitio, contacto (edukoder2025@gmail.com) y enlaces legales.
       8. Asegúrate de usar estilos CSS en línea (inline-styles) y compatibilidad móvil completa.
       
