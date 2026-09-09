@@ -6,6 +6,7 @@ import CookieBanner from "@/components/CookieBanner";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { buildArticleUrl, normalizeCategorySlug } from "@/lib/articleUtils";
+import { getSiteUrl } from "@/lib/seoUtils";
 
 function getCategoryHoverClass(category: string) {
   const cat = (category || '').toLowerCase().trim();
@@ -41,10 +42,16 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "El Irónico | Noticias de Argentina y el Mundo sin Sesgo - Periodismo IA",
   description: "El Irónico es un periódico digital 100% impulsado por IA que neutraliza noticias de Argentina, Mundo, Tecnología, Economía, Deportes y Ciencia. Periodismo ético, libre de sesgos políticos.",
   keywords: "noticias, periodismo, Argentina, mundo, tecnología, economía, inteligencia artificial, noticias sin sesgo, periodismo neutral",
+  alternates: {
+    canonical: siteUrl,
+  },
   other: process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID
     ? {
         "google-adsense-account": process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID,
@@ -53,12 +60,23 @@ export const metadata: Metadata = {
   openGraph: {
     title: "El Irónico | Noticias Neutrales de Argentina y el Mundo",
     description: "Periodismo impulsado por IA - Noticias neutralizadas sin intereses políticos",
-    url: "https://elironico.com",
+    url: siteUrl,
     siteName: "El Irónico",
     type: "website",
     images: [
-      "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop",
+      {
+        url: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop",
+        width: 1200,
+        height: 630,
+        alt: "El Irónico",
+      },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "El Irónico | Noticias Neutrales de Argentina y el Mundo",
+    description: "Periodismo impulsado por IA - Noticias neutralizadas sin intereses políticos",
+    images: ["https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop"],
   },
 };
 

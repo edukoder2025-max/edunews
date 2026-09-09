@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { buildArticleUrl, extractArticleId, getArticleImage, normalizeCategorySlug, slugify } from '@/lib/articleUtils';
-import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords } from '@/lib/seoUtils';
+import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords, getSiteUrl } from '@/lib/seoUtils';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -41,16 +41,27 @@ export async function generateMetadata({ params }: { params: { category: string;
     article.category || ''
   );
   const keywords = generateCategoryKeywords(article.category || '');
+  const canonicalUrl = buildArticleUrl(
+    article.id,
+    article.ai_title || article.original_title,
+    article.category,
+    getSiteUrl(),
+  );
+  const imageUrl = getArticleImage(article);
 
   return {
     title,
     description,
     keywords: `${keywords}, ${(article.ai_title || article.original_title).substring(0, 50)}`,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: article.ai_title || article.original_title,
       description: `${article.category || 'Noticia'} | Escrita sin sesgos por IA`,
+      url: canonicalUrl,
       type: 'article',
-      images: [getArticleImage(article)],
+      images: [imageUrl],
       publishedTime: article.published_at,
       authors: ['El Irónico'],
     },
@@ -58,7 +69,7 @@ export async function generateMetadata({ params }: { params: { category: string;
       card: 'summary_large_image',
       title: article.ai_title || article.original_title,
       description,
-      images: [getArticleImage(article)],
+      images: [imageUrl],
     },
   };
 }
@@ -135,9 +146,63 @@ export default async function ArticlePage({ params }: { params: { category: stri
   const relatedArticles = await getRelatedArticles(article.category || '', article.id);
   const topReadArticles = await getTopReadArticles();
   const todayReaders = getApproximateDailyReaders(article.views || 0);
+  const siteUrl = getSiteUrl();
+  const articleTitle = article.ai_title || article.original_title;
+  const articleDescription = generateArticleDescription(
+    articleTitle,
+    article.ai_content || article.original_content || '',
+    article.category || '',
+  );
+  const canonicalUrl = buildArticleUrl(article.id, articleTitle, article.category, siteUrl);
+  const articleImage = getArticleImage(article);
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: articleTitle,
+    description: articleDescription,
+    image: [articleImage],
+    datePublished: article.published_at,
+    author: {
+      '@type': 'Organization',
+      name: 'El Irónico',
+      url: siteUrl,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'El Irónico',
+      url: siteUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteUrl}/icon.png`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+    articleSection: article.category || 'Noticias',
+    isAccessibleForFree: true,
+  };
+  const breadcrumbData = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: siteUrl },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: article.category || 'Noticias',
+        item: `${siteUrl}/categoria/${normalizeCategorySlug(article.category || 'general')}`,
+      },
+      { '@type': 'ListItem', position: 3, name: articleTitle, item: canonicalUrl },
+    ],
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Sincronización con Google Publisher Center / Subscribe with Google */}
       <Script
         src="https://news.google.com/swg/js/v1/swg-basic.js"
@@ -366,5 +431,6 @@ export default async function ArticlePage({ params }: { params: { category: stri
         </aside>
       </div>
     </div>
+    </>
   );
 }

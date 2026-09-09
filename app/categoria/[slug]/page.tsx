@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { buildArticleUrl, getArticleImage, normalizeCategorySlug } from '@/lib/articleUtils';
+import { generateCategoryKeywords, generateSitemapDescription, getSiteUrl } from '@/lib/seoUtils';
+import { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, FolderOpen, Calendar, ArrowRight } from 'lucide-react';
@@ -27,6 +29,28 @@ function getCategoryFromSlug(slug: string) {
     default:
       return slug;
   }
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const categorySlug = normalizeCategorySlug(decodeURIComponent(params.slug));
+  const category = getCategoryFromSlug(categorySlug);
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = `${siteUrl}/categoria/${categorySlug}`;
+  const description = generateSitemapDescription(category);
+
+  return {
+    title: `${category} | Noticias neutralizadas - El Irónico`,
+    description,
+    keywords: generateCategoryKeywords(category),
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title: `${category} | Noticias neutralizadas - El Irónico`,
+      description,
+      url: canonicalUrl,
+      siteName: 'El Irónico',
+      type: 'website',
+    },
+  };
 }
 
 async function getNewsByCategory(category: string) {

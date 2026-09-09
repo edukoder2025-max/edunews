@@ -1,5 +1,8 @@
-// lib/seoUtils.ts
-// Utilidades para generar descripciones SEO dinámicas y keyword-rich
+// Utilidades SEO compartidas por las rutas públicas de El Irónico.
+
+export function getSiteUrl(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.elironico.com').replace(/\/$/, '');
+}
 
 export function generateCategoryKeywords(category: string): string {
   const cat = (category || '').toLowerCase().trim();
@@ -27,29 +30,22 @@ export function generateArticleDescription(
   content: string,
   category: string
 ): string {
-  // Limpiar el contenido
   const cleanContent = (content || '')
-    .replace(/<[^>]*>/g, '') // Remover HTML
-    .replace(/\n+/g, ' ') // Remover saltos de línea
-    .replace(/\s+/g, ' ') // Remover espacios múltiples
+    .replace(/<[^>]*>/g, '')
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
-  // Tomar primeras 155 caracteres para meta description (recomendado 155-160)
   let description = cleanContent.substring(0, 155);
-  
-  // Asegurar que no corte en medio de una palabra
   const lastSpace = description.lastIndexOf(' ');
   if (lastSpace > 0 && description.length > 140) {
     description = description.substring(0, lastSpace);
   }
 
-  description = description + '...';
-  
-  return description;
+  return `${description || title}`.trim().replace(/[.。]$/, '') + '...';
 }
 
 export function generateArticleTitle(title: string, category: string): string {
-  // Formato: "Título | Categoría | El Irónico" (máximo ~60 caracteres para SEO)
   const baseTitle = title.length > 50 ? title.substring(0, 47) + '...' : title;
   return `${baseTitle} - ${category || 'Noticias'} | El Irónico`;
 }
