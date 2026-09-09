@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { subscribeContact } from '@/lib/brevo';
+import { getNewsletterTopic } from '@/lib/newsletterTopics';
 
 export async function POST(request: Request) {
   try {
-    const { email, name, planInterest } = await request.json();
+    const { email, name, planInterest, topic: topicValue } = await request.json();
+    const topic = getNewsletterTopic(topicValue);
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
@@ -20,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await subscribeContact(email, { name, planInterest });
+    const result = await subscribeContact(email, { name, planInterest, topic: topic.value, topicListName: topic.listName });
 
     if (!result.success) {
       return NextResponse.json(
@@ -31,7 +33,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: result.message || 'Te has suscrito con éxito al boletín de El Irónico.'
+      message: result.message || `Te suscribiste a ${topic.label}.`
     });
 
   } catch (error: any) {

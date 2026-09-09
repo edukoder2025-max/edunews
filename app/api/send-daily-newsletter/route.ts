@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { buildArticleUrl } from '@/lib/articleUtils';
 import { withMarketingUtm } from '@/lib/marketingUrls';
-import { sendNewsletterCampaign } from '@/lib/brevo';
+import { getOrCreateListByName, sendNewsletterCampaign } from '@/lib/brevo';
+import { getNewsletterTopic, getNewsletterTopicFilter } from '@/lib/newsletterTopics';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,22 +32,32 @@ async function handleRequest(request: Request) {
     // Obtener el tipo de boletín
     const { searchParams } = new URL(request.url);
     let newsletterType = searchParams.get('type') || 'daily';
+    let topicValue = searchParams.get('topic');
 
     if (request.method === 'POST') {
       try {
         const body = await request.clone().json().catch(() => ({}));
         newsletterType = body.type || body.newsletterType || searchParams.get('type') || 'daily';
+        topicValue = body.topic || searchParams.get('topic');
       } catch {
         newsletterType = searchParams.get('type') || 'daily';
       }
     }
 
-    // 2. Obtener las últimas 5 noticias neutralizadas de Supabase
-    const { data: articles, error: dbError } = await supabase
+    const topic = getNewsletterTopic(topicValue);
+
+    // 2. Obtener las últimas noticias; si se solicita un tema, filtrar por sus términos.
+    let articlesQuery = supabase
       .from('news_articles')
       .select('id, ai_title, original_title, ai_content, original_content, category, published_at')
       .order('published_at', { ascending: false })
       .limit(5);
+
+    if (topic.searchTerms.length > 0) {
+      articlesQuery = articlesQuery.or(getNewsletterTopicFilter(topic.searchTerms));
+    }
+
+    const { data: articles, error: dbError } = await articlesQuery;
 
     if (dbError) {
       console.error('Error fetching articles for daily newsletter:', dbError);
@@ -781,7 +792,13 @@ async function handleRequest(request: Request) {
 
     // 6. Enviar campaña a través de Brevo
     const subject = `El Irónico – Resumen Diario: ${capitalizedDate}`;
-    const result = await sendNewsletterCampaign(subject, htmlTemplate);
+    let topicListId: number | undefined;
+    if (topic.value !== 'general') {
+      const resolvedTopicListId = await getOrCreateListByName(topic.listName);
+      if (!resolvedTopicListId) throw new Error(`No se pudo resolver la lista temática: ${topic.listName}`);
+      topicListId = resolvedTopicListId;
+    }
+    const result = await sendNewsletterCampaign(subject, htmlTemplate, topicListId);
 
     if (!result.success) {
       throw new Error(result.error || 'Error al enviar la campaña de Brevo.');
@@ -789,7 +806,7 @@ async function handleRequest(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Boletín de noticias diario enviado con éxito.',
+      message: `Boletín diario de ${topic.label} enviado con éxito.`,
       campaignId: result.campaignId,
       date: capitalizedDate
     });

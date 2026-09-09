@@ -3,9 +3,11 @@
 
 import React, { useState } from 'react';
 import { Mail, Check, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { NEWSLETTER_TOPICS } from '@/lib/newsletterTopics';
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState('');
+  const [topic, setTopic] = useState('general');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -26,7 +28,7 @@ export default function NewsletterForm() {
       const response = await fetch('/api/newsletter/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, topic }),
       });
 
       const data = await response.json();
@@ -71,6 +73,22 @@ export default function NewsletterForm() {
           </p>
 
           <form onSubmit={handleSubmit} className="mt-2 space-y-4">
+            <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              Elegí el tipo de resumen
+              <select
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                disabled={status === 'loading' || status === 'success'}
+                className="mt-2 w-full h-11 px-3 bg-slate-900/60 border border-white/10 text-slate-100 rounded-xl text-sm focus:outline-none focus:border-primary/50 transition-all disabled:opacity-50"
+              >
+                {NEWSLETTER_TOPICS.map((newsletterTopic) => (
+                  <option key={newsletterTopic.value} value={newsletterTopic.value}>
+                    {newsletterTopic.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <div className="flex flex-col sm:flex-row gap-2 relative">
               <div className="relative flex-1">
                 <input

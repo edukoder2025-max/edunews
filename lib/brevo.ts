@@ -21,15 +21,24 @@ function getHeaders(): BrevoHeaders {
  */
 export async function subscribeContact(
   email: string,
-  meta?: { name?: string; planInterest?: string }
+  meta?: { name?: string; planInterest?: string; topic?: string; topicListName?: string }
 ) {
   try {
     const listId = await getDefaultListId();
+    const listIds = listId ? [listId] : [];
+
+    // La lista temática permite preparar boletines segmentados sin quitar al
+    // contacto del boletín general. Las listas se crean solo cuando alguien
+    // elige explícitamente un tema.
+    if (meta?.topic && meta.topic !== 'general' && meta.topicListName) {
+      const topicListId = await getOrCreateListByName(meta.topicListName);
+      if (topicListId && !listIds.includes(topicListId)) listIds.push(topicListId);
+    }
 
     const body: any = {
       email,
       updateEnabled: true,
-      listIds: listId ? [listId] : undefined,
+      listIds: listIds.length > 0 ? listIds : undefined,
     };
 
     if (meta) {
