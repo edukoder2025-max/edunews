@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { isRecurringResultsStory } from '@/lib/editorialRules';
 
 // Initialize the Google Generative AI with the API key from environment variables
 // Initialize instances for both primary and fallback keys
@@ -49,6 +50,8 @@ export async function rewriteNews(
   Contenido: ${originalContent}
   `;
 
+  const isResultsArticle = isRecurringResultsStory(originalTitle);
+
   if (alternatives && alternatives.length > 0) {
     referenceBlock += `\n\nOTRAS FUENTES SOBRE EL MISMO TEMA (Perspectivas contrastantes):
     ${alternatives.map((a, i) => `
@@ -58,8 +61,20 @@ export async function rewriteNews(
     `).join('\n')}`;
   }
 
+  const resultsRule = isResultsArticle ? `
+  REGLA ESPECIAL PARA RESULTADOS DE QUINIELA/LOTERÍA:
+  - La categoría debe ser exactamente "Argentina".
+  - Conserva cada número, fecha, horario, sorteo y cero inicial tal como aparece en la fuente.
+  - No inventes resultados, letras, premios, organismos ni testimonios. Si la fuente no incluye un dato, indícalo expresamente.
+  - Organiza los resultados por jurisdicción y sorteo, preferentemente con listas <ul><li>.
+  - Incluye una nota breve que aclare que la publicación informa resultados ya realizados y no ofrece pronósticos.
+  - Evita párrafos genéricos sobre la historia del juego o la cultura del azar: el valor editorial debe estar en los datos concretos y en cómo verificarlos.
+  ` : '';
+
   const prompt = `
   Actúa como un Auditor de Datos y Redactor Jefe de un prestigioso y neutral servicio de prensa internacional. Tu misión es transformar la información de referencia en un reportaje periodístico impecable, libre de sesgos y de una neutralidad científica absoluta.
+
+  ${resultsRule}
 
   DIRECTRICES DE NEUTRALIDAD RADICAL (MUY IMPORTANTE):
   1. ELIMINACIÓN DE SESGO ADJETIVO: Identifica y remueve todos los adjetivos cargados emocionalmente (ej. "catastrófico", "histórico", "nefasto", "brillante", "ajuste salvaje", "especulación feroz", "éxito rotundo"). Los hechos y cifras deben hablar por sí mismos.
@@ -77,8 +92,8 @@ export async function rewriteNews(
   
   ESTILO EDITORIAL:
   - Tono sofisticado, neutral y profundo.
-  - Mínimo 600 palabras.
-  - Divide la noticia en al menos 3 secciones con <h2>.
+  - Redacta entre 450 y 800 palabras cuando la fuente tenga información suficiente; no rellenes con contexto genérico para alcanzar una cifra. Si la fuente es breve, prioriza exactitud, atribución y una sección clara de límites.
+  - Divide la noticia en secciones con <h2> solo cuando aporten información; evita subtítulos artificiales.
   
   Información de referencia:
   ${referenceBlock}
