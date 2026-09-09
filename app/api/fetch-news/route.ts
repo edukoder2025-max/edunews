@@ -7,6 +7,7 @@ import { fetchRelevantImage } from '@/lib/imageFetcher';
 import { buildArticleUrl } from '@/lib/articleUtils';
 import { NEWS_SOURCES } from '@/lib/newsSources';
 import { isSimilarStory } from '@/lib/storyClustering';
+import { normalizeEditorialCategory } from '@/lib/editorialRules';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -162,12 +163,16 @@ export async function GET(request: Request) {
 
             const parsedDate = article.pubDate ? new Date(article.pubDate) : new Date();
             const publishedAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+            const editorialCategory = normalizeEditorialCategory(
+              rewritten.category || source.section || 'General',
+              rewritten.new_title || article.title,
+            );
             const insertPayload: any = {
               original_title: article.title,
               ai_title: rewritten.new_title,
               original_content: article.content,
               ai_content: rewritten.new_content,
-              category: rewritten.category || source.section || 'General',
+              category: editorialCategory,
               image_url: finalImageUrl,
               source_url: article.link,
               source_name: article.sourceName || source.name,
@@ -219,7 +224,7 @@ export async function GET(request: Request) {
               const articleUrl = buildArticleUrl(
                 insertedRow.id,
                 rewritten.new_title || article.title,
-                rewritten.category || source.section || 'General',
+                editorialCategory,
                 siteUrl,
               );
 

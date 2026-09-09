@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { buildArticleUrl, extractArticleId, getArticleImage, normalizeCategorySlug, slugify } from '@/lib/articleUtils';
 import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords, getSiteUrl } from '@/lib/seoUtils';
+import { normalizeEditorialCategory } from '@/lib/editorialRules';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -34,17 +35,19 @@ export async function generateMetadata({ params }: { params: { category: string;
   const article = await getArticle(articleId);
   if (!article) return { title: 'Noticia no encontrada' };
 
-  const title = generateArticleTitle(article.ai_title || article.original_title, article.category || 'Noticias');
+  const articleTitle = article.ai_title || article.original_title;
+  const editorialCategory = normalizeEditorialCategory(article.category, articleTitle);
+  const title = generateArticleTitle(articleTitle, editorialCategory);
   const description = generateArticleDescription(
-    article.ai_title || article.original_title,
+    articleTitle,
     article.ai_content || article.original_content || '',
-    article.category || ''
+    editorialCategory
   );
-  const keywords = generateCategoryKeywords(article.category || '');
+  const keywords = generateCategoryKeywords(editorialCategory);
   const canonicalUrl = buildArticleUrl(
     article.id,
     article.ai_title || article.original_title,
-    article.category,
+    editorialCategory,
     getSiteUrl(),
   );
   const ogImageUrl = `${canonicalUrl}/opengraph-image`;
@@ -58,7 +61,7 @@ export async function generateMetadata({ params }: { params: { category: string;
     },
     openGraph: {
       title: article.ai_title || article.original_title,
-      description: `${article.category || 'Noticia'} | Escrita sin sesgos por IA`,
+      description: `${editorialCategory} | Escrita con asistencia de IA`,
       url: canonicalUrl,
       type: 'article',
       images: [{
@@ -140,25 +143,26 @@ export default async function ArticlePage({ params }: { params: { category: stri
     notFound();
   }
 
-  const currentCategorySlug = normalizeCategorySlug(article.category || 'general');
+  const articleTitle = article.ai_title || article.original_title;
+  const editorialCategory = normalizeEditorialCategory(article.category, articleTitle);
+  const currentCategorySlug = normalizeCategorySlug(editorialCategory);
   const cleanSlug = slugify(article.ai_title || article.original_title);
   const expectedArticlePath = `${cleanSlug ? `${cleanSlug}-${article.id}` : article.id}`;
 
   if (params.category !== currentCategorySlug || params.articlePath !== expectedArticlePath) {
-    redirect(buildArticleUrl(article.id, article.ai_title || article.original_title, article.category));
+    redirect(buildArticleUrl(article.id, articleTitle, editorialCategory));
   }
 
   const relatedArticles = await getRelatedArticles(article.category || '', article.id);
   const topReadArticles = await getTopReadArticles();
   const todayReaders = getApproximateDailyReaders(article.views || 0);
   const siteUrl = getSiteUrl();
-  const articleTitle = article.ai_title || article.original_title;
   const articleDescription = generateArticleDescription(
     articleTitle,
     article.ai_content || article.original_content || '',
-    article.category || '',
+    editorialCategory,
   );
-  const canonicalUrl = buildArticleUrl(article.id, articleTitle, article.category, siteUrl);
+  const canonicalUrl = buildArticleUrl(article.id, articleTitle, editorialCategory, siteUrl);
   const articleImage = getArticleImage(article);
   const structuredData = {
     '@context': 'https://schema.org',
@@ -185,7 +189,7 @@ export default async function ArticlePage({ params }: { params: { category: stri
       '@type': 'WebPage',
       '@id': canonicalUrl,
     },
-    articleSection: article.category || 'Noticias',
+    articleSection: editorialCategory,
     isAccessibleForFree: true,
   };
   const breadcrumbData = {
@@ -196,8 +200,8 @@ export default async function ArticlePage({ params }: { params: { category: stri
       {
         '@type': 'ListItem',
         position: 2,
-        name: article.category || 'Noticias',
-        item: `${siteUrl}/categoria/${normalizeCategorySlug(article.category || 'general')}`,
+        name: editorialCategory,
+        item: `${siteUrl}/categoria/${normalizeCategorySlug(editorialCategory)}`,
       },
       { '@type': 'ListItem', position: 3, name: articleTitle, item: canonicalUrl },
     ],
@@ -240,8 +244,8 @@ export default async function ArticlePage({ params }: { params: { category: stri
         <article className="lg:col-span-8 space-y-8">
           <header className="space-y-4">
             <div className="flex flex-wrap items-center gap-3 text-xs font-black uppercase tracking-wider">
-              <span className={`px-3 py-1 border rounded-full ${getCategoryColor(article.category)}`}>
-                {article.category || 'Mundo'}
+              <span className={`px-3 py-1 border rounded-full ${getCategoryColor(editorialCategory)}`}>
+                {editorialCategory}
               </span>
               <span className="text-slate-600">•</span>
               <span className="text-slate-400">Redacción El Irónico</span>
@@ -272,7 +276,7 @@ export default async function ArticlePage({ params }: { params: { category: stri
           <ContributionCTABanner />
 
           <ShareButtons
-            url={`https://elironico.com${buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}`}
+            url={`https://elironico.com${buildArticleUrl(article.id, articleTitle, editorialCategory)}`}
             title={article.ai_title || article.original_title}
           />
 
@@ -295,7 +299,7 @@ export default async function ArticlePage({ params }: { params: { category: stri
             originalContent={article.original_content}
             sourceName={article.source_name || 'RSS Feed'}
             sourceUrl={article.source_url || ''}
-            category={article.category || 'General'}
+            category={editorialCategory}
             biasDetected={article.bias_detected}
             biasScore={article.bias_score}
             sourcesUsed={article.sources_used}
@@ -395,7 +399,7 @@ export default async function ArticlePage({ params }: { params: { category: stri
               <div className="bg-slate-950/40 border border-white/5 rounded-2xl p-5 space-y-5">
                 <h3 className="text-xs font-black uppercase tracking-widest text-white border-b border-white/5 pb-3 flex items-center gap-2">
                   <Flame size={14} className="text-primary animate-pulse" />
-                  Destacados de {article.category}
+                  Destacados de {editorialCategory}
                 </h3>
                 <div className="space-y-4">
                   {relatedArticles.slice(0, 3).map((rel) => (

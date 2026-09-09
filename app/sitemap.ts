@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { buildArticleUrl } from '@/lib/articleUtils';
 import { getSiteUrl } from '@/lib/seoUtils';
 import { TOPIC_HUBS } from '@/lib/topicHubs';
+import { normalizeEditorialCategory } from '@/lib/editorialRules';
 
 export const revalidate = 300;
 
@@ -48,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: buildArticleUrl(
       article.id,
       article.ai_title || article.original_title || article.id,
-      article.category || 'general',
+      normalizeEditorialCategory(article.category, article.ai_title || article.original_title),
       baseUrl,
     ),
     lastModified: new Date(article.published_at || article.created_at || Date.now()),

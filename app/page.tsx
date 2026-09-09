@@ -8,6 +8,7 @@ import ProductsCarousel from '@/components/ProductsCarousel';
 import AdSense from '@/components/AdSense';
 import { AD_SLOTS } from '@/lib/adSlots';
 import { NEWS_SOURCES } from '@/lib/newsSources';
+import { normalizeEditorialCategory } from '@/lib/editorialRules';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -35,6 +36,10 @@ function getCategoryColor(category: string) {
   if (cat.includes("deport")) return "text-cat-deportes border-cat-deportes/20 bg-cat-deportes/10";
   if (cat.includes("ciencia") || cat.includes("cultur") || cat.includes("ciencias")) return "text-cat-cultura border-cat-cultura/20 bg-cat-cultura/10";
   return "text-cat-general border-cat-general/20 bg-cat-general/10";
+}
+
+function getDisplayCategory(article: { category?: string | null; ai_title?: string | null; original_title?: string | null }) {
+  return normalizeEditorialCategory(article.category, article.ai_title || article.original_title);
 }
 
 function getCategoryHoverColor(category: string) {
@@ -131,12 +136,12 @@ export default async function Home() {
                     <span className="text-[10px] bg-slate-900 text-primary border border-primary/10 font-black px-1.5 py-0.5 rounded">
                       {dateStr}
                     </span>
-                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 border rounded ${getCategoryColor(article.category)}`}>
-                      {article.category || 'Mundo'}
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 border rounded ${getCategoryColor(getDisplayCategory(article))}`}>
+                      {getDisplayCategory(article)}
                     </span>
                   </div>
                   <h3 className="text-sm font-bold text-white group-hover:text-primary transition-colors leading-tight font-sans">
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, getDisplayCategory(article))}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h3>
@@ -217,14 +222,14 @@ export default async function Home() {
                 <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden border border-white/5 group-hover:border-primary/20 transition-all duration-300">
                   <SafeImage 
                     src={getArticleImage(article)} 
-                    fallbackSrc={getCategoryFallbackImage(article.category)}
+                    fallbackSrc={getCategoryFallbackImage(getDisplayCategory(article))}
                     alt={article.ai_title || "Secundaria"}
                     className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
                   <div className="absolute top-2 left-2">
-                    <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 border rounded ${getCategoryColor(article.category)}`}>
-                      {article.category || 'Noticias'}
+                    <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 border rounded ${getCategoryColor(getDisplayCategory(article))}`}>
+                      {getDisplayCategory(article)}
                     </span>
                   </div>
                 </div>
@@ -232,7 +237,7 @@ export default async function Home() {
                 <div className="space-y-2 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
                     <h3 className="text-lg font-black font-serif text-white leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                      <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
+                      <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, getDisplayCategory(article))}>
                         {article.ai_title || article.original_title}
                       </Link>
                     </h3>
@@ -245,7 +250,7 @@ export default async function Home() {
                     <span>
                       {new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                     </span>
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)} className="text-primary hover:text-white transition-colors">
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, getDisplayCategory(article))} className="text-primary hover:text-white transition-colors">
                       Leer más +
                     </Link>
                   </div>
@@ -317,11 +322,11 @@ export default async function Home() {
             <div className="space-y-6">
               {analysisNews.map((article) => (
                 <article key={article.id} className="group space-y-2">
-                  <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 border rounded ${getCategoryColor(article.category)}`}>
-                    {article.category || 'Mundo'}
+                  <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 border rounded ${getCategoryColor(getDisplayCategory(article))}`}>
+                    {getDisplayCategory(article)}
                   </span>
                   <h3 className="text-sm font-black font-serif text-white leading-tight group-hover:text-primary transition-colors">
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, getDisplayCategory(article))}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h3>
