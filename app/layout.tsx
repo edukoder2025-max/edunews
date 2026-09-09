@@ -43,6 +43,7 @@ const playfair = Playfair_Display({
 });
 
 const siteUrl = getSiteUrl();
+const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -166,6 +167,23 @@ export default async function RootLayout({
             crossOrigin="anonymous"
             strategy="lazyOnload"
           />
+        )}
+
+        {gaMeasurementId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+                function gtag(){window.dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', ${JSON.stringify(gaMeasurementId)}, {
+                  page_path: window.location.pathname,
+                });`}
+            </Script>
+          </>
         )}
         
         {/* OCULTO: Google Subscribe with Google SDK - Temporalmente deshabilitado */}

@@ -5,204 +5,244 @@ import { supabase } from '@/lib/supabase';
 import { findAlternativeSources } from '@/lib/googleCSE';
 import { fetchRelevantImage } from '@/lib/imageFetcher';
 import { buildArticleUrl } from '@/lib/articleUtils';
+import { NEWS_SOURCES } from '@/lib/newsSources';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Lista robusta de RSS agrupados por categorías (Noticias, Tecnología, Ciencia, Economía, Deportes)
-// Balanceamos intencionalmente el espectro ideológico (Izquierda, Derecha, Liberal, Progresista, Centrista, Financiero y Global)
-const RSS_FEEDS = [
-  // 1. Fuentes Globales / Agencias Neutras
-  'https://feeds.bbci.co.uk/mundo/rss.xml', // BBC Mundo (Global Centrista)
-  'https://elpais.com/rss/elpais/portada.xml', // El País (España / Centro-Izquierda)
-  'https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml', // El Mundo (España / Centro-Derecha)
-  'https://www.rtve.es/rss/temas_noticias.xml', // RTVE Noticias (España / Pública)
-  'https://rss.dw.com/rdf/rss-es-all', // DW en Español (Alemania / Global Pública)
-  'https://cnnespanol.cnn.com/feed/', // CNN en Español (EEUU / Global Masivo)
+type SourceRunStats = {
+  id: string;
+  name: string;
+  section: string;
+  feedUrl: string;
+  fetched: number;
+  fresh: number;
+  selected: number;
+  skippedDuplicates: number;
+  skippedInvalid: number;
+  published: number;
+  errors: string[];
+};
 
-  // 2. Argentina: Izquierda / Progresismo / Keynesianismo
-  'https://www.pagina12.com.ar/rss/articulos', // Página 12 (Argentina / Izquierda Nacional)
-  'https://www.laizquierdadiario.com/spip.php?page=backend', // La Izquierda Diario (Argentina / Socialismo-Marxismo)
-  'https://www.ambito.com/rss/home.xml', // Ámbito Financiero (Argentina / Centro-Izquierda Económica)
-  'https://www.eldiario.es/rss/', // elDiario.es (España / Progresismo)
-  'https://www.eldestapeweb.com/rss/feed.xml', // El Destape (Argentina / Kirchnerismo-Izquierda)
-  'https://www.c5n.com/rss/c5n.xml', // C5N (Argentina / Oficialismo-Izquierda)
+function isAuthorized(request: Request) {
+  const cronSecret = process.env.CRON_SECRET;
 
-  // 3. Argentina: Centro / Derecha / Liberalismo
-  'https://tn.com.ar/rss.xml', // TN Noticias (Argentina / Centro-Derecha Comercial)
-  'https://www.clarin.com/rss/lo-ultimo/', // Clarín (Argentina / Centro Comercial)
-  'https://www.lanacion.com.ar/arc/outboundfeeds/rss/', // La Nación (Argentina / Conservador-Liberal)
-  'https://www.infobae.com/feeds/rss/', // Infobae (Argentina / Centro-Derecha Masivo)
-  'https://elobservador.com.ar/rss', // El Observador (Argentina / Centro-Derecha Liberal)
-  'https://www.laprensa.com.ar/Rss.aspx?IdSeccion=14', // La Prensa (Argentina / Conservador Tradicional)
-  
-  // 4. Finanzas / Mercados / Libertarios
-  'https://www.cronista.com/files/rss/news.xml', // El Cronista (Argentina / Negocios y Finanzas)
-  'https://feeds.feedburner.com/libertaddigital/portada', // Libertad Digital (España-Latam / Liberal-Libertario)
-  'https://www.perfil.com/rss/ultimo-momento', // Perfil (Argentina / Centrista Analítico)
-  'https://eleconomista.com.ar/rss/feed.xml' // El Economista (Argentina / Análisis Económico)
-];
-
-// Función para desordenar un array (Fisher-Yates)
-function shuffleArray(array: string[]) {
-  const newArr = [...array];
-  for (let i = newArr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+  // Vercel sends Authorization: Bearer $CRON_SECRET for scheduled crons.
+  // Until the secret is configured, preserve the existing manual behavior but
+  // make the missing protection visible in the deployment logs.
+  if (!cronSecret) {
+    console.warn('[fetch-news] CRON_SECRET no está configurado; endpoint sin protección de cron.');
+    return true;
   }
-  return newArr;
+
+  return request.headers.get('authorization') === `Bearer ${cronSecret}`;
+}
+
+async function articleAlreadyExists(sourceUrl: string, originalTitle: string) {
+  if (sourceUrl) {
+    const { data } = await supabase
+      .from('news_articles')
+      .select('id')
+      .eq('source_url', sourceUrl)
+      .limit(1)
+      .maybeSingle();
+    if (data?.id) return true;
+  }
+
+  if (originalTitle) {
+    const { data } = await supabase
+      .from('news_articles')
+      .select('id')
+      .eq('original_title', originalTitle)
+      .limit(1)
+      .maybeSingle();
+    if (data?.id) return true;
+  }
+
+  return false;
 }
 
 export async function GET(request: Request) {
+  const startedAt = new Date();
+
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const loadAll = searchParams.get('all') === 'true';
-
-    // 1. Autolimpieza de la Base de Datos (Evita saturar el plan gratuito de Supabase)
-    // Eliminamos de forma automática las noticias que tengan más de 7 días de antigüedad
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const { error: pruneError } = await supabase
-      .from('news_articles')
-      .delete()
-      .lt('published_at', sevenDaysAgo.toISOString());
-      
-    if (pruneError) {
-      console.error("Error limpiando base de datos:", pruneError.message);
-    }
-
-    let processedCount = 0;
+    const defaultMaxArticles = loadAll ? 5 : 3;
     const errors: string[] = [];
-    const debugInfo: any[] = [];
+    const sourceStats: SourceRunStats[] = [];
+    let processedCount = 0;
 
-    // Como el cron solo corre 1 vez al día (plan Hobby), procesamos TODOS los feeds
-    // Gemini 2.5 Flash gratis permite ~500 req/día + tenemos key de respaldo (~1000 total)
-    // 15 feeds × 3 artículos = ~45 llamadas a Gemini (muy lejos del límite)
-    const selectedFeeds = RSS_FEEDS; // Siempre procesamos todos los feeds
-    const articlesPerFeed = loadAll ? 5 : 3;
+    const enabledSources = NEWS_SOURCES.filter((source) => source.enabled);
 
-    for (const feedUrl of selectedFeeds) {
-      const articles = await fetchRssFeed(feedUrl);
-      debugInfo.push({ feedUrl, articlesFetched: articles.length });
-      
-      // Filtramos noticias que tengan menos de 48 horas de antigüedad para frescura total
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
+    for (const source of enabledSources) {
+      const stats: SourceRunStats = {
+        id: source.id,
+        name: source.name,
+        section: source.section,
+        feedUrl: source.url,
+        fetched: 0,
+        fresh: 0,
+        selected: 0,
+        skippedDuplicates: 0,
+        skippedInvalid: 0,
+        published: 0,
+        errors: [],
+      };
 
-      const freshArticles = articles.filter((a: any) => {
-        const pubDate = a.pubDate ? new Date(a.pubDate) : new Date();
-        return pubDate > twoDaysAgo;
-      });
+      try {
+        const articles = await fetchRssFeed(source.url);
+        stats.fetched = articles.length;
 
-      // Procesamos la cantidad de noticias configurada
-      const topArticles = freshArticles.slice(0, articlesPerFeed);
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
 
-      for (const article of topArticles) {
-        // Verificar si la noticia ya existe por URL o por Título exacto
-        const { data: existingArticle } = await supabase
-          .from('news_articles')
-          .select('id')
-          .or(`source_url.eq."${article.link}",original_title.eq."${article.title}"`)
-          .maybeSingle();
+        const freshArticles = articles.filter((article: any) => {
+          const parsedDate = article.pubDate ? new Date(article.pubDate) : new Date();
+          return !Number.isNaN(parsedDate.getTime()) && parsedDate > twoDaysAgo;
+        });
 
-        if (existingArticle) {
-          debugInfo.push({ skipped: article.title, reason: 'Duplicate' });
-          continue; 
-        }
+        stats.fresh = freshArticles.length;
+        const topArticles = freshArticles.slice(0, Math.min(defaultMaxArticles, source.maxArticlesPerRun));
+        stats.selected = topArticles.length;
 
-        // Reescribir con Gemini
-        const alternatives = await findAlternativeSources(article.title, article.link);
-        const rewritten = await rewriteNews(article.title, article.content, alternatives);
-        
-        if (!rewritten || rewritten.error) {
-          errors.push(`Error al reescribir: ${article.title}. Razón: ${rewritten?.error || 'Desconocida'}`);
-          continue;
-        }
+        for (const article of topArticles) {
+          if (!article.link || !article.title) {
+            stats.skippedInvalid++;
+            continue;
+          }
 
-        // Obtener imagen relevante si no viene en el feed RSS
-        let finalImageUrl = article.imageUrl || null;
-        if (!finalImageUrl) {
           try {
-            finalImageUrl = await fetchRelevantImage(article.title, article.link);
-          } catch (imgErr) {
-            console.error("Error fetching relevant image:", imgErr);
+            if (await articleAlreadyExists(article.link, article.title)) {
+              stats.skippedDuplicates++;
+              continue;
+            }
+
+            const alternatives = await findAlternativeSources(article.title, article.link);
+            const rewritten = await rewriteNews(article.title, article.content, alternatives);
+
+            if (!rewritten || rewritten.error) {
+              const reason = rewritten?.error || 'Respuesta vacía del redactor';
+              const message = `${source.name}: error al reescribir “${article.title}”: ${reason}`;
+              stats.errors.push(message);
+              errors.push(message);
+              continue;
+            }
+
+            let finalImageUrl = article.imageUrl || null;
+            if (!finalImageUrl) {
+              try {
+                finalImageUrl = await fetchRelevantImage(article.title, article.link);
+              } catch (imageError: any) {
+                console.warn('[fetch-news] Error obteniendo imagen:', imageError?.message || imageError);
+              }
+            }
+
+            const parsedDate = article.pubDate ? new Date(article.pubDate) : new Date();
+            const publishedAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+            const insertPayload: any = {
+              original_title: article.title,
+              ai_title: rewritten.new_title,
+              original_content: article.content,
+              ai_content: rewritten.new_content,
+              category: rewritten.category || source.section || 'General',
+              image_url: finalImageUrl,
+              source_url: article.link,
+              source_name: article.sourceName || source.name,
+              published_at: publishedAt,
+              bias_detected: rewritten.bias_detected || null,
+              bias_score: rewritten.bias_score || null,
+              sources_used: rewritten.sources_used || (alternatives.length > 0
+                ? alternatives.map((alternative: any) => alternative.source)
+                : [article.sourceName || source.name]),
+            };
+
+            let { data: insertedRow, error: dbError } = await supabase
+              .from('news_articles')
+              .insert(insertPayload)
+              .select('id')
+              .single();
+
+            // Compatibilidad con instalaciones que todavía no tienen las
+            // columnas opcionales del análisis de sesgo.
+            if (dbError && (dbError.message?.includes('column') || dbError.code === 'PGRST204')) {
+              const fallbackPayload = { ...insertPayload };
+              delete fallbackPayload.bias_detected;
+              delete fallbackPayload.bias_score;
+              delete fallbackPayload.sources_used;
+
+              const { data: fallbackRow, error: fallbackError } = await supabase
+                .from('news_articles')
+                .insert(fallbackPayload)
+                .select('id')
+                .single();
+
+              dbError = fallbackError;
+              if (!dbError) insertedRow = fallbackRow;
+            }
+
+            if (dbError) {
+              const message = `${source.name}: error en BD para “${article.title}”: ${dbError.message}`;
+              stats.errors.push(message);
+              errors.push(message);
+              continue;
+            }
+
+            processedCount++;
+            stats.published++;
+
+            if (insertedRow?.id) {
+              const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.elironico.com';
+              const articleUrl = buildArticleUrl(
+                insertedRow.id,
+                rewritten.new_title || article.title,
+                rewritten.category || source.section || 'General',
+                siteUrl,
+              );
+
+              fetch(`${siteUrl}/api/indexnow`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: articleUrl }),
+              }).catch((error) => console.warn('[IndexNow] Ping falló:', error?.message));
+            }
+          } catch (articleError: any) {
+            const message = `${source.name}: error procesando “${article.title}”: ${articleError?.message || articleError}`;
+            stats.errors.push(message);
+            errors.push(message);
           }
         }
-
-        // Guardar en Supabase
-        const insertPayload: any = {
-          original_title: article.title,
-          ai_title: rewritten.new_title,
-          original_content: article.content,
-          ai_content: rewritten.new_content,
-          category: rewritten.category || 'General',
-          image_url: finalImageUrl,
-          source_url: article.link,
-          source_name: article.sourceName,
-          published_at: article.pubDate ? new Date(article.pubDate) : new Date(),
-          bias_detected: rewritten.bias_detected || null,
-          bias_score: rewritten.bias_score || null,
-          sources_used: rewritten.sources_used || (alternatives.length > 0 ? alternatives.map((a: any) => a.source) : [article.sourceName])
-        };
-
-        let { data: insertedRow, error: dbError } = await supabase
-          .from('news_articles')
-          .insert(insertPayload)
-          .select('id')
-          .single();
-
-        // Fallback si no existen las columnas de sesgo en Supabase
-        if (dbError && (dbError.message?.includes('column') || dbError.code === 'PGRST204')) {
-          console.warn("Supabase columns for bias analysis missing. Retrying insert with standard columns...");
-          const fallbackPayload = { ...insertPayload };
-          delete fallbackPayload.bias_detected;
-          delete fallbackPayload.bias_score;
-          delete fallbackPayload.sources_used;
-
-          const { data: fallbackRow, error: fallbackError } = await supabase
-            .from('news_articles')
-            .insert(fallbackPayload)
-            .select('id')
-            .single();
-
-          dbError = fallbackError;
-          if (!dbError) insertedRow = fallbackRow;
-        }
-
-        if (dbError) {
-          errors.push(`Error en BD para: ${article.title} - ${dbError.message}`);
-        } else {
-          processedCount++;
-
-          // Ping IndexNow (silencioso — no bloquea ni rompe el flujo)
-          if (insertedRow?.id) {
-            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.elironico.com';
-            const articleUrl = buildArticleUrl(
-              insertedRow.id,
-              rewritten.new_title || article.title,
-              rewritten.category || 'General',
-              siteUrl
-            );
-            fetch(`${siteUrl}/api/indexnow`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url: articleUrl }),
-            }).catch((err) => console.warn('[IndexNow] Ping failed (non-blocking):', err?.message));
-          }
-        }
+      } catch (sourceError: any) {
+        const message = `${source.name}: RSS no disponible: ${sourceError?.message || sourceError}`;
+        stats.errors.push(message);
+        errors.push(message);
       }
+
+      sourceStats.push(stats);
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    const finishedAt = new Date();
+    return NextResponse.json({
+      success: true,
       message: `Proceso completado. Nuevas noticias agregadas: ${processedCount}`,
-      debugInfo,
-      errors: errors.length > 0 ? errors : undefined
+      processedCount,
+      run: {
+        startedAt: startedAt.toISOString(),
+        finishedAt: finishedAt.toISOString(),
+        durationMs: finishedAt.getTime() - startedAt.getTime(),
+        enabledSources: enabledSources.length,
+      },
+      sources: sourceStats,
+      // Se conserva debugInfo para no romper consumidores existentes.
+      debugInfo: sourceStats,
+      errors: errors.length > 0 ? errors : undefined,
     });
-
   } catch (error: any) {
-    console.error("Error general procesando feeds:", error);
+    console.error('Error general procesando feeds:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
