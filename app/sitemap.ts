@@ -4,7 +4,7 @@ import { buildArticleUrl } from '@/lib/articleUtils';
 import { getSiteUrl } from '@/lib/seoUtils';
 import { TOPIC_HUBS } from '@/lib/topicHubs';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
-import { applyEditorialOverride } from '@/lib/editorialOverrides';
+import { applyEditorialOverride, shouldRedirectEditorialArticle } from '@/lib/editorialOverrides';
 
 export const revalidate = 300;
 
@@ -46,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
   const articles = await getAllArticlesForSitemap();
 
-  const articleEntries = articles.map((rawArticle) => {
+  const articleEntries = articles.filter((article) => !shouldRedirectEditorialArticle(article.id)).map((rawArticle) => {
     const article = applyEditorialOverride(rawArticle);
     return {
     url: buildArticleUrl(

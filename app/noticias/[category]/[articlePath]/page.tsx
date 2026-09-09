@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { buildArticleUrl, extractArticleId, getArticleImage, normalizeCategorySlug, slugify } from '@/lib/articleUtils';
 import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords, getSiteUrl } from '@/lib/seoUtils';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
-import { applyEditorialOverride } from '@/lib/editorialOverrides';
+import { applyEditorialOverride, getEditorialOverride } from '@/lib/editorialOverrides';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -142,6 +142,18 @@ export default async function ArticlePage({ params }: { params: { category: stri
 
   if (!article) {
     notFound();
+  }
+
+  const editorialOverride = getEditorialOverride(article.id);
+  if (editorialOverride?.redirectToArticleId) {
+    const canonicalArticle = await getArticle(editorialOverride.redirectToArticleId);
+    if (canonicalArticle) {
+      redirect(buildArticleUrl(
+        canonicalArticle.id,
+        canonicalArticle.ai_title || canonicalArticle.original_title,
+        normalizeEditorialCategory(canonicalArticle.category, canonicalArticle.ai_title || canonicalArticle.original_title),
+      ));
+    }
   }
 
   const articleTitle = article.ai_title || article.original_title;

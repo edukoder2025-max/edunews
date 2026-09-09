@@ -4,6 +4,7 @@ export type EditorialArticle = {
   original_title?: string | null;
   ai_content?: string | null;
   category?: string | null;
+  redirectToArticleId?: string;
   [key: string]: unknown;
 };
 
@@ -23,6 +24,12 @@ const EDITORIAL_OVERRIDES: Record<string, Partial<EditorialArticle>> = {
     ai_content: "<p><strong>La Quiniela Nacional y Provincial del lunes 7 de septiembre de 2026 registró cinco sorteos: Previa, Primera, Matutina, Vespertina y Nocturna. A continuación se resumen los primeros cinco puestos de cada extracción, con la fuente original para consultar el listado completo.</strong></p>\n<h2>Resultados de la Quiniela Provincial</h2>\n<p><strong>Previa:</strong> 1.º 6329; 2.º 6998; 3.º 9014; 4.º 5437; 5.º 0114.</p>\n<p><strong>Primera:</strong> 1.º 8790; 2.º 0009; 3.º 2260; 4.º 8247; 5.º 2780.</p>\n<p><strong>Matutina:</strong> 1.º 5192; 2.º 1062; 3.º 0648; 4.º 0855; 5.º 0453.</p>\n<p><strong>Vespertina:</strong> 1.º 6654; 2.º 0974; 3.º 4998; 4.º 6321; 5.º 9649.</p>\n<p><strong>Nocturna:</strong> 1.º 9051; 2.º 1939; 3.º 0997; 4.º 1986; 5.º 1191.</p>\n<h2>Resultados de la Quiniela Nacional</h2>\n<p><strong>Previa:</strong> 1.º 7556; 2.º 1349; 3.º 0853; 4.º 9829; 5.º 2523.</p>\n<p><strong>Primera:</strong> 1.º 2187; 2.º 4674; 3.º 1242; 4.º 1428; 5.º 2182.</p>\n<p><strong>Matutina:</strong> 1.º 8669; 2.º 8256; 3.º 4610; 4.º 3646; 5.º 1417.</p>\n<p><strong>Vespertina:</strong> 1.º 9209; 2.º 3060; 3.º 3313; 4.º 9301; 5.º 5175.</p>\n<p><strong>Nocturna:</strong> 1.º 2269; 2.º 9330; 3.º 1317; 4.º 6906; 5.º 4289.</p>\n<h2>Cómo leer este resumen</h2>\n<p>Los números se muestran en el orden de llegada comunicado por la fuente. Los ceros iniciales son parte del resultado: 0114, 0009 y 0648, por ejemplo, deben conservarse con cuatro cifras. Este artículo informa resultados ya publicados y no ofrece pronósticos ni combinaciones para próximos sorteos.</p>\n<p>Para consultar los 20 puestos de cada sorteo y las letras de la Nacional, se puede revisar la <a href=\"https://www.ambito.com/informacion-general/quiniela-hoy-vivo-resultados-la-nacional-y-provincial-lunes-7-septiembre-n6319225\" rel=\"nofollow noopener noreferrer\">cobertura original de Ámbito</a>. Antes de reclamar un premio, conviene verificar el extracto con el organismo oficial o la agencia correspondiente.</p>\n<p><em>Actualización: 7 de septiembre de 2026. Fuente principal: Ámbito.</em></p>",
     category: "Argentina",
   },
+  "39a900ac-641e-410b-a06f-bb3622643767": {
+    redirectToArticleId: "4307fa42-2983-4652-b6f1-758e0295b3e8",
+  },
+  "cb0787b5-846f-401b-8289-54e825650e04": {
+    redirectToArticleId: "4307fa42-2983-4652-b6f1-758e0295b3e8",
+  },
 };
 
 export function applyEditorialOverride<T extends EditorialArticle>(article: T): T {
@@ -32,6 +39,10 @@ export function applyEditorialOverride<T extends EditorialArticle>(article: T): 
 
 export function getEditorialOverride(id: string) {
   return EDITORIAL_OVERRIDES[id] || null;
+}
+
+export function shouldRedirectEditorialArticle(id: string) {
+  return Boolean(EDITORIAL_OVERRIDES[id]?.redirectToArticleId);
 }
 
 export const EDITORIAL_OVERRIDE_IDS = Object.keys(EDITORIAL_OVERRIDES);

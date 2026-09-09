@@ -9,7 +9,7 @@ import AdSense from '@/components/AdSense';
 import { AD_SLOTS } from '@/lib/adSlots';
 import { NEWS_SOURCES } from '@/lib/newsSources';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
-import { applyEditorialOverride } from '@/lib/editorialOverrides';
+import { applyEditorialOverride, shouldRedirectEditorialArticle } from '@/lib/editorialOverrides';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -24,7 +24,7 @@ async function getNews() {
     console.error("Error cargando noticias:", error);
     return [];
   }
-  return (data || []).map(applyEditorialOverride);
+  return (data || []).filter((article) => !shouldRedirectEditorialArticle(article.id)).map(applyEditorialOverride);
 }
 
 // Helpers para determinar las clases de color por categoría
