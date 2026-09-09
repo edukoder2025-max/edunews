@@ -6,6 +6,7 @@ import { findAlternativeSources } from '@/lib/googleCSE';
 import { fetchRelevantImage } from '@/lib/imageFetcher';
 import { buildArticleUrl } from '@/lib/articleUtils';
 import { NEWS_SOURCES } from '@/lib/newsSources';
+import { isSimilarStory } from '@/lib/storyClustering';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -78,6 +79,23 @@ export async function GET(request: Request) {
     let processedCount = 0;
 
     const enabledSources = NEWS_SOURCES.filter((source) => source.enabled);
+    const recentCutoff = new Date();
+    recentCutoff.setHours(recentCutoff.getHours() - 48);
+    const { data: recentArticles, error: recentArticlesError } = await supabase
+      .from('news_articles')
+      .select('ai_title, original_title')
+      .gte('published_at', recentCutoff.toISOString())
+      .order('published_at', { ascending: false })
+      .limit(500);
+
+    if (recentArticlesError) {
+      console.warn('[fetch-news] No se pudo cargar el índice de historias recientes:', recentArticlesError.message);
+    }
+
+    // Índice liviano para evitar publicar la misma noticia con títulos apenas distintos.
+    const knownStoryTitles = (recentArticles || [])
+      .flatMap((article: any) => [article.ai_title, article.original_title])
+      .filter(Boolean) as string[];
 
     for (const source of enabledSources) {
       const stats: SourceRunStats = {
@@ -117,7 +135,7 @@ export async function GET(request: Request) {
           }
 
           try {
-            if (await articleAlreadyExists(article.link, article.title)) {
+            if (await articleAlreadyExists(article.link, article.title) || isSimilarStory(article.title, knownStoryTitles)) {
               stats.skippedDuplicates++;
               continue;
             }
@@ -194,6 +212,7 @@ export async function GET(request: Request) {
 
             processedCount++;
             stats.published++;
+            knownStoryTitles.push(rewritten.new_title || article.title);
 
             if (insertedRow?.id) {
               const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.elironico.com';

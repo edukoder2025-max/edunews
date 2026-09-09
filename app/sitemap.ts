@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 import { buildArticleUrl } from '@/lib/articleUtils';
 import { getSiteUrl } from '@/lib/seoUtils';
+import { TOPIC_HUBS } from '@/lib/topicHubs';
 
 export const revalidate = 300;
 
@@ -67,6 +68,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'hourly' as const,
       priority: 0.8,
+    })),
+    {
+      url: `${baseUrl}/temas`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    },
+    ...TOPIC_HUBS.map((topic) => ({
+      url: `${baseUrl}/temas/${topic.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.75,
     })),
     ...articleEntries,
   ];
