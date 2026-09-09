@@ -93,14 +93,14 @@ export default async function Home() {
   const analysisNews = news.slice(12, 16); // Opinión / Análisis (Columna Derecha)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
 
 
       {/* 3-Column Newspaper Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         
         {/* ================= COLUMNA IZQUIERDA (Breves / Última Hora) ================= */}
-        <aside className="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-white/5 lg:pr-8 space-y-6">
+        <aside className="order-2 lg:order-1 lg:col-span-3 border-b lg:border-b-0 lg:border-r border-white/5 lg:pr-8 space-y-6">
           <div className="flex items-center justify-between border-b border-primary/20 pb-3">
             <h2 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-primary animate-ping"></span>
@@ -145,17 +145,17 @@ export default async function Home() {
         </aside>
 
         {/* ================= COLUMNA CENTRAL (Destacado Principal y Grid) ================= */}
-        <section className="lg:col-span-6 space-y-12">
+        <section className="order-1 lg:order-2 lg:col-span-6 space-y-8 lg:space-y-12">
           
           {/* Noticia Hero */}
           {featuredArticle && (
-            <article className="group space-y-6 pb-8 border-b border-white/5">
-              <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 shadow-2xl transition-all duration-500">
+            <article className="group space-y-4 sm:space-y-6 pb-6 sm:pb-8 border-b border-white/5">
+              <div className="relative aspect-[16/9] w-full rounded-xl sm:rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 shadow-2xl transition-all duration-500">
                 <Image
                   src={getArticleImage(featuredArticle)}
                   alt={featuredArticle.ai_title || "Destacada"}
                   fill
-                  sizes="100vw"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
                   fetchPriority="high"
                   className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
@@ -173,7 +173,7 @@ export default async function Home() {
               </div>
 
               <div className="space-y-4">
-                <h2 className="text-3xl md:text-5xl font-black text-white font-serif leading-[1.05] tracking-tight group-hover:text-primary transition-colors duration-300">
+                <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white font-serif leading-[1.08] tracking-tight group-hover:text-primary transition-colors duration-300">
                   <Link href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title, featuredArticle.category)}>
                     {featuredArticle.ai_title || featuredArticle.original_title}
                   </Link>
@@ -248,7 +248,7 @@ export default async function Home() {
         </section>
 
         {/* ================= COLUMNA DERECHA (AI Neutralizer stats & opinión) ================= */}
-        <aside className="lg:col-span-3 border-t lg:border-t-0 lg:border-l border-white/5 lg:pl-8 space-y-8">
+        <aside className="order-3 lg:order-3 lg:col-span-3 border-t lg:border-t-0 lg:border-l border-white/5 lg:pl-8 space-y-8">
           
           {/* Panel Explicativo del Motor de IA */}
           <div className="bg-gradient-to-br from-slate-950 to-slate-900 rounded-2xl p-5 border border-primary/20 relative overflow-hidden group shadow-lg">
