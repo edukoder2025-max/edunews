@@ -12,7 +12,7 @@ export function getNewsletterTopic(value: unknown): (typeof NEWSLETTER_TOPICS)[n
   return NEWSLETTER_TOPICS.find((topic) => topic.value === value) || NEWSLETTER_TOPICS[0];
 }
 
-export function getNewsletterTopicFilter(searchTerms: string[]) {
+export function getNewsletterTopicFilter(searchTerms: readonly string[]) {
   return searchTerms
     .flatMap((term) => [`ai_title.ilike.%${term}%`, `original_title.ilike.%${term}%`])
     .join(',');
