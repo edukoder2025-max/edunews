@@ -5,25 +5,16 @@ import CookieBanner from "@/components/CookieBanner";
 // import { SWGInitializer } from "@/components/SWGInitializer"; // OCULTO: Temporalmente deshabilitado
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { buildArticleUrl, normalizeCategorySlug } from "@/lib/articleUtils";
+import { buildArticleUrl } from "@/lib/articleUtils";
 import { getSiteUrl } from "@/lib/seoUtils";
 
-function getCategoryHoverClass(category: string) {
-  const cat = (category || '').toLowerCase().trim();
-  if (cat.includes('mundo')) return 'hover:text-cat-mundo';
-  if (cat.includes('argentina')) return 'hover:text-cat-argentina';
-  if (cat.includes('tecnolog')) return 'hover:text-cat-tecnologia';
-  if (cat.includes('econom')) return 'hover:text-cat-economia';
-  if (cat.includes('deport')) return 'hover:text-cat-deportes';
-  if (cat.includes('ciencia') || cat.includes('cultur') || cat.includes('ciencias')) return 'hover:text-cat-cultura';
-  return 'hover:text-primary';
-}
+
 import WeatherWidget from "@/components/WeatherWidget";
 import CryptoWidget from "@/components/CryptoWidget";
-import SearchInput from "@/components/SearchInput";
 import Script from "next/script";
 import NewsletterForm from "@/components/NewsletterForm"; // ✅ ACTIVO: Newsletter gratuito funciona
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import MainNavigation from "@/components/MainNavigation";
 // import ContributionCTABanner from "@/components/ContributionCTABanner"; // OCULTO: Temporalmente deshabilitado
 // import ContributionButton from "@/components/ContributionButton"; // OCULTO: Temporalmente deshabilitado
 import Image from "next/image";
@@ -270,31 +261,7 @@ export default async function RootLayout({
               </p>
             </div>
 
-            {/* Navigation links styled as sections */}
-            <nav className="w-full mt-4 flex flex-wrap justify-center items-center text-xs font-black uppercase tracking-widest border-b border-white/5 pb-4">
-              <Link href="/" className="px-4 py-2 border-r border-white/5 text-white hover:text-primary transition-all">
-                Portada
-              </Link>
-              <Link href="/como-funciona" className="px-4 py-2 border-r border-white/5 text-primary hover:text-white transition-all font-bold flex items-center gap-1">
-                Cómo Funciona <span className="text-[10px]">🤖</span>
-              </Link>
-              {/* ✅ ACTIVO: Apoyanos */}
-              <Link href="/suscribite" className="px-4 py-2 border-r border-white/5 text-primary font-black hover:text-white transition-all">
-                Apoyanos ⭐
-              </Link>
-              {activeCategories.map((cat) => (
-                <Link
-                  key={cat}
-                  href={`/categoria/${normalizeCategorySlug(cat)}`}
-                  className={`px-4 py-2 border-r border-white/5 text-slate-400 ${getCategoryHoverClass(cat)} transition-all`}
-                >
-                  {cat}
-                </Link>
-              ))}
-              <div className="pl-4 py-1">
-                <SearchInput />
-              </div>
-            </nav>
+            <MainNavigation activeCategories={activeCategories} />
           </header>
 
           {/* Scrolling Ticker of Latest News */}
