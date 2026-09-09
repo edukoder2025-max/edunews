@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { buildArticleUrl } from '@/lib/articleUtils';
+import { withMarketingUtm } from '@/lib/marketingUrls';
 import { sendNewsletterCampaign } from '@/lib/brevo';
 
 export const dynamic = 'force-dynamic';
@@ -180,7 +181,8 @@ async function handleRequest(request: Request) {
         
       const title = art.ai_title || art.original_title || 'Noticia sin título';
       const category = art.category || 'General';
-      const link = buildArticleUrl(art.id, title, category, 'https://elironico.com');
+      const articleUrl = buildArticleUrl(art.id, title, category, 'https://elironico.com');
+      const link = withMarketingUtm(articleUrl, 'newsletter', 'daily_digest', `article_${art.id}`);
 
       return `
         <div class="news-item">

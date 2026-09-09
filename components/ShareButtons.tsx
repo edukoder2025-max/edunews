@@ -2,25 +2,44 @@
 
 import { Share2, Twitter, Facebook, Link2, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
+import { withMarketingUtm } from '@/lib/marketingUrls';
+
+function trackShare(channel: string, url: string) {
+  const gtag = (window as any).gtag;
+  if (typeof gtag === 'function') {
+    gtag('event', 'share', {
+      method: channel,
+      content_type: 'article',
+      item_id: url,
+    });
+  }
+}
 
 export default function ShareButtons({ url, title }: { url: string, title: string }) {
   const [copied, setCopied] = useState(false);
 
   const shareOnTwitter = () => {
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`, '_blank');
+    const shareUrl = withMarketingUtm(url, 'x', 'article_share', 'article_button');
+    trackShare('x', url);
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
   };
 
   const shareOnFacebook = () => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    const shareUrl = withMarketingUtm(url, 'facebook', 'article_share', 'article_button');
+    trackShare('facebook', url);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
   };
 
   const shareOnWhatsApp = () => {
-    const message = `${title} — Lee más en El Irónico: ${url}`;
+    const shareUrl = withMarketingUtm(url, 'whatsapp', 'article_share', 'article_button');
+    trackShare('whatsapp', url);
+    const message = `${title} — Lee más en El Irónico: ${shareUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(url);
+    trackShare('copy_link', url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
