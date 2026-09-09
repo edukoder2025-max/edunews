@@ -124,7 +124,7 @@ export default function AiTransparencyPanel({
             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-3 text-xs text-slate-300 leading-relaxed font-sans shadow-inner">
               <Sparkles className="text-primary flex-shrink-0 mt-0.5 animate-pulse" size={16} />
               <div>
-                <strong className="text-white">EduNews AI Engine:</strong> Este artículo ha sido reformulado. Se removió el sensacionalismo político y el framing partidario de la fuente original, ofreciendo una lectura estructurada de alta legibilidad.
+                <strong className="text-white">El Irónico AI Engine:</strong> Este artículo ha sido reformulado. Se removió el sensacionalismo político y el framing partidario de la fuente original, ofreciendo una lectura estructurada de alta legibilidad.
               </div>
             </div>
 
@@ -173,7 +173,7 @@ export default function AiTransparencyPanel({
                   {aiTitle}
                 </h4>
                 <p className="text-[10px] text-slate-500 uppercase font-black">
-                  Procesado por EduNews
+                  Procesado por El Irónico
                 </p>
               </div>
             </div>

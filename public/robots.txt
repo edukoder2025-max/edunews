@@ -1,0 +1,33 @@
+# Configuración de robots.txt para El Irónico
+# Permite a todos los motores de búsqueda indexar todo el contenido
+
+User-agent: *
+Allow: /
+
+# Rutas específicamente permitidas con prioridad
+Allow: /api/fetch-news
+Allow: /sitemap.xml
+
+# Prevenir indexación de rutas administrativas (si las hay)
+Disallow: /admin/
+Disallow: /.env*
+Disallow: /node_modules/
+
+# Configuración del sitemap
+Sitemap: https://elironico.com/sitemap.xml
+
+# Crawl-delay para Google y otros bots (en segundos)
+# Sin restricciones para bots normales
+Crawl-delay: 0
+
+# Para Bingbot
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Para otros bots más agresivos
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /

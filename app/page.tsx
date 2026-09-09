@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Sparkles, Calendar, ArrowRight, Eye, ShieldAlert, Cpu } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
 import ProductsCarousel from '@/components/ProductsCarousel';
+import AdSense from '@/components/AdSense';
+import { AD_SLOTS } from '@/lib/adSlots';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -92,6 +94,8 @@ export default async function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+
       {/* 3-Column Newspaper Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
@@ -123,7 +127,7 @@ export default async function Home() {
                     </span>
                   </div>
                   <h3 className="text-sm font-bold text-white group-hover:text-primary transition-colors leading-tight font-sans">
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h3>
@@ -147,12 +151,14 @@ export default async function Home() {
           {featuredArticle && (
             <article className="group space-y-6 pb-8 border-b border-white/5">
               <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 shadow-2xl transition-all duration-500">
-                <SafeImage 
-                  src={getArticleImage(featuredArticle)} 
-                  fallbackSrc={getCategoryFallbackImage(featuredArticle.category)}
+                <Image
+                  src={getArticleImage(featuredArticle)}
                   alt={featuredArticle.ai_title || "Destacada"}
+                  fill
+                  sizes="100vw"
+                  priority
+                  fetchPriority="high"
                   className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
-                  loading="eager"
                 />
                 
                 {/* Image Overlay */}
@@ -168,7 +174,7 @@ export default async function Home() {
 
               <div className="space-y-4">
                 <h2 className="text-3xl md:text-5xl font-black text-white font-serif leading-[1.05] tracking-tight group-hover:text-primary transition-colors duration-300">
-                  <Link href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title)}>
+                  <Link href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title, featuredArticle.category)}>
                     {featuredArticle.ai_title || featuredArticle.original_title}
                   </Link>
                 </h2>
@@ -184,7 +190,7 @@ export default async function Home() {
                     {new Date(featuredArticle.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                   </span>
                   <Link 
-                    href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title)}
+                    href={buildArticleUrl(featuredArticle.id, featuredArticle.ai_title || featuredArticle.original_title, featuredArticle.category)}
                     className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:text-white uppercase tracking-wider transition-colors"
                   >
                     Leer Reporte IA
@@ -217,7 +223,7 @@ export default async function Home() {
                 <div className="space-y-2 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
                     <h3 className="text-lg font-black font-serif text-white leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                      <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
+                      <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
                         {article.ai_title || article.original_title}
                       </Link>
                     </h3>
@@ -230,7 +236,7 @@ export default async function Home() {
                     <span>
                       {new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                     </span>
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)} className="text-primary hover:text-white transition-colors">
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)} className="text-primary hover:text-white transition-colors">
                       Leer más +
                     </Link>
                   </div>
@@ -255,7 +261,7 @@ export default async function Home() {
                   <Cpu size={14} className="animate-pulse" />
                 </div>
                 <h3 className="text-xs font-black uppercase tracking-wider text-white">
-                  EduNews AI Engine
+                  El Irónico AI Engine
                 </h3>
               </div>
               
@@ -306,7 +312,7 @@ export default async function Home() {
                     {article.category || 'Mundo'}
                   </span>
                   <h3 className="text-sm font-black font-serif text-white leading-tight group-hover:text-primary transition-colors">
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title)}>
+                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
                       {article.ai_title || article.original_title}
                     </Link>
                   </h3>
@@ -314,7 +320,7 @@ export default async function Home() {
                     {(article.ai_content || article.original_content).replace(/<[^>]*>/g, '').substring(0, 100)}...
                   </p>
                   <div className="pt-1 flex items-center justify-between text-[9px] text-slate-500 font-medium">
-                    <span className="italic">Redacción EduNews</span>
+                    <span className="italic">Redacción El Irónico</span>
                     <span>{new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
                   </div>
                 </article>
@@ -329,6 +335,17 @@ export default async function Home() {
         </aside>
 
       </div>
+
+      {/* AdSense relocated from top banner to homepage bottom */}
+      {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
+        <div className="mt-12 p-4 bg-slate-900/50 rounded-lg border border-white/5 ad-container">
+          <AdSense 
+            slot={AD_SLOTS.HOMEPAGE_TOP} 
+            format="auto"
+            className="w-full"
+          />
+        </div>
+      )}
     </div>
   );
 }

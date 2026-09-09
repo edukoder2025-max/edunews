@@ -83,7 +83,7 @@ export default function ComoFuncionaPage() {
   const runSimulation = () => {
     setSimStatus("fetching");
     setLogs([
-      "🔋 Iniciando EduNews AI Engine...",
+      "🔋 Iniciando El Irónico AI Engine...",
       `📡 Conectando a feeds RSS en tiempo real...`,
       `🔍 Escaneando titulares sobre: "${activeTopic.title}"...`
     ]);
@@ -116,7 +116,7 @@ export default function ComoFuncionaPage() {
         ...prev,
         `✅ Artículo neutralizado con éxito.`,
         `📝 Título Aprobado: "${activeTopic.neutralTitle}"`,
-        `🚀 Desplegando en EduNews Frontpage.`
+        `🚀 Desplegando en El Irónico Frontpage.`
       ]);
     }, 5000);
   };
@@ -135,7 +135,7 @@ export default function ComoFuncionaPage() {
           Radical Transparency / Transparencia Radical
         </span>
         <h1 className="text-4xl md:text-6xl font-black text-white font-serif tracking-tight uppercase italic text-center">
-          La Caja Negra de EduNews
+          La Caja Negra de El Irónico
         </h1>
         <p className="text-base text-slate-400 max-w-2xl mx-auto font-sans leading-relaxed">
           Los diarios tradicionales ocultan sus sesgos editoriales. Nosotros te mostramos exactamente cómo nuestro algoritmo de IA desarma la retórica partidista para entregarte los hechos limpios.
@@ -337,7 +337,7 @@ export default function ComoFuncionaPage() {
         </h2>
         
         <p className="text-sm text-slate-400 leading-relaxed font-sans max-w-3xl">
-          El periodismo moderno sufre una crisis de credibilidad. Para asegurar la imparcialidad radical, EduNews programa a sus agentes de IA bajo parámetros lógicos inalterables diseñados para filtrar la paja retórica y rescatar la verdad empírica.
+          El periodismo moderno sufre una crisis de credibilidad. Para asegurar la imparcialidad radical, El Irónico programa a sus agentes de IA bajo parámetros lógicos inalterables diseñados para filtrar la paja retórica y rescatar la verdad empírica.
         </p>
 
         <div className="pt-6 border-t border-white/5 space-y-4">
@@ -370,7 +370,7 @@ export default function ComoFuncionaPage() {
               <span className="h-5 w-5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-black text-[9px] flex-shrink-0 mt-0.5">4</span>
               <div>
                 <strong className="text-white block mb-0.5">Atribución de Fuente de Fuente Abierta</strong>
-                EduNews preserva la trazabilidad total del reporte. Cada noticia reescrita enlaza visualmente a la fuente RSS cruda original, permitiendo al usuario contrastar el origen cuando lo desee.
+                El Irónico preserva la trazabilidad total del reporte. Cada noticia reescrita enlaza visualmente a la fuente RSS cruda original, permitiendo al usuario contrastar el origen cuando lo desee.
               </div>
             </li>
           </ul>

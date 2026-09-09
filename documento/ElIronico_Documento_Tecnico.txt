@@ -1,7 +1,4 @@
-
-
-
-EduNews
+El Ironico
 Documento Técnico y Estratégico
 Pipeline de IA · Mejoras · Hoja de Ruta · Prácticas Recomendadas
 Versión
@@ -13,7 +10,7 @@ Mejoras
 
 
 1. Resumen ejecutivo
-EduNews es un medio digital 100% automatizado que procesa noticias desde feeds RSS de los principales medios argentinos e internacionales, y las reescribe usando Inteligencia Artificial (Gemini 2.5 Flash de Google) para eliminar lenguaje sesgado, sensacionalismo y retórica política.
+El Ironico es un medio digital 100% automatizado que procesa noticias desde feeds RSS de los principales medios argentinos e internacionales, y las reescribe usando Inteligencia Artificial (Gemini 2.5 Flash de Google) para eliminar lenguaje sesgado, sensacionalismo y retórica política.
 
 El sitio está desplegado sobre Vercel, probablemente con Next.js como framework, y es operado por una sola persona. Su diferencial principal es la promesa de transparencia editorial: cada artículo incluye pestañas de auditoría que muestran el proceso de neutralización.
 
@@ -23,7 +20,7 @@ La IA toma artículos de fuentes con sesgo conocido y los reescribe bajo 4 direc
 El resultado se publica con trazabilidad total hacia la fuente original.
 
 Sitio web
-https://edunews2.vercel.app
+https://elironico.com
 Motor de IA
 Gemini 2.5 Flash (Google)
 Infraestructura
@@ -55,7 +52,7 @@ Si la noticia involucra controversia ideológica, la IA presenta declaraciones d
 3. Citas textuales aisladas
 Las citas de protagonistas se preservan en bloques blockquote, sin parafraseo que altere el sentido.
 4. Atribución de fuente abierta
-Cada artículo enlaza a la fuente RSS original para que el lector pueda contrastar.
+Cada artículo enlaza a la fuente RSS original para que el lector pueda contrastar. 
 
 
 3. Nueva propuesta: pipeline de dos fuentes
@@ -264,7 +261,7 @@ Pedir a Gemini que devuelva este campo adicional junto con el artículo:
 
 
 5. Estrategia de credibilidad editorial
-La mayor amenaza para EduNews no es técnica sino de percepción. La promesa de neutralidad necesita evidencia concreta, no solo afirmaciones.
+La mayor amenaza para El Ironico no es técnica sino de percepción. La promesa de neutralidad necesita evidencia concreta, no solo afirmaciones.
 
 5.1 Página de metodología
 Crear la ruta /metodologia con el siguiente contenido mínimo:
@@ -284,7 +281,7 @@ Renderizar en la pestaña: texto original vs. texto neutralizado, frases modific
 La página 'Quiénes somos' actual tiene tres líneas. Para construir confianza mínima debe incluir:
 Nombre o alias del fundador con contexto (periodista, desarrollador, activista).
 La motivación detrás del proyecto en primera persona.
-Un compromiso editorial firmado (qué promete y qué NO promete EduNews).
+Un compromiso editorial firmado (qué promete y qué NO promete El Ironico).
 Mecanismo de contacto y reporte para errores editoriales.
 
 
@@ -345,10 +342,10 @@ GOOGLE_CSE_KEY=your_google_cse_key_here
 GOOGLE_CSE_ID=your_google_cse_id_here
 
 6.6 Estructura de carpetas recomendada
-edunews/
+elironico/
 ├── prompts/
 │   ├── neutralize-single-source.txt   ← prompt actual
-│   └── neutralize-dual-source.txt     ← prompt nuevo
+   └── neutralize-dual-source.txt     ← prompt nuevo
 ├── lib/
 │   ├── gemini.js      ← cliente Gemini con retry
 │   ├── googleCSE.js   ← cliente de búsqueda
@@ -389,7 +386,7 @@ Evaluar expansión a fuentes en portugués.
 8. Guía de configuración: Google Custom Search
 Estos son los pasos exactos para obtener las credenciales necesarias para el nuevo pipeline:
 
-Ir a https://console.cloud.google.com y crear un nuevo proyecto llamado 'EduNews'.
+Ir a https://console.cloud.google.com y crear un nuevo proyecto llamado 'El Ironico'.
 En 'APIs y servicios' → 'Biblioteca', buscar 'Custom Search API' y habilitarla.
 Ir a 'Credenciales' → 'Crear credenciales' → 'Clave de API'. Copiar el valor como GOOGLE_CSE_KEY.
 Ir a https://cse.google.com y crear un nuevo motor de búsqueda.
@@ -404,4 +401,4 @@ Si el volumen de artículos supera ese límite, implementar fallback al pipeline
 El plan pago comienza en USD 5 por cada 1000 búsquedas adicionales.
 
 
-EduNews · Documento generado en Junio 2026
+El Ironico · Documento generado en Junio 2026

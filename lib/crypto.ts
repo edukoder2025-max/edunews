@@ -17,7 +17,7 @@ export async function fetchLiveCryptoData(): Promise<CryptoData[]> {
       next: { revalidate: 120 },
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'EduNews/1.0'
+        'User-Agent': 'El Irónico/1.0'
       }
     });
     if (!res.ok) throw new Error(`CoinGecko API error: ${res.status}`);

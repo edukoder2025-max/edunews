@@ -2,6 +2,15 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
+  "headers": [
+    {
+      "source": "/02185f83b50749a28c480e57ea54180d.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    }
+  ],
   "crons": [
     {
       "path": "/api/fetch-news",

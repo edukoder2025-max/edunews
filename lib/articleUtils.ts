@@ -98,16 +98,22 @@ export function isValidImageUrl(url: string) {
   return false;
 }
 
-export function buildArticleUrl(articleId: string, title: string, baseUrl?: string) {
+export function normalizeCategorySlug(category: string) {
+  return slugify(category || 'general');
+}
+
+export function buildArticleUrl(articleId: string, title: string, category?: string, baseUrl?: string) {
   const slug = slugify(title || 'noticia');
-  const path = `/news/${articleId}${slug ? `-${slug}` : ''}`;
+  const categorySlug = normalizeCategorySlug(category || 'general');
+  const articleSegment = slug ? `${slug}-${articleId}` : articleId;
+  const path = `/noticias/${categorySlug}/${articleSegment}`;
   return baseUrl ? `${baseUrl.replace(/\/$/, '')}${path}` : path;
 }
 
 export function extractArticleId(pathParam: string) {
   if (!pathParam) return pathParam;
 
-  const uuidMatch = pathParam.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+  const uuidMatch = pathParam.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
   if (uuidMatch) {
     return uuidMatch[0];
   }

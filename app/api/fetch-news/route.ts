@@ -4,6 +4,7 @@ import { rewriteNews } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
 import { findAlternativeSources } from '@/lib/googleCSE';
 import { fetchRelevantImage } from '@/lib/imageFetcher';
+import { buildArticleUrl } from '@/lib/articleUtils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,23 +17,30 @@ const RSS_FEEDS = [
   'https://elpais.com/rss/elpais/portada.xml', // El País (España / Centro-Izquierda)
   'https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml', // El Mundo (España / Centro-Derecha)
   'https://www.rtve.es/rss/temas_noticias.xml', // RTVE Noticias (España / Pública)
+  'https://rss.dw.com/rdf/rss-es-all', // DW en Español (Alemania / Global Pública)
+  'https://cnnespanol.cnn.com/feed/', // CNN en Español (EEUU / Global Masivo)
 
   // 2. Argentina: Izquierda / Progresismo / Keynesianismo
   'https://www.pagina12.com.ar/rss/articulos', // Página 12 (Argentina / Izquierda Nacional)
   'https://www.laizquierdadiario.com/spip.php?page=backend', // La Izquierda Diario (Argentina / Socialismo-Marxismo)
   'https://www.ambito.com/rss/home.xml', // Ámbito Financiero (Argentina / Centro-Izquierda Económica)
   'https://www.eldiario.es/rss/', // elDiario.es (España / Progresismo)
+  'https://www.eldestapeweb.com/rss/feed.xml', // El Destape (Argentina / Kirchnerismo-Izquierda)
+  'https://www.c5n.com/rss/c5n.xml', // C5N (Argentina / Oficialismo-Izquierda)
 
   // 3. Argentina: Centro / Derecha / Liberalismo
   'https://tn.com.ar/rss.xml', // TN Noticias (Argentina / Centro-Derecha Comercial)
   'https://www.clarin.com/rss/lo-ultimo/', // Clarín (Argentina / Centro Comercial)
   'https://www.lanacion.com.ar/arc/outboundfeeds/rss/', // La Nación (Argentina / Conservador-Liberal)
   'https://www.infobae.com/feeds/rss/', // Infobae (Argentina / Centro-Derecha Masivo)
+  'https://elobservador.com.ar/rss', // El Observador (Argentina / Centro-Derecha Liberal)
+  'https://www.laprensa.com.ar/Rss.aspx?IdSeccion=14', // La Prensa (Argentina / Conservador Tradicional)
   
   // 4. Finanzas / Mercados / Libertarios
   'https://www.cronista.com/files/rss/news.xml', // El Cronista (Argentina / Negocios y Finanzas)
   'https://feeds.feedburner.com/libertaddigital/portada', // Libertad Digital (España-Latam / Liberal-Libertario)
-  'https://www.perfil.com/rss/ultimo-momento' // Perfil (Argentina / Centrista Analítico)
+  'https://www.perfil.com/rss/ultimo-momento', // Perfil (Argentina / Centrista Analítico)
+  'https://eleconomista.com.ar/rss/feed.xml' // El Economista (Argentina / Análisis Económico)
 ];
 
 // Función para desordenar un array (Fisher-Yates)
@@ -138,9 +146,11 @@ export async function GET(request: Request) {
           sources_used: rewritten.sources_used || (alternatives.length > 0 ? alternatives.map((a: any) => a.source) : [article.sourceName])
         };
 
-        let { error: dbError } = await supabase
+        let { data: insertedRow, error: dbError } = await supabase
           .from('news_articles')
-          .insert(insertPayload);
+          .insert(insertPayload)
+          .select('id')
+          .single();
 
         // Fallback si no existen las columnas de sesgo en Supabase
         if (dbError && (dbError.message?.includes('column') || dbError.code === 'PGRST204')) {
@@ -150,17 +160,36 @@ export async function GET(request: Request) {
           delete fallbackPayload.bias_score;
           delete fallbackPayload.sources_used;
 
-          const { error: fallbackError } = await supabase
+          const { data: fallbackRow, error: fallbackError } = await supabase
             .from('news_articles')
-            .insert(fallbackPayload);
-          
+            .insert(fallbackPayload)
+            .select('id')
+            .single();
+
           dbError = fallbackError;
+          if (!dbError) insertedRow = fallbackRow;
         }
 
         if (dbError) {
           errors.push(`Error en BD para: ${article.title} - ${dbError.message}`);
         } else {
           processedCount++;
+
+          // Ping IndexNow (silencioso — no bloquea ni rompe el flujo)
+          if (insertedRow?.id) {
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.elironico.com';
+            const articleUrl = buildArticleUrl(
+              insertedRow.id,
+              rewritten.new_title || article.title,
+              rewritten.category || 'General',
+              siteUrl
+            );
+            fetch(`${siteUrl}/api/indexnow`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: articleUrl }),
+            }).catch((err) => console.warn('[IndexNow] Ping failed (non-blocking):', err?.message));
+          }
         }
       }
     }

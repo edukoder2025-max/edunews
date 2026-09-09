@@ -1,6 +1,6 @@
 name: Daily news and newsletter
 
-on:
+'on':
   schedule:
     - cron: '0 6 * * *' # Ajusta esta hora según UTC.
   workflow_dispatch:
@@ -22,3 +22,18 @@ jobs:
           echo "Llamando a /api/send-daily-newsletter..."
           curl --fail -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://ultimo-news2026.vercel.app/api/send-daily-newsletter"
+            
+          DAY_OF_WEEK=$(date +%u)
+          echo "Día de la semana detectado: $DAY_OF_WEEK (1=Lunes, 5=Viernes, 7=Domingo)"
+          
+          if [ "$DAY_OF_WEEK" -eq 5 ]; then
+            echo "Es Viernes: Llamando a /api/send-daily-newsletter?type=plus..."
+            curl --fail -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              "https://ultimo-news2026.vercel.app/api/send-daily-newsletter?type=plus"
+          fi
+          
+          if [ "$DAY_OF_WEEK" -eq 7 ]; then
+            echo "Es Domingo: Llamando a /api/send-daily-newsletter?type=premium..."
+            curl --fail -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              "https://ultimo-news2026.vercel.app/api/send-daily-newsletter?type=premium"
+          fi

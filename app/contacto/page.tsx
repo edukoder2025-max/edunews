@@ -66,7 +66,7 @@ export default function ContactPage() {
       <div className="mt-20 text-center p-12 glass-panel rounded-3xl border border-white/5">
         <h3 className="text-2xl font-black text-white mb-4">Misión Editorial</h3>
         <p className="text-slate-400 max-w-3xl mx-auto italic leading-relaxed">
-          "En EduNews, nuestro compromiso es con la verdad y la tecnología. Utilizamos la Inteligencia Artificial no para reemplazar el criterio humano, sino para potenciar la neutralidad y el acceso a la información ética y transparente."
+          "En El Irónico, nuestro compromiso es con la verdad y la tecnología. Utilizamos la Inteligencia Artificial no para reemplazar el criterio humano, sino para potenciar la neutralidad y el acceso a la información ética y transparente."
         </p>
       </div>
     </div>

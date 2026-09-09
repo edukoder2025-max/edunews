@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { TrendingUp, TrendingDown, Activity, AlertCircle, Zap } from 'lucide-react';
 import { CryptoData } from '@/lib/crypto';
 
@@ -66,8 +67,14 @@ export default function CryptoWidget() {
             key={`${coin.id}-${index}`}
             className="flex items-center gap-4 px-4 py-1 border-r border-white/5 hover:bg-white/[0.02] transition-colors cursor-default group/item"
           >
-            <div className="relative">
-              <img src={coin.image} alt={coin.name} className="w-4 h-4 grayscale group-hover/item:grayscale-0 transition-all duration-300" />
+            <div className="relative w-4 h-4">
+              <Image
+                src={coin.image}
+                alt={coin.name}
+                width={20}
+                height={20}
+                className="w-4 h-4 grayscale group-hover/item:grayscale-0 transition-all duration-300"
+              />
               <div className="absolute inset-0 bg-emerald-400/20 blur-sm opacity-0 group-hover/item:opacity-100 transition-opacity" />
             </div>
             

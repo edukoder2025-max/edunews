@@ -120,7 +120,7 @@ export default function NewsletterForm() {
                 className="mt-0.5 rounded border-white/10 bg-slate-900 text-primary focus:ring-0 cursor-pointer"
               />
               <label htmlFor="privacy-agreement" className="text-[10px] text-slate-400 hover:text-slate-300 transition-colors leading-tight cursor-pointer">
-                Acepto la <a href="/privacidad" className="text-primary hover:underline">Política de Privacidad</a> y consiento el envío del boletín diario de EduNews.
+                Acepto la <a href="/privacidad" className="text-primary hover:underline">Política de Privacidad</a> y consiento el envío del boletín diario de El Irónico.
               </label>
             </div>
           </form>

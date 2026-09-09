@@ -169,7 +169,7 @@ export default async function SearchPage({
           {results.map((article) => (
             <Link
               key={article.id}
-              href={buildArticleUrl(article.id, article.ai_title || article.original_title)}
+              href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}
               className="group flex flex-col overflow-hidden rounded-xl border border-white/10 hover:border-primary/40 bg-slate-900/30 hover:bg-slate-900/60 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
             >
               {/* Imagen */}
