@@ -35,11 +35,11 @@ export function isSimilarStory(title: string, knownTitles: string[], threshold =
     if (known.size < 4) return false;
 
     let intersection = 0;
-    for (const token of current) {
+    current.forEach((token) => {
       if (known.has(token)) intersection++;
-    }
+    });
 
-    const union = new Set([...current, ...known]).size;
+    const union = new Set(Array.from(current).concat(Array.from(known))).size;
     return union > 0 && intersection / union >= threshold;
   });
 }
