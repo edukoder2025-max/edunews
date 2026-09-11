@@ -1,3 +1,12 @@
+import type { Metadata } from 'next';
+import { getSiteUrl } from '@/lib/seoUtils';
+
+export const metadata: Metadata = {
+  title: 'Términos de Servicio | El Irónico',
+  description: 'Términos y condiciones de uso de El Irónico.',
+  alternates: { canonical: `${getSiteUrl()}/terminos` },
+};
+
 export default function TermsPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-20 prose prose-invert prose-slate">
