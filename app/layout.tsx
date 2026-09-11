@@ -118,7 +118,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es" className="dark">
-      <body className={`${inter.variable} ${playfair.variable} font-sans bg-background text-slate-200 antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} font-sans editorial-paper bg-background text-slate-200 antialiased`}>
         {/* SVG Filter: Chalk-on-Blackboard turbulence effect — usado por .chalk-title */}
         <svg
           style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
@@ -378,4 +378,5 @@ export default async function RootLayout({
     </html>
   );
 }
+
 
