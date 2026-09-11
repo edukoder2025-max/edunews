@@ -106,9 +106,27 @@ export default async function CategoryPage({ params }: { params: { slug: string 
   const canonicalCategorySlug = normalizeCategorySlug(rawCategory);
   const category = getCategoryFromSlug(canonicalCategorySlug);
   const news = await getNewsByCategory(category);
+  const siteUrl = getSiteUrl();
+  const categoryStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${category} | Noticias neutralizadas - El Irónico`,
+    description: generateSitemapDescription(category),
+    url: `${siteUrl}/categoria/${canonicalCategorySlug}`,
+    isPartOf: { '@type': 'WebSite', name: 'El Irónico', url: siteUrl },
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: news.map((article, index) => ({
+        '@type': 'ListItem', position: index + 1,
+        url: `${siteUrl}${buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}`,
+        name: article.ai_title || article.original_title
+      }))
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryStructuredData) }} />
       <div className="mb-6">
         <Link
           href="/"
