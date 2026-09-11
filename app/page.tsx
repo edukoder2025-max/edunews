@@ -10,6 +10,7 @@ import { AD_SLOTS } from '@/lib/adSlots';
 import { NEWS_SOURCES } from '@/lib/newsSources';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
 import { applyEditorialOverride, shouldRedirectEditorialArticle } from '@/lib/editorialOverrides';
+import { getSiteUrl } from '@/lib/seoUtils';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -69,6 +70,14 @@ function getCategoryFallbackImage(category: string) {
 
 export default async function Home() {
   const news = await getNews();
+  const siteUrl = getSiteUrl();
+  const homeStructuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'WebSite', '@id': `${siteUrl}/#website`, url: siteUrl, name: 'El Irónico', inLanguage: 'es-AR', description: 'Noticias de Argentina y el mundo con contexto y análisis.' },
+      { '@type': 'Organization', '@id': `${siteUrl}/#organization`, name: 'El Irónico', url: siteUrl, logo: `${siteUrl}/logo-square.png` }
+    ]
+  };
 
   if (news.length === 0) {
     return (
@@ -101,6 +110,7 @@ export default async function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }} />
       <header className="mb-5 sm:mb-8 border-b border-white/10 pb-4 sm:pb-5">
         <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-primary">Edición digital</p>
         <h1 className="text-2xl sm:text-4xl font-black font-serif text-white leading-tight mt-2">
