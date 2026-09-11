@@ -51,9 +51,27 @@ export default async function TopicPage({ params }: { params: { slug: string } }
   if (!topic) notFound();
 
   const articles = await getTopicArticles(topic.slug);
+  const siteUrl = getSiteUrl();
+  const topicStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${topic.title} | El Irónico`,
+    description: topic.description,
+    url: `${siteUrl}/temas/${topic.slug}`,
+    isPartOf: { '@type': 'WebSite', name: 'El Irónico', url: siteUrl },
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: articles.map((article, index) => ({
+        '@type': 'ListItem', position: index + 1,
+        url: `${siteUrl}${buildArticleUrl(article.id, article.ai_title || article.original_title || 'Noticia', article.category)}`,
+        name: article.ai_title || article.original_title || 'Noticia'
+      }))
+    }
+  };
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(topicStructuredData) }} />
       <Link
         href="/temas"
         className="inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-xs font-black uppercase tracking-widest"
