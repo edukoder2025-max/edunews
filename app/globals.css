@@ -235,3 +235,128 @@ body {
   border-radius: 9999px !important;
 }
 
+
+
+
+/* ─────────────────────────────────────────────
+   EL IRÓNICO 2.0 — Editorial paper system
+   Newspaper hierarchy with responsive mobile-first layout.
+   ───────────────────────────────────────────── */
+body.editorial-paper {
+  --paper: #f5f1e8;
+  --paper-deep: #e9e2d5;
+  --ink: #1c1c1a;
+  --muted-ink: #625d55;
+  --rule: #c9bda9;
+  --accent: #a8322d;
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+  background-image: radial-gradient(rgba(28, 28, 26, .045) .65px, transparent .65px) !important;
+  background-size: 7px 7px !important;
+  background-attachment: fixed !important;
+}
+
+body.editorial-paper::before {
+  content: '';
+  display: block;
+  height: 5px;
+  width: 100%;
+  background: var(--accent);
+}
+
+body.editorial-paper .text-white,
+body.editorial-paper .text-slate-100,
+body.editorial-paper .text-slate-200,
+body.editorial-paper .text-slate-300 {
+  color: var(--ink) !important;
+}
+body.editorial-paper .text-slate-400,
+body.editorial-paper .text-slate-500,
+body.editorial-paper .text-slate-600 {
+  color: var(--muted-ink) !important;
+}
+body.editorial-paper .bg-slate-950,
+body.editorial-paper .bg-slate-950\/40,
+body.editorial-paper .bg-slate-950\/80,
+body.editorial-paper .bg-slate-900,
+body.editorial-paper .bg-slate-900\/50,
+body.editorial-paper .bg-surface,
+body.editorial-paper .bg-background {
+  background-color: rgba(255, 252, 246, .86) !important;
+}
+body.editorial-paper .border-white\/5,
+body.editorial-paper .border-white\/10,
+body.editorial-paper .border-white\/20,
+body.editorial-paper .divide-white\/5 {
+  border-color: var(--rule) !important;
+}
+body.editorial-paper .glass-panel {
+  background: rgba(255, 252, 246, .9) !important;
+  border: 1px solid var(--rule) !important;
+  box-shadow: 0 14px 35px rgba(74, 55, 33, .08) !important;
+  backdrop-filter: none !important;
+}
+body.editorial-paper header {
+  border-color: var(--rule) !important;
+}
+body.editorial-paper > div > header {
+  max-width: 1280px;
+  padding-top: 1.25rem;
+}
+body.editorial-paper > div > header a {
+  color: var(--ink);
+}
+body.editorial-paper main {
+  color: var(--ink);
+}
+body.editorial-paper main article {
+  border-color: var(--rule) !important;
+}
+body.editorial-paper main article h1,
+body.editorial-paper main article h2,
+body.editorial-paper main article h3 {
+  letter-spacing: -.02em;
+}
+body.editorial-paper a:hover {
+  color: var(--accent) !important;
+}
+body.editorial-paper .bg-primary {
+  background-color: var(--accent) !important;
+}
+body.editorial-paper .text-primary {
+  color: var(--accent) !important;
+}
+body.editorial-paper .border-primary\/20,
+body.editorial-paper .border-primary\/10 {
+  border-color: rgba(168, 50, 45, .28) !important;
+}
+body.editorial-paper input,
+body.editorial-paper select,
+body.editorial-paper textarea {
+  background: #fffdf8 !important;
+  color: var(--ink) !important;
+  border-color: var(--rule) !important;
+}
+
+/* Newspaper rules and readable article measure */
+body.editorial-paper .border-newspaper-double,
+body.editorial-paper .border-newspaper-double-b,
+body.editorial-paper .border-newspaper-double-t {
+  border-color: rgba(168, 50, 45, .5) !important;
+}
+body.editorial-paper .prose {
+  color: var(--ink) !important;
+}
+body.editorial-paper .prose :where(h1,h2,h3,h4,strong) {
+  color: var(--ink) !important;
+}
+
+@media (max-width: 640px) {
+  body.editorial-paper::before { height: 4px; }
+  body.editorial-paper > div > header { padding-top: .75rem; }
+  body.editorial-paper main { padding-top: .5rem; }
+  body.editorial-paper main h1 { font-size: clamp(2rem, 10vw, 3.5rem); line-height: .98; }
+  body.editorial-paper main h2 { font-size: clamp(1.25rem, 6vw, 2rem); line-height: 1.08; }
+  body.editorial-paper .glass-panel { border-radius: 1rem !important; }
+  body.editorial-paper main article { padding-bottom: 1rem; }
+}
