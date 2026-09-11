@@ -4,6 +4,7 @@ name: IndexNow Submit
   push:
     branches:
       - main
+      - rename/elironico
   schedule:
     - cron: "0 * * * *" # hourly
   workflow_dispatch: {}
