@@ -1,3 +1,12 @@
+import type { Metadata } from 'next';
+import { getSiteUrl } from '@/lib/seoUtils';
+
+export const metadata: Metadata = {
+  title: 'Política de Privacidad | El Irónico',
+  description: 'Política de privacidad, cookies y tratamiento de datos de El Irónico.',
+  alternates: { canonical: `${getSiteUrl()}/privacidad` },
+};
+
 export default function PrivacyPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-20 prose prose-invert prose-slate">
