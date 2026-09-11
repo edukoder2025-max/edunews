@@ -1,4 +1,12 @@
+import type { Metadata } from 'next';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { getSiteUrl } from '@/lib/seoUtils';
+
+export const metadata: Metadata = {
+  title: 'Contacto | El Irónico',
+  description: 'Contactá a la redacción, soporte técnico y publicidad de El Irónico.',
+  alternates: { canonical: `${getSiteUrl()}/contacto` },
+};
 
 export default function ContactPage() {
   return (
