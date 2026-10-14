@@ -185,6 +185,19 @@ export default async function RootLayout({
         /> */}
         
         <div className="min-h-screen flex flex-col">
+          <section
+            data-nosnippet="true"
+            role="status"
+            aria-labelledby="editorial-maintenance-title"
+            className="w-full border-y border-amber-300/20 bg-amber-950/90 px-4 py-6 sm:py-9"
+          >
+            <div className="mx-auto max-w-5xl rounded-3xl border border-amber-200/25 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/60 px-5 py-8 text-center shadow-2xl shadow-black/30 sm:px-10 sm:py-11">
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-amber-300">Pausa editorial · 14 al 22 de octubre</p>
+              <h2 id="editorial-maintenance-title" className="font-serif text-2xl font-black leading-tight text-white sm:text-4xl">Estamos mejorando nuestro sistema para vos</h2>
+              <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-slate-200 sm:text-lg">Estamos revisando nuestras fuentes y renovando nuestro proceso editorial para volver con información más propia, precisa y con mayor contexto.</p>
+              <p className="mt-5 text-sm font-bold text-amber-200 sm:text-base">Estimamos volver entre el 21 y el 22 de octubre.</p>
+            </div>
+          </section>
           {/* OCULTO: Initialize SWG - Temporalmente deshabilitado */}
           {/* <SWGInitializer /> */}
 

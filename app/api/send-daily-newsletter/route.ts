@@ -7,6 +7,8 @@ import { getNewsletterTopic, getNewsletterTopicFilter } from '@/lib/newsletterTo
 
 export const dynamic = 'force-dynamic';
 
+const NEWSLETTER_SENDING_PAUSED = true; // Envíos pausados durante la revisión editorial de octubre de 2026.
+
 export async function GET(request: Request) {
   return handleRequest(request);
 }
@@ -16,13 +18,20 @@ export async function POST(request: Request) {
 }
 
 async function handleRequest(request: Request) {
+  if (NEWSLETTER_SENDING_PAUSED) {
+    return NextResponse.json(
+      { success: false, paused: true, message: 'El envío de newsletters está pausado durante una revisión editorial.' },
+      { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
+    );
+  }
+
   try {
     // 1. Validar la protección por CRON_SECRET
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
     
-    // Si CRON_SECRET está configurado, exigir la cabecera correspondiente
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // El endpoint falla cerrado si falta el secreto o la cabecera no coincide.
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(
         { success: false, error: 'Acceso no autorizado' },
         { status: 401 }

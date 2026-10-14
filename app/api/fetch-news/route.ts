@@ -26,17 +26,11 @@ type SourceRunStats = {
   errors: string[];
 };
 
+const EDITORIAL_PUBLICATION_PAUSED = true; // Pausa temporal durante la revisión editorial de octubre de 2026.
+
 function isAuthorized(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
-
-  // Vercel sends Authorization: Bearer $CRON_SECRET for scheduled crons.
-  // Until the secret is configured, preserve the existing manual behavior but
-  // make the missing protection visible in the deployment logs.
-  if (!cronSecret) {
-    console.warn('[fetch-news] CRON_SECRET no está configurado; endpoint sin protección de cron.');
-    return true;
-  }
-
+  if (!cronSecret) return false;
   return request.headers.get('authorization') === `Bearer ${cronSecret}`;
 }
 
@@ -65,6 +59,13 @@ async function articleAlreadyExists(sourceUrl: string, originalTitle: string) {
 }
 
 export async function GET(request: Request) {
+  if (EDITORIAL_PUBLICATION_PAUSED) {
+    return NextResponse.json(
+      { success: false, paused: true, message: 'La publicación automática está pausada durante una revisión editorial.' },
+      { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
+    );
+  }
+
   const startedAt = new Date();
 
   if (!isAuthorized(request)) {
