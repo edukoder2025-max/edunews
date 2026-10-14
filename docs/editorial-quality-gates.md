@@ -65,3 +65,10 @@ Conservar los textos originales y una copia/versionado antes de cualquier modifi
 ## Auditoría mecánica del archivo
 
 El script `scripts/audit_news_archive.py` consulta el archivo con permisos de lectura y produce un CSV de priorización más un resumen JSON. Requiere `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`; no inserta, actualiza ni elimina filas y no llama a modelos. Marca señales como textos muy breves o extensos, falta de URL/fuente, registro de una sola fuente, duplicados y coincidencia textual con el original. Un resultado sin banderas **no es aprobación**: sirve para ordenar la revisión factual y editorial por lotes.
+
+## Prototipo técnico en rama de prueba
+
+- `lib/editorialReview.ts` plantea una revisión separada con `gemini-2.5-pro`; el redactor usa Gemini Flash. Es otra llamada y otro modelo del mismo proveedor, no una verificación independiente de Google ni una garantía de verdad/originalidad. No ejecutar lotes grandes sin verificar el nivel de facturación y fijar un límite de gasto.
+- `lib/supabaseServer.ts` solo crea el cliente de escritura si existe `SUPABASE_SERVICE_ROLE_KEY`, y está marcado para uso exclusivamente del servidor. Esa variable no está configurada en el entorno actual.
+- `supabase/migrations/20261014_editorial_review_queue.sql` crea una cola privada y un registro de eventos con RLS; es una migración de trabajo y aún no se aplicó a la base.
+- La función de revisión no reactiva la ruta de publicación; el interruptor de pausa sigue activo y la ruta pública no debe recuperar permiso de inserción.
