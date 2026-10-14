@@ -8,6 +8,7 @@ root = Path(__file__).parent.parent
 route = (root / "app/api/fetch-news/route.ts").read_text(encoding="utf-8")
 sources = (root / "lib/newsSources.ts").read_text(encoding="utf-8")
 review = (root / "lib/editorialReview.ts").read_text(encoding="utf-8")
+gemini = (root / "lib/gemini.ts").read_text(encoding="utf-8")
 migration = (root / "supabase/migrations/20261014_editorial_review_queue.sql").read_text(encoding="utf-8")
 visibility = (root / "lib/publicationVisibility.ts").read_text(encoding="utf-8")
 public_surfaces = [
@@ -39,7 +40,9 @@ checks = {
     "no public IndexNow call": "/api/indexnow" not in route,
     "private queue uses atomic RPC": "rpc('enqueue_editorial_review_candidate'" in route,
     "AI approval remains pending, never published": "queueStatus = 'review_pending'" in route and "publishedCount: 0" in route,
-    "review uses a separate credential": "process.env.EDITORIAL_REVIEW_API_KEY" in review and "process.env.GEMINI_API_KEY;" not in review,
+    "same Gemini credential powers a separate redactor call": "process.env.GEMINI_API_KEY" in review and "redactedHtmlContent" in review and "redactedHtmlContent" in route and "EDITORIAL_REVIEW_API_KEY" not in review,
+    "pilot is limited to one story per execution": "MAX_STORIES_PER_RUN = 1" in route,
+    "pilot uses the same Gemini key without fallback": "allowFallback: false" in route and "options.allowFallback !== false" in gemini,
     "all configured sources are disabled": sources.count("enabled: false") == 22 and "enabled: true" not in sources,
     "migration has no public publishing status": "'published'" not in migration and "published_article_id" not in migration,
     "private RPC permission is service-role-only": "grant execute on function public.enqueue_editorial_review_candidate" in migration and "from public, anon, authenticated" in migration,

@@ -45,13 +45,13 @@ type SourceRunStats = {
 
 // Independent gates: none may be opened by changing only the pause switch.
 const EDITORIAL_PUBLICATION_PAUSED = true;
-const EDITORIAL_REVIEW_GATE_READY = false; // Requires a chosen independent provider, budget cap, tests, and verified queue schema.
+const EDITORIAL_REVIEW_GATE_READY = false; // Requires second-pass redactor tests and verified private queue schema; same provider is not independent.
 const EDITORIAL_QUEUE_SCHEMA_READY = false; // Migration is prepared but not yet applied/verified.
 const EDITORIAL_AI_BUDGET_APPROVED = false;
 const MAX_SOURCES_PER_RUN = 5;
-const MAX_STORIES_PER_RUN = 5;
+const MAX_STORIES_PER_RUN = 1; // Pilot: at most one story per run to conserve Gemini quota.
 const STORY_WINDOW_HOURS = 48;
-const PROMPT_VERSION = 'editorial-evidence-review-v1';
+const PROMPT_VERSION = 'two-step-gemini-redactor-v2';
 
 function isAuthorized(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -285,8 +285,8 @@ export async function GET(request: Request) {
           'Se retuvo el candidato: no hay dos evidencias aprobadas y de orígenes independientes.'
         );
         lastError = reviewResult.summary;
-      } else if (!process.env.GEMINI_API_KEY || !process.env.EDITORIAL_REVIEW_API_KEY) {
-        reviewResult = heldResult('model_credentials_missing', 'Faltan credenciales separadas para redacción y revisión; el candidato quedó retenido.');
+      } else if (!process.env.GEMINI_API_KEY) {
+        reviewResult = heldResult('gemini_credentials_missing', 'Falta la credencial Gemini compartida por ambas etapas; el candidato quedó retenido.');
         lastError = reviewResult.summary;
       } else {
         const alternatives = orderedItems.slice(1).map((item) => ({
@@ -294,7 +294,7 @@ export async function GET(request: Request) {
           title: item.article.title,
           snippet: plainText(item.article.content).slice(0, 6000),
         }));
-        const rewritten = await rewriteNews(primary.article.title, primary.article.content, alternatives);
+        const rewritten = await rewriteNews(primary.article.title, primary.article.content, alternatives, { allowFallback: false });
         if (!rewritten || rewritten.error || !rewritten.new_title || !rewritten.new_content) {
           reviewResult = heldResult('writer_failed', 'La redacción no produjo un borrador válido; el candidato quedó retenido.');
           lastError = reviewResult.summary;
@@ -308,6 +308,11 @@ export async function GET(request: Request) {
             category,
             evidence,
           });
+          if (reviewResult.redactedTitle && reviewResult.redactedHtmlContent) {
+            draftTitle = reviewResult.redactedTitle;
+            draftContent = reviewResult.redactedHtmlContent;
+            category = normalizeEditorialCategory(category, draftTitle);
+          }
           if (reviewResult.decision === 'approve') {
             queueStatus = 'review_pending'; // AI approval is never publication approval.
           } else if (reviewResult.decision === 'reject') {

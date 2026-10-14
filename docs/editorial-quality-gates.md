@@ -68,11 +68,12 @@ El script `scripts/audit_news_archive.py` consulta el archivo con permisos de le
 
 ## Prototipo técnico en rama de prueba
 
-- `lib/editorialReview.ts` usa una credencial propia (`EDITORIAL_REVIEW_API_KEY`) y otro modelo de Gemini; sigue siendo el mismo proveedor, así que todavía no se considera revisor de proveedor independiente. La clave, el proveedor y el límite de gasto deben aprobarse antes de probar llamadas pagas.
+- La etapa 1 (`rewriteNews`) y la etapa 2 (`reviewEditorialDraft`) hacen llamadas separadas a Gemini con la misma `GEMINI_API_KEY`. La etapa 2 ahora entrega un texto re-redactado y una revisión de afirmaciones; al compartir proveedor/modelo no es una verificación independiente. El flujo piloto desactiva el fallback a `GEMINI_API_KEY_FALLBACK`, se limita a un candidato por ejecución y se detiene si la cuota se agota; el candidato queda retenido.
 - `app/api/fetch-news/route.ts` solo contempla guardar candidatos/borradores en la cola privada mediante una función SQL transaccional; ya no contiene inserciones en `public.news_articles` ni llamada a IndexNow. La ruta permanece detrás de interruptores cerrados y no se ha ejecutado.
 - `lib/supabaseServer.ts` solo crea el cliente de escritura si existe `SUPABASE_SERVICE_ROLE_KEY`, exclusivamente del lado servidor. Esa variable no está configurada en el entorno actual.
 - `supabase/migrations/20261014_editorial_review_queue.sql` prepara una cola privada, un registro de eventos y una función de escritura transaccional con RLS. No se aplicó a la base; antes habrá que revisar su compatibilidad y obtener autorización explícita.
-- La ruta de publicación conserva la pausa; aun si alguien cambiara ese interruptor, siguen cerrados los gates de revisor, presupuesto y esquema. No se restableció ningún permiso de escritura público.
+- La publicación conserva la pausa; los gates de segunda etapa, presupuesto y esquema siguen cerrados. Un `approve` de Gemini solo pasa a `review_pending`: Zapia debe revisar y editar el texto final, y no se publica automáticamente.
+- El piloto usa únicamente la `GEMINI_API_KEY` existente, sin otra credencial ni fallback. Está pensado para 7–8 días con un máximo de un candidato por ejecución; si Gemini agota la cuota o falla la segunda etapa, el candidato queda retenido. No se habilitaron llamadas ni escritura mientras faltan pruebas y autorización para aplicar la cola privada.
 
 ## Demostración de archivo oculto en preview
 

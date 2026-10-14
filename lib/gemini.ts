@@ -42,7 +42,8 @@ function cleanHtml(html: string): string {
 export async function rewriteNews(
   originalTitle: string,
   originalContent: string,
-  alternatives: any[] = []
+  alternatives: any[] = [],
+  options: { allowFallback?: boolean } = {},
 ) {
   let referenceBlock = `
   FUENTE PRINCIPAL:
@@ -125,7 +126,7 @@ export async function rewriteNews(
   } catch (primaryError: any) {
     const isQuotaError = primaryError.message?.includes('429') || primaryError.message?.includes('quota');
 
-    if (isQuotaError && process.env.GEMINI_API_KEY_FALLBACK) {
+    if (isQuotaError && options.allowFallback !== false && process.env.GEMINI_API_KEY_FALLBACK) {
       console.warn("Cuota excedida en API principal, intentando con API de respaldo...");
       try {
         const fallbackModel = getGeminiModel(true);

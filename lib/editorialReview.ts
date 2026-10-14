@@ -31,6 +31,8 @@ export type EditorialReviewResult = {
   decision: ReviewDecision;
   model: string;
   summary: string;
+  redactedTitle: string | null;
+  redactedHtmlContent: string | null;
   claims: ClaimReview[];
   issues: ReviewIssue[];
 };
@@ -43,6 +45,8 @@ function held(model: string, code: string, description: string): EditorialReview
     decision: 'hold',
     model,
     summary: description,
+    redactedTitle: null,
+    redactedHtmlContent: null,
     claims: [],
     issues: [{ severity: 'major', code, description }],
   };
@@ -62,6 +66,8 @@ function validateReview(raw: unknown, model: string, allowedUrls: Set<string>): 
   if (!raw || typeof raw !== 'object') return held(model, 'invalid_review_json', 'La revisión no devolvió un objeto válido.');
   const value = raw as Record<string, unknown>;
   const decision = value.decision as ReviewDecision;
+  const redactedTitle = typeof value.redactedTitle === 'string' ? value.redactedTitle.trim().slice(0, 500) : null;
+  const redactedHtmlContent = typeof value.redactedHtmlContent === 'string' ? value.redactedHtmlContent.trim().slice(0, 100000) : null;
   const claimsRaw = Array.isArray(value.claims) ? value.claims : [];
   const issuesRaw = Array.isArray(value.issues) ? value.issues : [];
 
@@ -96,20 +102,23 @@ function validateReview(raw: unknown, model: string, allowedUrls: Set<string>): 
   let finalDecision = decision;
   const anyUnsupported = claims.some((claim) => claim.status !== 'supported' || claim.evidenceUrls.length === 0);
   const severeIssue = issues.some((issue) => issue.severity === 'critical' || issue.severity === 'major');
-  if (decision === 'approve' && (claims.length === 0 || anyUnsupported || severeIssue)) finalDecision = 'hold';
+  if (decision === 'approve' && (!redactedTitle || !redactedHtmlContent || claims.length === 0 || anyUnsupported || severeIssue)) finalDecision = 'hold';
 
   return {
     decision: finalDecision,
     model,
-    summary: typeof value.summary === 'string' ? value.summary : 'La revisión terminó sin resumen.',
+    summary: typeof value.summary === 'string' ? value.summary : 'La segunda etapa terminó sin resumen.',
+    redactedTitle,
+    redactedHtmlContent,
     claims,
     issues,
   };
 }
 
 /**
- * Independent second-pass review. This is a separate model call, not proof of truth
- * or originality. Missing/weak evidence, invalid output, or API failure always holds.
+ * Second-pass Gemini redaction and evidence review using the existing Gemini credential.
+ * It is a separate prompt/call, not an independent provider and not proof of truth or originality.
+ * Missing/weak evidence, invalid output, or API failure always holds.
  */
 export async function reviewEditorialDraft(input: {
   title: string;
@@ -117,9 +126,9 @@ export async function reviewEditorialDraft(input: {
   category: string;
   evidence: EditorialEvidence[];
 }): Promise<EditorialReviewResult> {
-  const modelName = process.env.EDITORIAL_REVIEW_MODEL || 'gemini-2.5-pro';
-  const apiKey = process.env.EDITORIAL_REVIEW_API_KEY;
-  if (!apiKey) return held(modelName, 'review_api_key_missing', 'No está configurada la credencial separada para la revisión editorial.');
+  const modelName = process.env.GEMINI_REDACTOR_MODEL || 'gemini-2.5-flash';
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return held(modelName, 'gemini_api_key_missing', 'No está configurada la credencial Gemini ya usada por la primera etapa.');
   if (!input.title.trim() || !input.htmlContent.trim()) return held(modelName, 'empty_draft', 'El borrador está vacío.');
 
   const usableEvidence = input.evidence.filter((item) => {
@@ -150,13 +159,13 @@ export async function reviewEditorialDraft(input: {
     excerpt: item.excerpt.slice(0, 6000),
   }));
 
-  const prompt = `Sos la revisora editorial independiente de El Irónico. Revisá el borrador únicamente contra las evidencias adjuntas; no uses memoria previa ni completes datos faltantes. Una segunda IA no certifica verdad ni originalidad.\n\nCriterios: revisá cada afirmación material, nombres, fechas, cifras, unidades, citas, atribuciones, contexto omitido, tono valorativo, título y similitud con las evidencias. Distinguí hechos de declaraciones. No inventes fuentes ni enlaces. Considerá que dos dominios pueden pertenecer al mismo grupo y no son automáticamente independientes.\n\nAprobá solo si cada afirmación material queda apoyada de manera suficiente y atribuida; si hay duda, una sola fuente no primaria, contradicción, contexto importante faltante o similitud sustancial, decidí hold o revise. Las citas de evidencia deben copiar exactamente una de las URLs provistas.\n\nDevolvé exclusivamente JSON con esta forma: {"decision":"approve|revise|hold|reject","summary":"...","claims":[{"claim":"...","status":"supported|partial|unsupported|contradicted","evidenceUrls":["URL exacta de evidencia"],"note":"..."}],"issues":[{"severity":"critical|major|minor","code":"...","description":"..."}]}. Incluí todas las afirmaciones factuales materiales, no solo una muestra.\n\nBORRADOR:\nTítulo: ${input.title}\nCategoría: ${input.category}\nHTML: ${input.htmlContent.slice(0, 24000)}\n\nEVIDENCIAS:\n${JSON.stringify(evidenceBlock)}`;
+  const prompt = `Sos la IA redactora de segunda etapa de El Irónico. Usás la misma credencial Gemini que la etapa generadora, pero trabajás como una llamada y un prompt separados. Tu tarea es crear una versión editorial final del borrador: original en estructura y redacción, clara, precisa, equilibrada y con valor propio. No hagas sustitución mecánica de sinónimos ni copies frases de las fuentes.\n\nUsá exclusivamente las evidencias adjuntas. No uses memoria, conocimiento externo ni completes datos faltantes. No inventes hechos, cifras, citas, fechas, enlaces ni atribuciones. Conservá el contexto material; distinguí hechos de declaraciones; atribuí las afirmaciones según la evidencia. Si algo no está respaldado, omitilo o marcá la limitación en la redacción y registralo como unsupported/partial. Dos dominios del mismo grupo no son evidencia independiente.\n\nAdemás de redactar, audita todas las afirmaciones materiales de la versión propuesta. El campo decision solo puede ser approve si el texto final es completo, no copia sustancialmente las fuentes y cada afirmación material queda apoyada por evidencias aprobadas; en caso de dudas, contradicciones, insuficiencia o similitud relevante usa hold o revise. Esta etapa no certifica verdad ni originalidad y no reemplaza la edición final de Zapia. Las URLs de evidenceUrls deben copiarse exactamente de las evidencias adjuntas.\n\nDevolvé exclusivamente JSON con esta forma: {"decision":"approve|revise|hold|reject","summary":"...","redactedTitle":"título nuevo","redactedHtmlContent":"contenido HTML nuevo","claims":[{"claim":"...","status":"supported|partial|unsupported|contradicted","evidenceUrls":["URL exacta"],"note":"..."}],"issues":[{"severity":"critical|major|minor","code":"...","description":"..."}]}. Incluí todas las afirmaciones factuales materiales. Si no podés producir una redacción respaldada, devuelve decision=hold y deja redactedTitle/redactedHtmlContent vacíos.\n\nBORRADOR DE LA PRIMERA ETAPA:\nTítulo: ${input.title}\nCategoría: ${input.category}\nHTML: ${input.htmlContent.slice(0, 24000)}\n\nEVIDENCIAS APROBADAS:\n${JSON.stringify(evidenceBlock)}`;
 
   try {
     const response = await model.generateContent(prompt);
     const parsed = JSON.parse(response.response.text());
     return validateReview(parsed, modelName, evidenceUrls);
   } catch {
-    return held(modelName, 'review_unavailable_or_invalid', 'La revisión independiente no terminó correctamente; el artículo debe quedar retenido.');
+    return held(modelName, 'redactor_unavailable_or_invalid', 'La segunda etapa de redacción falló; el artículo debe quedar retenido.');
   }
 }
