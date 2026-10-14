@@ -80,7 +80,8 @@ export async function GET(request: Request) {
     const sourceStats: SourceRunStats[] = [];
     let processedCount = 0;
 
-    const enabledSources = NEWS_SOURCES.filter((source) => source.enabled);
+    // Endpoint health is not permission: rewriting is fail-closed until rights are explicitly approved.
+    const enabledSources = NEWS_SOURCES.filter((source) => source.enabled && source.rewriteRights === 'approved');
     const recentCutoff = new Date();
     recentCutoff.setHours(recentCutoff.getHours() - 48);
     const { data: recentArticles, error: recentArticlesError } = await supabase
