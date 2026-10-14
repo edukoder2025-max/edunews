@@ -27,6 +27,8 @@ type SourceRunStats = {
 };
 
 const EDITORIAL_PUBLICATION_PAUSED = true; // Pausa temporal durante la revisión editorial de octubre de 2026.
+const EDITORIAL_REVIEW_GATE_READY = false; // No habilitar hasta integrar y probar la cola privada y el revisor.
+const MAX_CANDIDATES_PER_RUN = 5;
 
 function isAuthorized(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -72,16 +74,32 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
   }
 
+  if (!EDITORIAL_REVIEW_GATE_READY) {
+    return NextResponse.json(
+      { success: false, paused: true, message: 'La revisión privada todavía no está integrada y probada.' },
+      { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
+    );
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const loadAll = searchParams.get('all') === 'true';
-    const defaultMaxArticles = loadAll ? 5 : 3;
     const errors: string[] = [];
     const sourceStats: SourceRunStats[] = [];
     let processedCount = 0;
+    let candidateCount = 0;
 
-    // Endpoint health is not permission: rewriting is fail-closed until rights are explicitly approved.
-    const enabledSources = NEWS_SOURCES.filter((source) => source.enabled && source.rewriteRights === 'approved');
+    // A valid feed is not permission: publication requires explicit rights and reviewed ownership.
+    const enabledSources = NEWS_SOURCES.filter((source) =>
+      source.enabled &&
+      source.feedStatus === 'healthy' &&
+      source.rewriteRights === 'approved' &&
+      source.independenceGroup !== 'unreviewed'
+    );
+    if (enabledSources.length === 0) {
+      return NextResponse.json(
+        { success: false, paused: true, message: 'No hay fuentes habilitadas con salud, permisos y procedencia verificados.' },
+        { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
+      );
+    }
     const recentCutoff = new Date();
     recentCutoff.setHours(recentCutoff.getHours() - 48);
     const { data: recentArticles, error: recentArticlesError } = await supabase
@@ -101,6 +119,7 @@ export async function GET(request: Request) {
       .filter(Boolean) as string[];
 
     for (const source of enabledSources) {
+      if (candidateCount >= MAX_CANDIDATES_PER_RUN) break;
       const stats: SourceRunStats = {
         id: source.id,
         name: source.name,
@@ -128,10 +147,12 @@ export async function GET(request: Request) {
         });
 
         stats.fresh = freshArticles.length;
-        const topArticles = freshArticles.slice(0, Math.min(defaultMaxArticles, source.maxArticlesPerRun));
+        const sourceRunLimit = Math.min(source.maxArticlesPerRun, MAX_CANDIDATES_PER_RUN - candidateCount);
+        const topArticles = freshArticles.slice(0, sourceRunLimit);
         stats.selected = topArticles.length;
 
         for (const article of topArticles) {
+          candidateCount++;
           if (!article.link || !article.title) {
             stats.skippedInvalid++;
             continue;
