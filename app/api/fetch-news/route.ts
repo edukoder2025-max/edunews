@@ -97,6 +97,8 @@ function heldResult(code: string, summary: string): EditorialReviewResult {
     decision: 'hold',
     model: 'not_run',
     summary,
+    redactedTitle: null,
+    redactedHtmlContent: null,
     claims: [],
     issues: [{ severity: 'major', code, description: summary }],
   };
