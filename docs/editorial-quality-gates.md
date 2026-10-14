@@ -68,7 +68,8 @@ El script `scripts/audit_news_archive.py` consulta el archivo con permisos de le
 
 ## Prototipo técnico en rama de prueba
 
-- `lib/editorialReview.ts` plantea una revisión separada con `gemini-2.5-pro`; el redactor usa Gemini Flash. Es otra llamada y otro modelo del mismo proveedor, no una verificación independiente de Google ni una garantía de verdad/originalidad. No ejecutar lotes grandes sin verificar el nivel de facturación y fijar un límite de gasto.
-- `lib/supabaseServer.ts` solo crea el cliente de escritura si existe `SUPABASE_SERVICE_ROLE_KEY`, y está marcado para uso exclusivamente del servidor. Esa variable no está configurada en el entorno actual.
-- `supabase/migrations/20261014_editorial_review_queue.sql` crea una cola privada y un registro de eventos con RLS; es una migración de trabajo y aún no se aplicó a la base.
-- La función de revisión no reactiva la ruta de publicación; el interruptor de pausa sigue activo y la ruta pública no debe recuperar permiso de inserción.
+- `lib/editorialReview.ts` usa una credencial propia (`EDITORIAL_REVIEW_API_KEY`) y otro modelo de Gemini; sigue siendo el mismo proveedor, así que todavía no se considera revisor de proveedor independiente. La clave, el proveedor y el límite de gasto deben aprobarse antes de probar llamadas pagas.
+- `app/api/fetch-news/route.ts` solo contempla guardar candidatos/borradores en la cola privada mediante una función SQL transaccional; ya no contiene inserciones en `public.news_articles` ni llamada a IndexNow. La ruta permanece detrás de interruptores cerrados y no se ha ejecutado.
+- `lib/supabaseServer.ts` solo crea el cliente de escritura si existe `SUPABASE_SERVICE_ROLE_KEY`, exclusivamente del lado servidor. Esa variable no está configurada en el entorno actual.
+- `supabase/migrations/20261014_editorial_review_queue.sql` prepara una cola privada, un registro de eventos y una función de escritura transaccional con RLS. No se aplicó a la base; antes habrá que revisar su compatibilidad y obtener autorización explícita.
+- La ruta de publicación conserva la pausa; aun si alguien cambiara ese interruptor, siguen cerrados los gates de revisor, presupuesto y esquema. No se restableció ningún permiso de escritura público.

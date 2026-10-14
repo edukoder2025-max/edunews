@@ -2,33 +2,56 @@ import { NextResponse } from 'next/server';
 import { fetchRssFeed } from '@/lib/rss';
 import { rewriteNews } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
-import { findAlternativeSources } from '@/lib/googleCSE';
-import { fetchRelevantImage } from '@/lib/imageFetcher';
-import { buildArticleUrl } from '@/lib/articleUtils';
 import { NEWS_SOURCES } from '@/lib/newsSources';
 import { isSimilarStory } from '@/lib/storyClustering';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
+import { getEditorialWriteClient } from '@/lib/supabaseServer';
+import { reviewEditorialDraft, type EditorialEvidence, type EditorialReviewResult } from '@/lib/editorialReview';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+type FeedArticle = {
+  title: string;
+  link: string;
+  content: string;
+  pubDate: string;
+  imageUrl?: string;
+  sourceName?: string;
+};
+
+type CandidateEvidence = {
+  source: (typeof NEWS_SOURCES)[number];
+  article: FeedArticle;
+};
+
+type StoryCandidate = {
+  items: CandidateEvidence[];
+};
+
 type SourceRunStats = {
   id: string;
   name: string;
-  section: string;
   feedUrl: string;
   fetched: number;
   fresh: number;
   selected: number;
+  staged: number;
+  held: number;
   skippedDuplicates: number;
   skippedInvalid: number;
-  published: number;
   errors: string[];
 };
 
-const EDITORIAL_PUBLICATION_PAUSED = true; // Pausa temporal durante la revisión editorial de octubre de 2026.
-const EDITORIAL_REVIEW_GATE_READY = false; // No habilitar hasta integrar y probar la cola privada y el revisor.
-const MAX_CANDIDATES_PER_RUN = 5;
+// Independent gates: none may be opened by changing only the pause switch.
+const EDITORIAL_PUBLICATION_PAUSED = true;
+const EDITORIAL_REVIEW_GATE_READY = false; // Requires a chosen independent provider, budget cap, tests, and verified queue schema.
+const EDITORIAL_QUEUE_SCHEMA_READY = false; // Migration is prepared but not yet applied/verified.
+const EDITORIAL_AI_BUDGET_APPROVED = false;
+const MAX_SOURCES_PER_RUN = 5;
+const MAX_STORIES_PER_RUN = 5;
+const STORY_WINDOW_HOURS = 48;
+const PROMPT_VERSION = 'editorial-evidence-review-v1';
 
 function isAuthorized(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -36,260 +59,346 @@ function isAuthorized(request: Request) {
   return request.headers.get('authorization') === `Bearer ${cronSecret}`;
 }
 
-async function articleAlreadyExists(sourceUrl: string, originalTitle: string) {
-  if (sourceUrl) {
-    const { data } = await supabase
-      .from('news_articles')
-      .select('id')
-      .eq('source_url', sourceUrl)
-      .limit(1)
-      .maybeSingle();
-    if (data?.id) return true;
+function safeHttpsUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
   }
+}
 
-  if (originalTitle) {
-    const { data } = await supabase
-      .from('news_articles')
-      .select('id')
-      .eq('original_title', originalTitle)
-      .limit(1)
-      .maybeSingle();
-    if (data?.id) return true;
+function dateOrNull(value: string | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function plainText(value: string): string {
+  return String(value || '')
+    .replace(/<(script|style|noscript)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function storyKey(title: string): string {
+  return title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 180);
+}
+
+function heldResult(code: string, summary: string): EditorialReviewResult {
+  return {
+    decision: 'hold',
+    model: 'not_run',
+    summary,
+    claims: [],
+    issues: [{ severity: 'major', code, description: summary }],
+  };
+}
+
+function mapEvidence(items: CandidateEvidence[]): EditorialEvidence[] {
+  const seenGroups = new Set<string>();
+  const evidence: EditorialEvidence[] = [];
+  for (const item of items) {
+    const group = item.source.independenceGroup.trim();
+    const excerpt = plainText(item.article.content).slice(0, 6000);
+    if (!group || group === 'unreviewed' || seenGroups.has(group) || excerpt.length < 120) continue;
+    seenGroups.add(group);
+    evidence.push({
+      publisher: item.source.name,
+      title: item.article.title,
+      url: item.article.link,
+      excerpt,
+      rightsStatus: item.source.rewriteRights,
+      independenceGroup: group,
+      publishedAt: item.article.pubDate || null,
+    });
   }
+  return evidence;
+}
 
-  return false;
+function buildStoryCandidates(feeds: Array<{ source: (typeof NEWS_SOURCES)[number]; articles: FeedArticle[] }>): StoryCandidate[] {
+  const candidates: StoryCandidate[] = [];
+  for (const { source, articles } of feeds) {
+    for (const article of articles) {
+      const match = candidates.find((candidate) =>
+        isSimilarStory(article.title, candidate.items.map((item) => item.article.title))
+      );
+      if (match) {
+        if (!match.items.some((item) => item.source.id === source.id)) match.items.push({ source, article });
+      } else {
+        candidates.push({ items: [{ source, article }] });
+      }
+    }
+  }
+  return candidates;
 }
 
 export async function GET(request: Request) {
   if (EDITORIAL_PUBLICATION_PAUSED) {
     return NextResponse.json(
-      { success: false, paused: true, message: 'La publicación automática está pausada durante una revisión editorial.' },
+      { success: false, paused: true, message: 'La publicación automática continúa pausada.' },
       { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
     );
   }
-
-  const startedAt = new Date();
 
   if (!isAuthorized(request)) {
     return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
   }
 
-  if (!EDITORIAL_REVIEW_GATE_READY) {
+  if (!EDITORIAL_REVIEW_GATE_READY || !EDITORIAL_QUEUE_SCHEMA_READY || !EDITORIAL_AI_BUDGET_APPROVED) {
     return NextResponse.json(
-      { success: false, paused: true, message: 'La revisión privada todavía no está integrada y probada.' },
+      { success: false, paused: true, message: 'Faltan aprobaciones y pruebas del flujo editorial privado.' },
+      { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  const writeClient = getEditorialWriteClient();
+  if (!writeClient) {
+    return NextResponse.json(
+      { success: false, paused: true, message: 'La credencial de escritura privada no está configurada.' },
+      { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  const startedAt = new Date();
+  const eligibleSources = NEWS_SOURCES.filter((source) =>
+    source.enabled &&
+    source.feedStatus === 'healthy' &&
+    source.rewriteRights === 'approved' &&
+    source.independenceGroup !== 'unreviewed'
+  ).slice(0, MAX_SOURCES_PER_RUN);
+
+  if (eligibleSources.length < 2) {
+    return NextResponse.json(
+      { success: false, paused: true, message: 'Se requieren al menos dos fuentes activas con permiso y procedencia verificados.' },
       { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
     );
   }
 
   try {
-    const errors: string[] = [];
-    const sourceStats: SourceRunStats[] = [];
-    let processedCount = 0;
-    let candidateCount = 0;
-
-    // A valid feed is not permission: publication requires explicit rights and reviewed ownership.
-    const enabledSources = NEWS_SOURCES.filter((source) =>
-      source.enabled &&
-      source.feedStatus === 'healthy' &&
-      source.rewriteRights === 'approved' &&
-      source.independenceGroup !== 'unreviewed'
-    );
-    if (enabledSources.length === 0) {
-      return NextResponse.json(
-        { success: false, paused: true, message: 'No hay fuentes habilitadas con salud, permisos y procedencia verificados.' },
-        { status: 503, headers: { 'Retry-After': '604800', 'Cache-Control': 'no-store' } },
-      );
-    }
-    const recentCutoff = new Date();
-    recentCutoff.setHours(recentCutoff.getHours() - 48);
-    const { data: recentArticles, error: recentArticlesError } = await supabase
+    const cutoff = new Date(Date.now() - STORY_WINDOW_HOURS * 60 * 60 * 1000);
+    const { data: recentArticles, error: recentError } = await supabase
       .from('news_articles')
-      .select('ai_title, original_title')
-      .gte('published_at', recentCutoff.toISOString())
+      .select('ai_title, original_title, source_url')
+      .gte('published_at', cutoff.toISOString())
       .order('published_at', { ascending: false })
       .limit(500);
-
-    if (recentArticlesError) {
-      console.warn('[fetch-news] No se pudo cargar el índice de historias recientes:', recentArticlesError.message);
+    if (recentError) {
+      return NextResponse.json(
+        { success: false, paused: true, message: 'No se pudo verificar el índice público de duplicados; no se procesaron artículos.' },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } },
+      );
     }
 
-    // Índice liviano para evitar publicar la misma noticia con títulos apenas distintos.
-    const knownStoryTitles = (recentArticles || [])
-      .flatMap((article: any) => [article.ai_title, article.original_title])
-      .filter(Boolean) as string[];
+    const { data: queuedRows, error: queueReadError } = await writeClient
+      .from('editorial_review_queue')
+      .select('source_url, story_key, original_title, draft_title')
+      .gte('created_at', cutoff.toISOString())
+      .limit(1000);
+    if (queueReadError) {
+      return NextResponse.json(
+        { success: false, paused: true, message: 'No se pudo verificar la cola privada; no se procesaron artículos.' },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
 
-    for (const source of enabledSources) {
-      if (candidateCount >= MAX_CANDIDATES_PER_RUN) break;
+    const publicRows = recentArticles || [];
+    const privateRows = queuedRows || [];
+    const knownTitles = [
+      ...publicRows.flatMap((row: any) => [row.ai_title, row.original_title]),
+      ...privateRows.flatMap((row: any) => [row.original_title, row.draft_title]),
+    ].filter(Boolean) as string[];
+    const knownUrls = new Set<string>([
+      ...publicRows.map((row: any) => row.source_url),
+      ...privateRows.map((row: any) => row.source_url),
+    ].filter(Boolean));
+
+    const sourceStats: SourceRunStats[] = [];
+    const feeds: Array<{ source: (typeof NEWS_SOURCES)[number]; articles: FeedArticle[] }> = [];
+    const errors: string[] = [];
+
+    for (const source of eligibleSources) {
       const stats: SourceRunStats = {
-        id: source.id,
-        name: source.name,
-        section: source.section,
-        feedUrl: source.url,
-        fetched: 0,
-        fresh: 0,
-        selected: 0,
-        skippedDuplicates: 0,
-        skippedInvalid: 0,
-        published: 0,
-        errors: [],
+        id: source.id, name: source.name, feedUrl: source.url, fetched: 0, fresh: 0,
+        selected: 0, staged: 0, held: 0, skippedDuplicates: 0, skippedInvalid: 0, errors: [],
       };
-
+      sourceStats.push(stats);
       try {
-        const articles = await fetchRssFeed(source.url);
-        stats.fetched = articles.length;
-
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
-
-        const freshArticles = articles.filter((article: any) => {
-          const parsedDate = article.pubDate ? new Date(article.pubDate) : new Date();
-          return !Number.isNaN(parsedDate.getTime()) && parsedDate > twoDaysAgo;
+        const feedArticles = await fetchRssFeed(source.url) as FeedArticle[];
+        stats.fetched = feedArticles.length;
+        const fresh = feedArticles.filter((article) => {
+          const published = dateOrNull(article.pubDate);
+          return Boolean(published && published >= cutoff);
         });
-
-        stats.fresh = freshArticles.length;
-        const sourceRunLimit = Math.min(source.maxArticlesPerRun, MAX_CANDIDATES_PER_RUN - candidateCount);
-        const topArticles = freshArticles.slice(0, sourceRunLimit);
-        stats.selected = topArticles.length;
-
-        for (const article of topArticles) {
-          candidateCount++;
-          if (!article.link || !article.title) {
+        stats.fresh = fresh.length;
+        const usable: FeedArticle[] = [];
+        for (const article of fresh) {
+          if (!article.title?.trim() || !article.link || !safeHttpsUrl(article.link)) {
             stats.skippedInvalid++;
             continue;
           }
-
-          try {
-            if (await articleAlreadyExists(article.link, article.title) || isSimilarStory(article.title, knownStoryTitles)) {
-              stats.skippedDuplicates++;
-              continue;
-            }
-
-            const alternatives = await findAlternativeSources(article.title, article.link);
-            const rewritten = await rewriteNews(article.title, article.content, alternatives);
-
-            if (!rewritten || rewritten.error) {
-              const reason = rewritten?.error || 'Respuesta vacía del redactor';
-              const message = `${source.name}: error al reescribir “${article.title}”: ${reason}`;
-              stats.errors.push(message);
-              errors.push(message);
-              continue;
-            }
-
-            let finalImageUrl = article.imageUrl || null;
-            if (!finalImageUrl) {
-              try {
-                finalImageUrl = await fetchRelevantImage(article.title, article.link);
-              } catch (imageError: any) {
-                console.warn('[fetch-news] Error obteniendo imagen:', imageError?.message || imageError);
-              }
-            }
-
-            const parsedDate = article.pubDate ? new Date(article.pubDate) : new Date();
-            const publishedAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
-            const editorialCategory = normalizeEditorialCategory(
-              rewritten.category || source.section || 'General',
-              rewritten.new_title || article.title,
-            );
-            const insertPayload: any = {
-              original_title: article.title,
-              ai_title: rewritten.new_title,
-              original_content: article.content,
-              ai_content: rewritten.new_content,
-              category: editorialCategory,
-              image_url: finalImageUrl,
-              source_url: article.link,
-              source_name: article.sourceName || source.name,
-              published_at: publishedAt,
-              bias_detected: rewritten.bias_detected || null,
-              bias_score: rewritten.bias_score || null,
-              sources_used: rewritten.sources_used || (alternatives.length > 0
-                ? alternatives.map((alternative: any) => alternative.source)
-                : [article.sourceName || source.name]),
-            };
-
-            let { data: insertedRow, error: dbError } = await supabase
-              .from('news_articles')
-              .insert(insertPayload)
-              .select('id')
-              .single();
-
-            // Compatibilidad con instalaciones que todavía no tienen las
-            // columnas opcionales del análisis de sesgo.
-            if (dbError && (dbError.message?.includes('column') || dbError.code === 'PGRST204')) {
-              const fallbackPayload = { ...insertPayload };
-              delete fallbackPayload.bias_detected;
-              delete fallbackPayload.bias_score;
-              delete fallbackPayload.sources_used;
-
-              const { data: fallbackRow, error: fallbackError } = await supabase
-                .from('news_articles')
-                .insert(fallbackPayload)
-                .select('id')
-                .single();
-
-              dbError = fallbackError;
-              if (!dbError) insertedRow = fallbackRow;
-            }
-
-            if (dbError) {
-              const message = `${source.name}: error en BD para “${article.title}”: ${dbError.message}`;
-              stats.errors.push(message);
-              errors.push(message);
-              continue;
-            }
-
-            processedCount++;
-            stats.published++;
-            knownStoryTitles.push(rewritten.new_title || article.title);
-
-            if (insertedRow?.id) {
-              const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.elironico.com';
-              const articleUrl = buildArticleUrl(
-                insertedRow.id,
-                rewritten.new_title || article.title,
-                editorialCategory,
-                siteUrl,
-              );
-
-              fetch(`${siteUrl}/api/indexnow`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: articleUrl }),
-              }).catch((error) => console.warn('[IndexNow] Ping falló:', error?.message));
-            }
-          } catch (articleError: any) {
-            const message = `${source.name}: error procesando “${article.title}”: ${articleError?.message || articleError}`;
-            stats.errors.push(message);
-            errors.push(message);
+          if (knownUrls.has(article.link) || isSimilarStory(article.title, knownTitles)) {
+            stats.skippedDuplicates++;
+            continue;
           }
+          usable.push(article);
         }
-      } catch (sourceError: any) {
-        const message = `${source.name}: RSS no disponible: ${sourceError?.message || sourceError}`;
+        stats.selected = usable.length;
+        feeds.push({ source, articles: usable });
+      } catch (error: any) {
+        const message = `${source.name}: ${error?.message || 'feed no disponible'}`;
         stats.errors.push(message);
         errors.push(message);
       }
+    }
 
-      sourceStats.push(stats);
+    const candidates = buildStoryCandidates(feeds).slice(0, MAX_STORIES_PER_RUN);
+    let stagedCount = 0;
+    let heldCount = 0;
+    let reviewPendingCount = 0;
+
+    for (const candidate of candidates) {
+      const orderedItems = [...candidate.items].sort((a, b) =>
+        (dateOrNull(b.article.pubDate)?.getTime() || 0) - (dateOrNull(a.article.pubDate)?.getTime() || 0)
+      );
+      const primary = orderedItems[0];
+      if (!primary) continue;
+
+      const evidence = mapEvidence(orderedItems);
+      let draftTitle: string | null = null;
+      let draftContent: string | null = null;
+      let reviewResult: EditorialReviewResult;
+      let queueStatus: 'review_pending' | 'held' | 'rejected' = 'held';
+      let lastError: string | null = null;
+      let category = normalizeEditorialCategory(primary.source.section, primary.article.title);
+
+      if (evidence.length < 2) {
+        reviewResult = heldResult(
+          'insufficient_independent_evidence',
+          'Se retuvo el candidato: no hay dos evidencias aprobadas y de orígenes independientes.'
+        );
+        lastError = reviewResult.summary;
+      } else if (!process.env.GEMINI_API_KEY || !process.env.EDITORIAL_REVIEW_API_KEY) {
+        reviewResult = heldResult('model_credentials_missing', 'Faltan credenciales separadas para redacción y revisión; el candidato quedó retenido.');
+        lastError = reviewResult.summary;
+      } else {
+        const alternatives = orderedItems.slice(1).map((item) => ({
+          source: item.source.name,
+          title: item.article.title,
+          snippet: plainText(item.article.content).slice(0, 6000),
+        }));
+        const rewritten = await rewriteNews(primary.article.title, primary.article.content, alternatives);
+        if (!rewritten || rewritten.error || !rewritten.new_title || !rewritten.new_content) {
+          reviewResult = heldResult('writer_failed', 'La redacción no produjo un borrador válido; el candidato quedó retenido.');
+          lastError = reviewResult.summary;
+        } else {
+          draftTitle = String(rewritten.new_title).slice(0, 500);
+          draftContent = String(rewritten.new_content).slice(0, 100000);
+          category = normalizeEditorialCategory(rewritten.category || primary.source.section, draftTitle);
+          reviewResult = await reviewEditorialDraft({
+            title: draftTitle,
+            htmlContent: draftContent,
+            category,
+            evidence,
+          });
+          if (reviewResult.decision === 'approve') {
+            queueStatus = 'review_pending'; // AI approval is never publication approval.
+          } else if (reviewResult.decision === 'reject') {
+            queueStatus = 'rejected';
+            lastError = reviewResult.summary;
+          } else {
+            queueStatus = 'held';
+            lastError = reviewResult.summary;
+          }
+        }
+      }
+
+      const evidenceSummary = evidence.map((item) => ({
+        publisher: item.publisher,
+        title: item.title,
+        url: item.url,
+        excerpt: item.excerpt,
+        rightsStatus: item.rightsStatus,
+        independenceGroup: item.independenceGroup,
+        publishedAt: item.publishedAt || null,
+      }));
+      const sourceUrl = primary.article.link;
+      const result = await writeClient.rpc('enqueue_editorial_review_candidate', {
+        p_source_id: primary.source.id,
+        p_source_name: primary.source.name,
+        p_source_url: sourceUrl,
+        p_original_title: primary.article.title.slice(0, 500),
+        p_original_content: String(primary.article.content || '').slice(0, 100000),
+        p_source_published_at: dateOrNull(primary.article.pubDate)?.toISOString() || null,
+        p_evidence: evidenceSummary,
+        p_draft_title: draftTitle,
+        p_draft_content: draftContent,
+        p_category: category,
+        p_status: queueStatus,
+        p_review_result: reviewResult,
+        p_writer_model: draftTitle ? 'gemini-2.5-flash' : null,
+        p_reviewer_model: reviewResult.model,
+        p_prompt_version: PROMPT_VERSION,
+        p_story_key: storyKey(primary.article.title),
+        p_last_error: lastError,
+        p_event_details: {
+          evidenceCount: evidence.length,
+          distinctOrigins: new Set(evidence.map((item) => item.independenceGroup)).size,
+          reviewDecision: reviewResult.decision,
+          sourceIds: orderedItems.map((item) => item.source.id),
+        },
+      });
+
+      if (result.error) {
+        if (result.error.code === '23505') {
+          const stats = sourceStats.find((item) => item.id === primary.source.id);
+          if (stats) stats.skippedDuplicates++;
+          continue;
+        }
+        throw new Error(`No se pudo guardar el candidato en la cola privada: ${result.error.message}`);
+      }
+
+      stagedCount++;
+      if (queueStatus === 'held' || queueStatus === 'rejected') heldCount++;
+      if (queueStatus === 'review_pending') reviewPendingCount++;
+      const primaryStats = sourceStats.find((item) => item.id === primary.source.id);
+      if (primaryStats) {
+        primaryStats.staged++;
+        if (queueStatus === 'held' || queueStatus === 'rejected') primaryStats.held++;
+      }
+      knownUrls.add(sourceUrl);
+      knownTitles.push(primary.article.title);
     }
 
     const finishedAt = new Date();
     return NextResponse.json({
-      success: true,
-      message: `Proceso completado. Nuevas noticias agregadas: ${processedCount}`,
-      processedCount,
+      success: errors.length === 0,
+      message: `Candidatos en cola privada: ${stagedCount}. No se publicó ningún artículo.`,
+      stagedCount,
+      heldCount,
+      reviewPendingCount,
+      publishedCount: 0,
       run: {
         startedAt: startedAt.toISOString(),
         finishedAt: finishedAt.toISOString(),
         durationMs: finishedAt.getTime() - startedAt.getTime(),
-        enabledSources: enabledSources.length,
+        enabledSources: eligibleSources.length,
       },
       sources: sourceStats,
-      // Se conserva debugInfo para no romper consumidores existentes.
-      debugInfo: sourceStats,
-      errors: errors.length > 0 ? errors : undefined,
+      errors: errors.length ? errors : undefined,
     });
   } catch (error: any) {
-    console.error('Error general procesando feeds:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('[fetch-news] Flujo editorial privado detenido:', error?.message || error);
+    return NextResponse.json(
+      { success: false, paused: true, message: 'El flujo editorial privado falló de forma cerrada; no se publicó ningún artículo.' },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 }

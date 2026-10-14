@@ -1,4 +1,4 @@
--- Private draft/review staging tables. No public policies are created.
+-- Private draft/review staging only. This migration deliberately has no public publication path.
 -- Do not restore public INSERT on public.news_articles.
 
 create table if not exists public.editorial_review_queue (
@@ -14,19 +14,17 @@ create table if not exists public.editorial_review_queue (
   draft_content text,
   category text,
   status text not null default 'candidate'
-    check (status in ('candidate', 'evidence_ready', 'draft', 'review_pending', 'approved', 'held', 'rejected', 'published', 'withdrawn')),
+    check (status in ('candidate', 'evidence_ready', 'draft', 'review_pending', 'held', 'rejected', 'withdrawn')),
   review_result jsonb,
   writer_model text,
   reviewer_model text,
   prompt_version text,
   story_key text,
   revision_number integer not null default 1 check (revision_number > 0),
-  published_article_id uuid references public.news_articles(id) on delete set null,
   last_error text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  reviewed_at timestamptz,
-  published_at timestamptz
+  reviewed_at timestamptz
 );
 
 create index if not exists editorial_review_queue_status_created_idx
@@ -55,5 +53,65 @@ revoke all on table public.editorial_review_events from public, anon, authentica
 grant all on table public.editorial_review_queue to service_role;
 grant all on table public.editorial_review_events to service_role;
 
-comment on table public.editorial_review_queue is 'Private staging queue; articles are not public until independent review approval.';
+-- Insert a queue item and its audit event atomically. It cannot write to news_articles.
+create or replace function public.enqueue_editorial_review_candidate(
+  p_source_id text,
+  p_source_name text,
+  p_source_url text,
+  p_original_title text,
+  p_original_content text,
+  p_source_published_at timestamptz,
+  p_evidence jsonb,
+  p_draft_title text,
+  p_draft_content text,
+  p_category text,
+  p_status text,
+  p_review_result jsonb,
+  p_writer_model text,
+  p_reviewer_model text,
+  p_prompt_version text,
+  p_story_key text,
+  p_last_error text,
+  p_event_details jsonb default '{}'::jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = pg_catalog, public, pg_temp
+as $$
+declare
+  new_queue_id uuid;
+begin
+  insert into public.editorial_review_queue (
+    source_id, source_name, source_url, original_title, original_content,
+    source_published_at, evidence, draft_title, draft_content, category, status,
+    review_result, writer_model, reviewer_model, prompt_version, story_key, last_error
+  ) values (
+    p_source_id, p_source_name, p_source_url, p_original_title, coalesce(p_original_content, ''),
+    p_source_published_at, coalesce(p_evidence, '[]'::jsonb), p_draft_title, p_draft_content,
+    p_category, p_status, p_review_result, p_writer_model, p_reviewer_model,
+    p_prompt_version, p_story_key, p_last_error
+  ) returning id into new_queue_id;
+
+  insert into public.editorial_review_events (
+    queue_id, actor, event_type, from_status, to_status, details
+  ) values (
+    new_queue_id, 'system:fetch-news', 'candidate_staged', null, p_status,
+    coalesce(p_event_details, '{}'::jsonb)
+  );
+
+  return new_queue_id;
+end;
+$$;
+
+revoke all on function public.enqueue_editorial_review_candidate(
+  text, text, text, text, text, timestamptz, jsonb, text, text, text, text,
+  jsonb, text, text, text, text, text, jsonb
+) from public, anon, authenticated;
+grant execute on function public.enqueue_editorial_review_candidate(
+  text, text, text, text, text, timestamptz, jsonb, text, text, text, text,
+  jsonb, text, text, text, text, text, jsonb
+) to service_role;
+
+comment on table public.editorial_review_queue is 'Private candidate and draft staging; this schema has no public publishing path.';
 comment on table public.editorial_review_events is 'Append-only editorial status and review audit trail.';

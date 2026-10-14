@@ -118,8 +118,8 @@ export async function reviewEditorialDraft(input: {
   evidence: EditorialEvidence[];
 }): Promise<EditorialReviewResult> {
   const modelName = process.env.EDITORIAL_REVIEW_MODEL || 'gemini-2.5-pro';
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return held(modelName, 'review_api_key_missing', 'No está configurada la clave para la revisión independiente.');
+  const apiKey = process.env.EDITORIAL_REVIEW_API_KEY;
+  if (!apiKey) return held(modelName, 'review_api_key_missing', 'No está configurada la credencial separada para la revisión editorial.');
   if (!input.title.trim() || !input.htmlContent.trim()) return held(modelName, 'empty_draft', 'El borrador está vacío.');
 
   const usableEvidence = input.evidence.filter((item) => {
