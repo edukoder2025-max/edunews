@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -9,6 +10,7 @@ export async function GET() {
     const { data: articles, error } = await supabase
       .from('news_articles')
       .select('id, ai_title, original_title, published_at, category, image_url, source_url')
+      .gte('created_at', PUBLIC_NEWS_CUTOFF)
       .order('published_at', { ascending: false });
 
     if (error) throw error;

@@ -11,6 +11,7 @@ import { NEWS_SOURCES } from '@/lib/newsSources';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
 import { applyEditorialOverride, shouldRedirectEditorialArticle } from '@/lib/editorialOverrides';
 import { getSiteUrl } from '@/lib/seoUtils';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 
 export const revalidate = 60; // Revalidar la página cada 60 segundos
 
@@ -18,6 +19,7 @@ async function getNews() {
   const { data, error } = await supabase
     .from('news_articles')
     .select('*')
+    .gte('created_at', PUBLIC_NEWS_CUTOFF)
     .order('published_at', { ascending: false })
     .limit(20);
     
@@ -81,24 +83,18 @@ export default async function Home() {
 
   if (news.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center py-20 glass-panel rounded-3xl border-dashed border-white/10">
-          <ShieldAlert className="h-12 w-12 text-primary mx-auto mb-4 animate-bounce" />
-          <p className="text-slate-300 text-lg font-bold">No hay noticias cargadas en este momento.</p>
-          <p className="text-slate-500 text-sm mt-2 max-w-md mx-auto">
-            Por favor, visita la dirección <code className="bg-slate-900 px-2 py-1 rounded text-primary">/api/fetch-news</code> para cargar información desde los feeds RSS y reescribirlos usando Inteligencia Artificial.
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-24">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }} />
+        <section className="text-center py-16 rounded-3xl border border-dashed border-white/10 bg-slate-950/40">
+          <ShieldAlert className="h-12 w-12 text-primary mx-auto mb-5" />
+          <p className="text-primary text-xs font-black uppercase tracking-[0.22em]">Nueva etapa editorial</p>
+          <h1 className="text-3xl sm:text-4xl font-black font-serif text-white mt-3">Estamos preparando nuevas coberturas</h1>
+          <p className="text-slate-300 text-sm sm:text-base mt-5 max-w-2xl mx-auto leading-relaxed">
+            Las notas del archivo anterior no aparecen en esta vista. Las nuevas noticias se mostrarán aquí cuando pasen los controles editoriales.
           </p>
-          <div className="mt-8">
-            <a 
-              href="/api/fetch-news" 
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20"
-            >
-              Cargar Noticias Iniciales
-              <ArrowRight size={14} />
-            </a>
-          </div>
-        </div>
-      </div>
+          <p className="text-slate-500 text-xs mt-4">El archivo original permanece guardado; esta vista previa solo prueba el filtro público.</p>
+        </section>
+      </main>
     );
   }
 

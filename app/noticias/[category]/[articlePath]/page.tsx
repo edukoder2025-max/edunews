@@ -15,15 +15,17 @@ import { AD_SLOTS } from '@/lib/adSlots';
 import { Calendar, ChevronLeft, Shield, Eye, Flame, Compass, TrendingUp } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
 import ContributionCTABanner from '@/components/ContributionCTABanner';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 
 
-export const revalidate = 3600; // Revalidar cada hora
+export const revalidate = 60; // Revalidar para que el corte de archivo se aplique pronto
 
 async function getArticle(id: string) {
   const { data, error } = await supabase
     .from('news_articles')
     .select('*')
     .eq('id', id)
+    .gte('created_at', PUBLIC_NEWS_CUTOFF)
     .single();
 
   if (error || !data) return null;
@@ -34,7 +36,7 @@ async function getArticle(id: string) {
 export async function generateMetadata({ params }: { params: { category: string; articlePath: string } }): Promise<Metadata> {
   const articleId = extractArticleId(params.articlePath);
   const article = await getArticle(articleId);
-  if (!article) return { title: 'Noticia no encontrada' };
+  if (!article) return { title: 'Noticia no encontrada', robots: { index: false, follow: false } };
 
   const articleTitle = article.ai_title || article.original_title;
   const editorialCategory = normalizeEditorialCategory(article.category, articleTitle);
@@ -89,6 +91,7 @@ async function getRelatedArticles(category: string, currentId: string) {
     .select('id, ai_title, original_title, image_url, published_at, category')
     .ilike('category', category)
     .neq('id', currentId)
+    .gte('created_at', PUBLIC_NEWS_CUTOFF)
     .order('published_at', { ascending: false })
     .limit(4);
 
@@ -100,6 +103,7 @@ async function getTopReadArticles() {
   const { data, error } = await supabase
     .from('news_articles')
     .select('id, ai_title, original_title, image_url, published_at, category, views')
+    .gte('created_at', PUBLIC_NEWS_CUTOFF)
     .order('views', { ascending: false })
     .limit(5);
 

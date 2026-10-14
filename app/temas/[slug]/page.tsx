@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { buildArticleUrl } from '@/lib/articleUtils';
 import { getSiteUrl } from '@/lib/seoUtils';
 import { getTopicHub, getTopicOrFilters } from '@/lib/topicHubs';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 
 export const revalidate = 300;
 
@@ -17,6 +18,7 @@ async function getTopicArticles(slug: string) {
     .from('news_articles')
     .select('id, ai_title, original_title, ai_content, original_content, category, published_at')
     .or(getTopicOrFilters(topic.searchTerms))
+    .gte('created_at', PUBLIC_NEWS_CUTOFF)
     .order('published_at', { ascending: false })
     .limit(24);
 

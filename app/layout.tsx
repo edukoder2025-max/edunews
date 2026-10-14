@@ -5,6 +5,7 @@ import CookieBanner from "@/components/CookieBanner";
 // import { SWGInitializer } from "@/components/SWGInitializer"; // OCULTO: Temporalmente deshabilitado
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { PUBLIC_NEWS_CUTOFF } from "@/lib/publicationVisibility";
 import { buildArticleUrl } from "@/lib/articleUtils";
 import { getSiteUrl } from "@/lib/seoUtils";
 
@@ -77,6 +78,7 @@ async function getTickerNews() {
     const { data, error } = await supabase
       .from('news_articles')
       .select('id, ai_title, original_title, category')
+      .gte('created_at', PUBLIC_NEWS_CUTOFF)
       .order('published_at', { ascending: false })
       .limit(8);
     if (error) {
@@ -103,7 +105,8 @@ export default async function RootLayout({
   // Fetch active categories dynamically
   const { data: categoriesData } = await supabase
     .from('news_articles')
-    .select('category');
+    .select('category')
+    .gte('created_at', PUBLIC_NEWS_CUTOFF);
   
   const activeCategories = Array.from(
     new Set(categoriesData?.map(item => item.category?.trim()).filter(Boolean) || [])

@@ -1,8 +1,10 @@
 import { ImageResponse } from 'next/og';
 import { supabase } from '@/lib/supabase';
 import { extractArticleId } from '@/lib/articleUtils';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 
 export const runtime = 'edge';
+export const revalidate = 60;
 export const alt = 'Artículo de El Irónico';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -17,6 +19,7 @@ export default async function OpenGraphImage({
     .from('news_articles')
     .select('ai_title, original_title, category')
     .eq('id', articleId)
+    .gte('created_at', PUBLIC_NEWS_CUTOFF)
     .single();
 
   const title = article?.ai_title || article?.original_title || 'Noticias de Argentina y el mundo';

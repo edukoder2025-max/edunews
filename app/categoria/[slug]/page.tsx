@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, FolderOpen, Calendar, ArrowRight } from 'lucide-react';
 import SafeImage from '@/components/SafeImage';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 
 export const revalidate = 60;
 
@@ -58,6 +59,7 @@ async function getNewsByCategory(category: string) {
     .from('news_articles')
     .select('*')
     .ilike('category', category)
+    .gte('created_at', PUBLIC_NEWS_CUTOFF)
     .order('published_at', { ascending: false })
     .limit(24);
 

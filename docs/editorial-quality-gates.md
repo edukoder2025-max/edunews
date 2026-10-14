@@ -73,3 +73,11 @@ El script `scripts/audit_news_archive.py` consulta el archivo con permisos de le
 - `lib/supabaseServer.ts` solo crea el cliente de escritura si existe `SUPABASE_SERVICE_ROLE_KEY`, exclusivamente del lado servidor. Esa variable no está configurada en el entorno actual.
 - `supabase/migrations/20261014_editorial_review_queue.sql` prepara una cola privada, un registro de eventos y una función de escritura transaccional con RLS. No se aplicó a la base; antes habrá que revisar su compatibilidad y obtener autorización explícita.
 - La ruta de publicación conserva la pausa; aun si alguien cambiara ese interruptor, siguen cerrados los gates de revisor, presupuesto y esquema. No se restableció ningún permiso de escritura público.
+
+## Demostración de archivo oculto en preview
+
+- `lib/publicationVisibility.ts` define un corte por `created_at` en `2026-10-14T15:49:00.000Z`. La demostración excluye del sitio, listados, búsqueda, artículos relacionados, endpoints de diagnóstico y sitemap todo registro previo a ese momento; sus páginas individuales devuelven 404/noindex. Los registros no se borran ni modifican.
+- El corte es solo de la rama de preview; antes de cualquier despliegue real hay que confirmar de nuevo la fecha y revisar cachés y rutas.
+- Este filtro web no revoca por sí solo el acceso directo a la API REST de Supabase: la aplicación usa una clave pública `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Si la política actual deja leer `news_articles`, para garantizar que el archivo antiguo deje de ser público también habrá que cambiar la política o servirlo desde un acceso privado. No se hizo ese cambio.
+- Los 404/noindex se procesan cuando Google vuelve a rastrear las URLs; la herramienta Removals de Search Console solo ofrece una ocultación temporal. El historial de URLs excluidas puede seguir apareciendo en Search Console.
+- La ruta de noticias sigue pausada y la cola privada no publica automáticamente. En la demostración es normal que la portada quede sin noticias nuevas hasta que exista un flujo de publicación separado y aprobado.

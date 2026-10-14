@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { isValidImageUrl } from '@/lib/articleUtils';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
     .from('news_articles')
     .select('id, ai_title, original_title, image_url, source_url, category')
     .ilike('category', `%${category}%`)
+    .gte('created_at', PUBLIC_NEWS_CUTOFF)
     .order('published_at', { ascending: false })
     .limit(50);
 

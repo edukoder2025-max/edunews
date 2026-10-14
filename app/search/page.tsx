@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { buildArticleUrl, getArticleImage } from '@/lib/articleUtils';
 import Link from 'next/link';
 import SafeImage from '@/components/SafeImage';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 import { ArrowLeft, Eye, Calendar } from 'lucide-react';
 
 export const revalidate = 60;
@@ -52,6 +53,7 @@ async function searchNews(query: string): Promise<NewsArticle[]> {
       const { data, error } = await supabase
         .from('news_articles')
         .select('*')
+        .gte('created_at', PUBLIC_NEWS_CUTOFF)
         .or(
           `ai_title.ilike.%${term}%,original_title.ilike.%${term}%,ai_content.ilike.%${term}%`
         )

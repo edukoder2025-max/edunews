@@ -5,6 +5,7 @@ import { getSiteUrl } from '@/lib/seoUtils';
 import { TOPIC_HUBS } from '@/lib/topicHubs';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
 import { applyEditorialOverride, shouldRedirectEditorialArticle } from '@/lib/editorialOverrides';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 
 export const revalidate = 300;
 
@@ -25,6 +26,7 @@ async function getAllArticlesForSitemap() {
       .from('news_articles')
       .select('id, published_at, created_at, category, ai_title, original_title')
       .not('published_at', 'is', null)
+      .gte('created_at', PUBLIC_NEWS_CUTOFF)
       .order('published_at', { ascending: false })
       .range(from, from + SITEMAP_BATCH_SIZE - 1);
 
