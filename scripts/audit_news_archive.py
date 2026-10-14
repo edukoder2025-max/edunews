@@ -14,7 +14,7 @@ from collections import Counter
 from datetime import datetime, timezone
 
 FIELDS = "id,original_title,ai_title,category,source_name,source_url,published_at,original_content,ai_content,sources_used"
-PAGE_SIZE = 250
+PAGE_SIZE = 50
 
 
 def text(value):
