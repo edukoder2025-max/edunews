@@ -10,7 +10,7 @@ export type NewsSource = {
   feedStatus: 'healthy' | 'disabled_pending_recheck';
   feedCheckedAt: string;
   /** Unknown is fail-closed. Perfil terms permit displaying title/link only, not rewriting. */
-  rewriteRights: 'unknown' | 'restricted';
+  rewriteRights: 'approved' | 'unknown' | 'restricted';
 };
 
 /**
@@ -36,7 +36,7 @@ export const NEWS_SOURCES: NewsSource[] = [
   { id: 'infobae', name: 'Infobae', url: 'https://www.infobae.com/feeds/rss/', section: 'Argentina', enabled: false, maxArticlesPerRun: 3, feedStatus: 'disabled_pending_recheck', feedCheckedAt: '2026-10-14', rewriteRights: 'unknown' },
   { id: 'el-observador', name: 'El Observador', url: 'https://elobservador.com.ar/rss', section: 'Argentina', enabled: false, maxArticlesPerRun: 3, feedStatus: 'disabled_pending_recheck', feedCheckedAt: '2026-10-14', rewriteRights: 'unknown' },
   { id: 'la-prensa', name: 'La Prensa', url: 'https://www.laprensa.com.ar/Rss.aspx?IdSeccion=14', section: 'Argentina', enabled: false, maxArticlesPerRun: 3, feedStatus: 'disabled_pending_recheck', feedCheckedAt: '2026-10-14', rewriteRights: 'unknown' },
-  { id: 'cronista', name: 'El Cronista', url: 'https://www.cronista.com/files/rss/news.xml', section: 'Economía', enabled: false, maxArticlesPerRun: 3, feedStatus: 'healthy', feedCheckedAt: '2026-10-14', rewriteRights: 'unknown' },
+  { id: 'cronista', name: 'El Cronista', url: 'https://www.cronista.com/arc/outboundfeeds/news/', section: 'Economía', enabled: false, maxArticlesPerRun: 3, feedStatus: 'healthy', feedCheckedAt: '2026-10-14', rewriteRights: 'unknown' },
   { id: 'libertad-digital', name: 'Libertad Digital', url: 'https://feeds.feedburner.com/libertaddigital/portada', section: 'Mundo', enabled: false, maxArticlesPerRun: 3, feedStatus: 'healthy', feedCheckedAt: '2026-10-14', rewriteRights: 'unknown' },
   { id: 'perfil', name: 'Perfil', url: 'https://www.perfil.com/rss/ultimo-momento', section: 'Argentina', enabled: false, maxArticlesPerRun: 3, feedStatus: 'disabled_pending_recheck', feedCheckedAt: '2026-10-14', rewriteRights: 'restricted' },
   { id: 'eleconomista', name: 'El Economista', url: 'https://eleconomista.com.ar/rss/feed.xml', section: 'Economía', enabled: false, maxArticlesPerRun: 3, feedStatus: 'disabled_pending_recheck', feedCheckedAt: '2026-10-14', rewriteRights: 'unknown' },
