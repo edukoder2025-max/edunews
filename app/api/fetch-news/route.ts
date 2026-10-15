@@ -51,7 +51,7 @@ const EDITORIAL_AI_BUDGET_APPROVED = false;
 const MAX_SOURCES_PER_RUN = 5;
 const MAX_STORIES_PER_RUN = 1; // Pilot: at most one story per run to conserve Gemini quota.
 const STORY_WINDOW_HOURS = 48;
-const PROMPT_VERSION = 'two-step-gemini-redactor-v2';
+const PROMPT_VERSION = 'two-step-gemini-redactor-v3';
 
 function isAuthorized(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -99,6 +99,7 @@ function heldResult(code: string, summary: string): EditorialReviewResult {
     summary,
     redactedTitle: null,
     redactedHtmlContent: null,
+    editorialComparison: null,
     claims: [],
     issues: [{ severity: 'major', code, description: summary }],
   };

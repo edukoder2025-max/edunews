@@ -27,12 +27,18 @@ export type ReviewIssue = {
   description: string;
 };
 
+export type EditorialComparison = {
+  sourceFindings: Array<{ aspect: string; observation: string; evidenceUrls: string[] }>;
+  elIronicoImprovements: Array<{ aspect: string; action: string }>;
+};
+
 export type EditorialReviewResult = {
   decision: ReviewDecision;
   model: string;
   summary: string;
   redactedTitle: string | null;
   redactedHtmlContent: string | null;
+  editorialComparison: EditorialComparison | null;
   claims: ClaimReview[];
   issues: ReviewIssue[];
 };
@@ -47,6 +53,7 @@ function held(model: string, code: string, description: string): EditorialReview
     summary: description,
     redactedTitle: null,
     redactedHtmlContent: null,
+    editorialComparison: null,
     claims: [],
     issues: [{ severity: 'major', code, description }],
   };
@@ -68,6 +75,33 @@ function validateReview(raw: unknown, model: string, allowedUrls: Set<string>): 
   const decision = value.decision as ReviewDecision;
   const redactedTitle = typeof value.redactedTitle === 'string' ? value.redactedTitle.trim().slice(0, 500) : null;
   const redactedHtmlContent = typeof value.redactedHtmlContent === 'string' ? value.redactedHtmlContent.trim().slice(0, 100000) : null;
+  let editorialComparison: EditorialComparison | null = null;
+  const comparisonRaw = value.editorialComparison;
+  if (comparisonRaw && typeof comparisonRaw === 'object') {
+    const comparison = comparisonRaw as Record<string, unknown>;
+    const findingsRaw = Array.isArray(comparison.sourceFindings) ? comparison.sourceFindings : [];
+    const improvementsRaw = Array.isArray(comparison.elIronicoImprovements) ? comparison.elIronicoImprovements : [];
+    const sourceFindings: EditorialComparison['sourceFindings'] = [];
+    for (const item of findingsRaw) {
+      if (!item || typeof item !== 'object') return held(model, 'invalid_editorial_comparison', 'La comparación editorial contiene un hallazgo mal formado.');
+      const finding = item as Record<string, unknown>;
+      const evidenceUrls = Array.isArray(finding.evidenceUrls) ? finding.evidenceUrls.filter((url): url is string => typeof url === 'string') : [];
+      if (typeof finding.aspect !== 'string' || !finding.aspect.trim() || typeof finding.observation !== 'string' || !finding.observation.trim() || evidenceUrls.length === 0 || evidenceUrls.some((url) => !allowedUrls.has(url))) {
+        return held(model, 'invalid_editorial_comparison', 'Cada crítica a la pieza fuente debe ser concreta y citar evidencias aprobadas.');
+      }
+      sourceFindings.push({ aspect: finding.aspect.trim().slice(0, 120), observation: finding.observation.trim().slice(0, 1000), evidenceUrls });
+    }
+    const elIronicoImprovements: EditorialComparison['elIronicoImprovements'] = [];
+    for (const item of improvementsRaw) {
+      if (!item || typeof item !== 'object') return held(model, 'invalid_editorial_comparison', 'La comparación no describe una mejora editorial propia válida.');
+      const improvement = item as Record<string, unknown>;
+      if (typeof improvement.aspect !== 'string' || !improvement.aspect.trim() || typeof improvement.action !== 'string' || !improvement.action.trim()) {
+        return held(model, 'invalid_editorial_comparison', 'La comparación no describe una mejora editorial propia válida.');
+      }
+      elIronicoImprovements.push({ aspect: improvement.aspect.trim().slice(0, 120), action: improvement.action.trim().slice(0, 1000) });
+    }
+    editorialComparison = { sourceFindings, elIronicoImprovements };
+  }
   const claimsRaw = Array.isArray(value.claims) ? value.claims : [];
   const issuesRaw = Array.isArray(value.issues) ? value.issues : [];
 
@@ -102,7 +136,8 @@ function validateReview(raw: unknown, model: string, allowedUrls: Set<string>): 
   let finalDecision = decision;
   const anyUnsupported = claims.some((claim) => claim.status !== 'supported' || claim.evidenceUrls.length === 0);
   const severeIssue = issues.some((issue) => issue.severity === 'critical' || issue.severity === 'major');
-  if (decision === 'approve' && (!redactedTitle || !redactedHtmlContent || claims.length === 0 || anyUnsupported || severeIssue)) finalDecision = 'hold';
+  const comparisonComplete = Boolean(editorialComparison && editorialComparison.sourceFindings.length > 0 && editorialComparison.elIronicoImprovements.length > 0);
+  if (decision === 'approve' && (!redactedTitle || !redactedHtmlContent || !comparisonComplete || claims.length === 0 || anyUnsupported || severeIssue)) finalDecision = 'hold';
 
   return {
     decision: finalDecision,
@@ -110,6 +145,7 @@ function validateReview(raw: unknown, model: string, allowedUrls: Set<string>): 
     summary: typeof value.summary === 'string' ? value.summary : 'La segunda etapa terminó sin resumen.',
     redactedTitle,
     redactedHtmlContent,
+    editorialComparison,
     claims,
     issues,
   };
@@ -159,7 +195,30 @@ export async function reviewEditorialDraft(input: {
     excerpt: item.excerpt.slice(0, 6000),
   }));
 
-  const prompt = `Sos la IA redactora de segunda etapa de El Irónico. Usás la misma credencial Gemini que la etapa generadora, pero trabajás como una llamada y un prompt separados. Tu tarea es crear una versión editorial final del borrador: original en estructura y redacción, clara, precisa, equilibrada y con valor propio. No hagas sustitución mecánica de sinónimos ni copies frases de las fuentes.\n\nUsá exclusivamente las evidencias adjuntas. No uses memoria, conocimiento externo ni completes datos faltantes. No inventes hechos, cifras, citas, fechas, enlaces ni atribuciones. Conservá el contexto material; distinguí hechos de declaraciones; atribuí las afirmaciones según la evidencia. Si algo no está respaldado, omitilo o marcá la limitación en la redacción y registralo como unsupported/partial. Dos dominios del mismo grupo no son evidencia independiente.\n\nAdemás de redactar, audita todas las afirmaciones materiales de la versión propuesta. El campo decision solo puede ser approve si el texto final es completo, no copia sustancialmente las fuentes y cada afirmación material queda apoyada por evidencias aprobadas; en caso de dudas, contradicciones, insuficiencia o similitud relevante usa hold o revise. Esta etapa no certifica verdad ni originalidad y no reemplaza la edición final de Zapia. Las URLs de evidenceUrls deben copiarse exactamente de las evidencias adjuntas.\n\nDevolvé exclusivamente JSON con esta forma: {"decision":"approve|revise|hold|reject","summary":"...","redactedTitle":"título nuevo","redactedHtmlContent":"contenido HTML nuevo","claims":[{"claim":"...","status":"supported|partial|unsupported|contradicted","evidenceUrls":["URL exacta"],"note":"..."}],"issues":[{"severity":"critical|major|minor","code":"...","description":"..."}]}. Incluí todas las afirmaciones factuales materiales. Si no podés producir una redacción respaldada, devuelve decision=hold y deja redactedTitle/redactedHtmlContent vacíos.\n\nBORRADOR DE LA PRIMERA ETAPA:\nTítulo: ${input.title}\nCategoría: ${input.category}\nHTML: ${input.htmlContent.slice(0, 24000)}\n\nEVIDENCIAS APROBADAS:\n${JSON.stringify(evidenceBlock)}`;
+  const prompt = `Sos la redactora crítica de segunda etapa de El Irónico. Usás una llamada separada, pero la misma credencial Gemini que la IA generativa. MODELO EDITORIAL: El Irónico no es un periódico que reescribe feeds ni reproduce la noticia con otras palabras. Publica artículos propios que examinan críticamente cómo la fuente original construyó su pieza y, al mismo tiempo, ofrecen al lector una versión periodística mejor documentada, precisa y bien armada. Tu trabajo no es resumir ni parafrasear: usá el borrador inicial como material de trabajo, no como texto final, y reconstruí una pieza original con tesis, estructura y valor propios.
+
+ARTÍCULO PRINCIPAL (redactedTitle y redactedHtmlContent):
+- Escribí para el lector, no como una carta o una instrucción directa al medio. El título debe expresar la tesis o el problema editorial comprobable con precisión y sin clickbait; no uses fórmulas genéricas como “así se debe escribir” ni acusaciones vacías.
+- La nota debe hacer una crítica fuerte, concreta y argumentada de las decisiones periodísticas observables en la pieza fuente: título y enfoque, relación entre título y contenido, entrada, evidencia y fuentes, atribuciones, contexto, equilibrio, tratamiento de cifras/citas, estructura y claridad. Elegí solo los aspectos que puedas demostrar; no fuerces todos los puntos.
+- Construí un artículo legible y completo: entrada que explique por qué importa el caso, desarrollo con ejemplos verificables, contexto indispensable, análisis de cómo esas decisiones afectan la comprensión del lector y cierre que deje clara la lección o el límite. La propia nota debe demostrar el estándar que reclama mediante exactitud, fuentes, atribuciones, contexto y límites explícitos.
+- La crítica recae en el texto y sus decisiones editoriales, no en ataques personales. No atribuyas intención, mala fe, mentira, manipulación, incompetencia o sesgo a periodistas o medios sin evidencia directa, suficiente y relevante. No conviertas una omisión no verificable en hecho: si solo recibiste un fragmento, limita la crítica a ese fragmento.
+- No inventes ni completes hechos. Usá exclusivamente las evidencias aprobadas adjuntas. Separá hechos, declaraciones e interpretación; incluí todas las limitaciones relevantes. No reproduzcas párrafos de la fuente ni hagas sustitución mecánica de sinónimos; las citas deben ser breves, necesarias y atribuidas. Dos dominios del mismo grupo no son evidencia independiente.
+- Si la fuente no presenta un defecto periodístico material que pueda demostrarse con la evidencia disponible, no fabriques una crítica: decidí reject o hold y explica por qué.
+- Redactá con párrafos y subtítulos HTML útiles, sin relleno; apunta a 450–800 palabras solo cuando la evidencia alcance. Si el caso es breve, preferí una pieza más corta, precisa y honesta.
+
+COMPARACIÓN EDITORIAL SEPARADA: devolvé editorialComparison para el módulo separado de la página, no la mezcles dentro del cuerpo principal. Incluí entre 1 y 5 hallazgos concretos de la pieza fuente, cada uno con aspecto, observación y una o más URLs exactas de evidencia; y entre 1 y 5 acciones que expliquen qué hizo El Irónico para corregir o mejorar ese aspecto. La comparación tiene que corresponder a la crítica desarrollada en el artículo. No declares que El Irónico resolvió algo si la propia nota no lo demuestra.
+
+AUDITORÍA: revisá todas las afirmaciones materiales del artículo final. decision solo puede ser approve si la pieza es original en enfoque y estructura, contiene una crítica verificable, cada afirmación factual material está apoyada por evidencias aprobadas, el cuerpo principal está completo y editorialComparison contiene hallazgos citados y mejoras propias. Si hay insuficiencia, contradicción, afirmación parcial, similitud sustancial, crítica no demostrada o comparación incompleta, elegí hold/revise/reject. Esta etapa no certifica verdad ni originalidad y no reemplaza la edición final de Zapia. Las URLs de claims y comparación deben copiarse exactamente de las evidencias proporcionadas.
+
+Devolvé exclusivamente JSON con esta forma: {"decision":"approve|revise|hold|reject","summary":"...","redactedTitle":"título propio de El Irónico","redactedHtmlContent":"artículo crítico original en HTML","editorialComparison":{"sourceFindings":[{"aspect":"...","observation":"...","evidenceUrls":["URL exacta"]}],"elIronicoImprovements":[{"aspect":"...","action":"..."}]},"claims":[{"claim":"...","status":"supported|partial|unsupported|contradicted","evidenceUrls":["URL exacta"],"note":"..."}],"issues":[{"severity":"critical|major|minor","code":"...","description":"..."}]}. Incluí todas las afirmaciones factuales materiales. Si no hay crítica sustentable, devuelve decision=reject o hold; no inventes observaciones.
+
+BORRADOR DE TRABAJO DE LA PRIMERA ETAPA:
+Título: ${input.title}
+Categoría: ${input.category}
+HTML: ${input.htmlContent.slice(0, 24000)}
+
+EVIDENCIAS APROBADAS:
+${JSON.stringify(evidenceBlock)}`;
 
   try {
     const response = await model.generateContent(prompt);

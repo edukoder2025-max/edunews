@@ -41,6 +41,8 @@ checks = {
     "private queue uses atomic RPC": "rpc('enqueue_editorial_review_candidate'" in route,
     "AI approval remains pending, never published": "queueStatus = 'review_pending'" in route and "publishedCount: 0" in route,
     "same Gemini credential powers a separate redactor call": "process.env.GEMINI_API_KEY" in review and "redactedHtmlContent" in review and "redactedHtmlContent" in route and "EDITORIAL_REVIEW_API_KEY" not in review,
+    "redactor follows El Irónico's original critical model": "no es un periódico que reescribe feeds" in review and "hagas sustitución mecánica" in review and "editorialComparison" in review and "editorialComparison" in route,
+    "source criticism must cite approved evidence": "evidenceUrls.some((url) => !allowedUrls.has(url))" in review and "comparisonComplete" in review,
     "pilot is limited to one story per execution": "MAX_STORIES_PER_RUN = 1" in route,
     "pilot uses the same Gemini key without fallback": "allowFallback: false" in route and "options.allowFallback !== false" in gemini,
     "all configured sources are disabled": sources.count("enabled: false") == 22 and "enabled: true" not in sources,
