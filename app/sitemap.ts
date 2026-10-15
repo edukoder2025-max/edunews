@@ -6,6 +6,7 @@ import { TOPIC_HUBS } from '@/lib/topicHubs';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
 import { applyEditorialOverride, shouldRedirectEditorialArticle } from '@/lib/editorialOverrides';
 import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
+import { hasValidEditorialComparison } from '@/lib/editorialComparison';
 
 export const revalidate = 300;
 
@@ -18,13 +19,13 @@ async function getAllArticlesForSitemap() {
     created_at: string | null;
     category: string | null;
     ai_title: string | null;
-    original_title: string | null;
+    editorial_comparison?: unknown;
   }> = [];
 
   for (let from = 0; ; from += SITEMAP_BATCH_SIZE) {
     const { data, error } = await supabase
       .from('news_articles')
-      .select('id, published_at, created_at, category, ai_title, original_title')
+      .select('*')
       .not('published_at', 'is', null)
       .gte('created_at', PUBLIC_NEWS_CUTOFF)
       .order('published_at', { ascending: false })
@@ -48,13 +49,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
   const articles = await getAllArticlesForSitemap();
 
-  const articleEntries = articles.filter((article) => !shouldRedirectEditorialArticle(article.id)).map((rawArticle) => {
+  const articleEntries = articles.filter((article) => !shouldRedirectEditorialArticle(article.id) && Boolean(article.ai_title) && hasValidEditorialComparison(article.editorial_comparison)).map((rawArticle) => {
     const article = applyEditorialOverride(rawArticle);
     return {
     url: buildArticleUrl(
       article.id,
-      article.ai_title || article.original_title || article.id,
-      normalizeEditorialCategory(article.category, article.ai_title || article.original_title),
+      article.ai_title || 'Análisis editorial',
+      normalizeEditorialCategory(article.category, article.ai_title),
       baseUrl,
     ),
     lastModified: new Date(article.published_at || article.created_at || Date.now()),

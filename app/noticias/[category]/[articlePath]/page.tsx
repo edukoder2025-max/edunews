@@ -1,24 +1,21 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
+import { ArrowLeft, ArrowRight, CalendarDays, ExternalLink, FileSearch } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { buildArticleUrl, extractArticleId, getArticleImage, normalizeCategorySlug, slugify } from '@/lib/articleUtils';
+import { applyEditorialOverride, getEditorialOverride } from '@/lib/editorialOverrides';
+import { buildArticleUrl, extractArticleId, normalizeCategorySlug, slugify } from '@/lib/articleUtils';
 import { generateArticleDescription, generateArticleTitle, generateCategoryKeywords, getSiteUrl } from '@/lib/seoUtils';
 import { normalizeEditorialCategory } from '@/lib/editorialRules';
-import { applyEditorialOverride, getEditorialOverride } from '@/lib/editorialOverrides';
-import Link from 'next/link';
-import Image from 'next/image';
-import Script from 'next/script';
-import { notFound, redirect } from 'next/navigation';
-import { Metadata } from 'next';
+import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
 import ShareButtons from '@/components/ShareButtons';
-import AiTransparencyPanel from '@/components/AiTransparencyPanel';
 import AdSense from '@/components/AdSense';
 import { AD_SLOTS } from '@/lib/adSlots';
-import { Calendar, ChevronLeft, Shield, Eye, Flame, Compass, TrendingUp } from 'lucide-react';
-import SafeImage from '@/components/SafeImage';
-import ContributionCTABanner from '@/components/ContributionCTABanner';
-import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
+import EditorialComparisonPanel from '@/components/EditorialComparisonPanel';
+import { parseEditorialComparison, sanitizeEditorialHtml } from '@/lib/editorialComparison';
+import type { EditorialComparisonData } from '@/lib/editorialComparison';
 
-
-export const revalidate = 60; // Revalidar para que el corte de archivo se aplique pronto
+export const revalidate = 60;
 
 async function getArticle(id: string) {
   const { data, error } = await supabase
@@ -26,437 +23,191 @@ async function getArticle(id: string) {
     .select('*')
     .eq('id', id)
     .gte('created_at', PUBLIC_NEWS_CUTOFF)
+    .not('published_at', 'is', null)
     .single();
 
   if (error || !data) return null;
-  return applyEditorialOverride(data);
+  const article = applyEditorialOverride(data) as any;
+  const comparison = parseEditorialComparison(article.editorial_comparison);
+  // Fail closed: no article from the new stage is visible/indexable without its own body and separate comparison.
+  if (!article.ai_title?.trim() || !article.ai_content?.trim() || !comparison) return null;
+  return { ...article, editorial_comparison: comparison };
 }
 
-// SEO Dinámico: Genera el título y descripción únicos para Google
 export async function generateMetadata({ params }: { params: { category: string; articlePath: string } }): Promise<Metadata> {
-  const articleId = extractArticleId(params.articlePath);
-  const article = await getArticle(articleId);
-  if (!article) return { title: 'Noticia no encontrada', robots: { index: false, follow: false } };
-
-  const articleTitle = article.ai_title || article.original_title;
-  const editorialCategory = normalizeEditorialCategory(article.category, articleTitle);
-  const title = generateArticleTitle(articleTitle, editorialCategory);
-  const description = generateArticleDescription(
-    articleTitle,
-    article.ai_content || article.original_content || '',
-    editorialCategory
-  );
-  const keywords = generateCategoryKeywords(editorialCategory);
-  const canonicalUrl = buildArticleUrl(
-    article.id,
-    article.ai_title || article.original_title,
-    editorialCategory,
-    getSiteUrl(),
-  );
-  const ogImageUrl = `${canonicalUrl}/opengraph-image`;
-
+  const article = await getArticle(extractArticleId(params.articlePath));
+  if (!article) return { title: 'Análisis no disponible', robots: { index: false, follow: false } };
+  const category = normalizeEditorialCategory(article.category, article.ai_title);
+  const canonicalUrl = buildArticleUrl(article.id, article.ai_title, category, getSiteUrl());
+  const description = generateArticleDescription(article.ai_title, article.ai_content, category);
+  const title = generateArticleTitle(article.ai_title, category);
+  const keywords = generateCategoryKeywords(category);
   return {
     title,
     description,
-    keywords: `${keywords}, ${(article.ai_title || article.original_title).substring(0, 50)}`,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    keywords: `${keywords}, crítica periodística, análisis editorial`,
+    alternates: { canonical: canonicalUrl },
+    robots: { index: true, follow: true },
     openGraph: {
-      title: article.ai_title || article.original_title,
-      description: `${editorialCategory} | Escrita con asistencia de IA`,
+      title: article.ai_title,
+      description,
       url: canonicalUrl,
       type: 'article',
-      images: [{
-        url: ogImageUrl,
-        width: 1200,
-        height: 630,
-        alt: article.ai_title || article.original_title,
-      }],
+      siteName: 'El Irónico',
+      locale: 'es_AR',
       publishedTime: article.published_at,
       authors: ['El Irónico'],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: article.ai_title || article.original_title,
-      description,
-      images: [ogImageUrl],
-    },
+    twitter: { card: 'summary', title: article.ai_title, description },
   };
 }
 
 async function getRelatedArticles(category: string, currentId: string) {
   const { data, error } = await supabase
     .from('news_articles')
-    .select('id, ai_title, original_title, image_url, published_at, category')
+    .select('*')
     .ilike('category', category)
     .neq('id', currentId)
     .gte('created_at', PUBLIC_NEWS_CUTOFF)
+    .not('published_at', 'is', null)
     .order('published_at', { ascending: false })
-    .limit(4);
-
+    .limit(8);
   if (error) return [];
-  return data || [];
+  return (data || []).filter((item: any) => item.id && item.published_at && item.ai_title && item.ai_content && parseEditorialComparison(item.editorial_comparison)).slice(0, 3);
 }
 
-async function getTopReadArticles() {
-  const { data, error } = await supabase
-    .from('news_articles')
-    .select('id, ai_title, original_title, image_url, published_at, category, views')
-    .gte('created_at', PUBLIC_NEWS_CUTOFF)
-    .order('views', { ascending: false })
-    .limit(5);
-
-  if (error) return [];
-  return data || [];
+function safeHttpsUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password ? url.toString() : null; } catch { return null; }
 }
 
-function getApproximateDailyReaders(views: number) {
-  const estimate = Math.round((views || 250) * 1.15 + 1600);
-  return Math.min(Math.max(estimate, 1800), 16000);
-}
-
-// Fallback de imágenes en alta definición de Unsplash organizadas por categoría
-function getCategoryFallbackImage(category: string) {
-  const cat = (category || '').toLowerCase().trim();
-  if (cat.includes('mundo')) return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('argentina')) return 'https://images.unsplash.com/photo-1545852528-fa22f7f8d17a?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('tecnolog')) return 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('econom')) return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('deport')) return 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('ciencia') || cat.includes('cultur') || cat.includes('ciencias')) return 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800&auto=format&fit=crop';
-  return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=800&auto=format&fit=crop';
-}
-
-function getCategoryColor(category: string) {
-  const cat = (category || '').toLowerCase().trim();
-  if (cat.includes('mundo')) return 'text-cat-mundo border-cat-mundo/20 bg-cat-mundo/10';
-  if (cat.includes('argentina')) return 'text-cat-argentina border-cat-argentina/20 bg-cat-argentina/10';
-  if (cat.includes('tecnolog')) return 'text-cat-tecnologia border-cat-tecnologia/20 bg-cat-tecnologia/10';
-  if (cat.includes('econom')) return 'text-cat-economia border-cat-economia/20 bg-cat-economia/10';
-  if (cat.includes('deport')) return 'text-cat-deportes border-cat-deportes/20 bg-cat-deportes/10';
-  if (cat.includes('ciencia') || cat.includes('cultur') || cat.includes('ciencias')) return 'text-cat-cultura border-cat-cultura/20 bg-cat-cultura/10';
-  return 'text-cat-general border-cat-general/20 bg-cat-general/10';
+function formatDate(value: string | null | undefined): string | null {
+  if (!value || Number.isNaN(new Date(value).getTime())) return null;
+  return new Date(value).toLocaleDateString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
 }
 
 export default async function ArticlePage({ params }: { params: { category: string; articlePath: string } }) {
-  const publicationId = process.env.NEXT_PUBLIC_GOOGLE_SWG_PUBLICATION_ID || 'CAowg7u3DA';
   const articleId = extractArticleId(params.articlePath);
   const article = await getArticle(articleId);
+  if (!article) notFound();
 
-  if (!article) {
-    notFound();
+  const override = getEditorialOverride(article.id);
+  if (override?.redirectToArticleId) {
+    const canonicalArticle = await getArticle(override.redirectToArticleId);
+    if (canonicalArticle) redirect(buildArticleUrl(canonicalArticle.id, canonicalArticle.ai_title, canonicalArticle.category));
   }
 
-  const editorialOverride = getEditorialOverride(article.id);
-  if (editorialOverride?.redirectToArticleId) {
-    const canonicalArticle = await getArticle(editorialOverride.redirectToArticleId);
-    if (canonicalArticle) {
-      redirect(buildArticleUrl(
-        canonicalArticle.id,
-        canonicalArticle.ai_title || canonicalArticle.original_title,
-        normalizeEditorialCategory(canonicalArticle.category, canonicalArticle.ai_title || canonicalArticle.original_title),
-      ));
-    }
+  const category = normalizeEditorialCategory(article.category, article.ai_title);
+  const expectedPath = `${slugify(article.ai_title) ? `${slugify(article.ai_title)}-${article.id}` : article.id}`;
+  if (params.category !== normalizeCategorySlug(category) || params.articlePath !== expectedPath) {
+    redirect(buildArticleUrl(article.id, article.ai_title, category));
   }
 
-  const articleTitle = article.ai_title || article.original_title;
-  const editorialCategory = normalizeEditorialCategory(article.category, articleTitle);
-  const currentCategorySlug = normalizeCategorySlug(editorialCategory);
-  const cleanSlug = slugify(article.ai_title || article.original_title);
-  const expectedArticlePath = `${cleanSlug ? `${cleanSlug}-${article.id}` : article.id}`;
-
-  if (params.category !== currentCategorySlug || params.articlePath !== expectedArticlePath) {
-    redirect(buildArticleUrl(article.id, articleTitle, editorialCategory));
-  }
-
-  const relatedArticles = await getRelatedArticles(article.category || '', article.id);
-  const topReadArticles = await getTopReadArticles();
-  const todayReaders = getApproximateDailyReaders(article.views || 0);
-  const siteUrl = getSiteUrl();
-  const articleDescription = generateArticleDescription(
-    articleTitle,
-    article.ai_content || article.original_content || '',
-    editorialCategory,
-  );
-  const canonicalUrl = buildArticleUrl(article.id, articleTitle, editorialCategory, siteUrl);
-  const articleImage = getArticleImage(article);
+  const comparison = article.editorial_comparison as EditorialComparisonData;
+  const related = await getRelatedArticles(article.category || '', article.id);
+  const canonicalUrl = buildArticleUrl(article.id, article.ai_title, category, getSiteUrl());
+  const articleDate = formatDate(article.published_at);
+  const sourceUrl = safeHttpsUrl(article.source_url);
+  const description = generateArticleDescription(article.ai_title, article.ai_content, category);
   const structuredData = {
     '@context': 'https://schema.org',
-    '@type': 'NewsArticle',
-    headline: articleTitle,
-    description: articleDescription,
-    image: [articleImage],
+    '@type': 'Article',
+    headline: article.ai_title,
+    description,
     datePublished: article.published_at,
-    author: {
-      '@type': 'Organization',
-      name: 'El Irónico',
-      url: siteUrl,
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'El Irónico',
-      url: siteUrl,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${siteUrl}/icon.png`,
-      },
-    },
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': canonicalUrl,
-    },
-    articleSection: editorialCategory,
+    author: { '@type': 'Organization', name: 'El Irónico', url: getSiteUrl() },
+    publisher: { '@type': 'Organization', name: 'El Irónico', url: getSiteUrl() },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+    articleSection: category,
     isAccessibleForFree: true,
-  };
-  const breadcrumbData = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Inicio', item: siteUrl },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: editorialCategory,
-        item: `${siteUrl}/categoria/${normalizeCategorySlug(editorialCategory)}`,
-      },
-      { '@type': 'ListItem', position: 3, name: articleTitle, item: canonicalUrl },
-    ],
   };
 
   return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Sincronización con Google Publisher Center / Subscribe with Google */}
-      <Script
-        src="https://news.google.com/swg/js/v1/swg-basic.js"
-        strategy="afterInteractive"
-      />
-      <Script id="google-swg-init" strategy="afterInteractive">
-        {`(self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
-          basicSubscriptions.init({
-            type: "NewsArticle",
-            isPartOfType: ["Product"],
-            isPartOfProductId: "${publicationId}:openaccess",
-            clientOptions: { theme: "light", lang: "es-419" },
-          });
-          // Expose the instance so swgClient.ts can call methods directly
-          window.SWG_BASIC = basicSubscriptions;
-          window.dispatchEvent(new Event('swg-ready'));
-        });`}
-      </Script>
-      <div className="mb-6">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors group text-xs font-black uppercase tracking-widest"
-        >
-          <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          Volver a la portada
-        </Link>
-      </div>
+    <article className="mx-auto w-full max-w-5xl px-5 pb-20 pt-8 sm:px-8 sm:pt-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }} />
+      <nav aria-label="Ruta de navegación" className="mb-8 flex flex-wrap items-center gap-2 text-xs font-semibold text-[#777064]">
+        <Link href="/" className="inline-flex items-center gap-1.5 hover:text-[#9b3732]"><ArrowLeft size={13} aria-hidden="true" /> Portada</Link>
+        <span aria-hidden="true">/</span><Link href={`/categoria/${normalizeCategorySlug(category)}`} className="hover:text-[#9b3732]">{category}</Link>
+        <span aria-hidden="true">/</span><span aria-current="page">Análisis</span>
+      </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <article className="lg:col-span-8 space-y-8">
-          <header className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3 text-xs font-black uppercase tracking-wider">
-              <span className={`px-3 py-1 border rounded-full ${getCategoryColor(editorialCategory)}`}>
-                {editorialCategory}
-              </span>
-              <span className="text-slate-600">•</span>
-              <span className="text-slate-400">Redacción El Irónico</span>
-              <span className="text-slate-600">•</span>
-              <span className="text-slate-400 flex items-center gap-1">
-                <Calendar size={12} />
-                {new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400 mt-2">
-              <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 bg-slate-950/70">
-                <Eye size={14} className="text-primary" />
-                ≈ {todayReaders.toLocaleString('es-ES')} lectores hoy
-              </span>
-            </div>
-
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black font-serif text-white leading-[1.05] tracking-tight">
-              {article.ai_title || article.original_title}
-            </h1>
-
-            {article.source_name && (
-              <p className="text-xs text-slate-500 font-medium">
-                Fuente original: <span className="text-slate-300 font-bold">{article.source_name}</span> (extraído automáticamente vía RSS)
-              </p>
-            )}
-          </header>
-
-          <ContributionCTABanner />
-
-          <ShareButtons
-            url={`https://elironico.com${buildArticleUrl(article.id, articleTitle, editorialCategory)}`}
-            title={article.ai_title || article.original_title}
-          />
-
-          <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-            <Image
-              src={getArticleImage(article)}
-              alt={article.ai_title || 'Imagen del artículo'}
-              fill
-              sizes="100vw"
-              priority
-              fetchPriority="high"
-              className="absolute inset-0 object-cover w-full h-full"
-            />
-          </div>
-
-          <AiTransparencyPanel
-            aiTitle={article.ai_title || article.original_title}
-            originalTitle={article.original_title}
-            aiContent={article.ai_content || article.original_content}
-            originalContent={article.original_content}
-            sourceName={article.source_name || 'RSS Feed'}
-            sourceUrl={article.source_url || ''}
-            category={editorialCategory}
-            biasDetected={article.bias_detected}
-            biasScore={article.bias_score}
-            sourcesUsed={article.sources_used}
-          />
-
-          {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-            <div className="my-10 p-6 bg-slate-900/50 rounded-lg border border-white/5 text-center ad-container">
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-600 block mb-4">Publicidad</span>
-              <AdSense slot={AD_SLOTS.ARTICLE_MIDDLE} format="auto" className="w-full" />
-            </div>
+      <header className="border-b border-[#d9d1c5] pb-8 sm:pb-10">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold uppercase tracking-[.13em] text-[#777064]">
+          <span className="rounded-full bg-[#eadfd4] px-3 py-1 text-[#87332e]">Crítica periodística</span>
+          <span>{category}</span>
+          {articleDate && <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} aria-hidden="true" />{articleDate}</span>}
+        </div>
+        <h1 className="mt-5 max-w-4xl font-serif text-4xl font-bold leading-[1.05] tracking-[-.035em] text-[#191a17] sm:text-6xl">{article.ai_title}</h1>
+        <p className="mt-5 max-w-3xl text-base leading-7 text-[#5d594f]">Un análisis de cómo la pieza original presenta la información, qué sostiene con evidencia y qué decisiones editoriales merecen una lectura crítica.</p>
+        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-[#5d594f]">
+          <span>Fuente analizada: <strong className="text-[#272722]">{article.source_name || 'Fuente no identificada'}</strong></span>
+          {sourceUrl && (
+            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-[#9b3732] underline underline-offset-4">
+              Ver pieza original <ExternalLink size={13} aria-hidden="true" />
+            </a>
           )}
+        </div>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <nav aria-label="Secciones de este análisis" className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold">
+            <a href="#analisis" className="text-[#38362f] underline decoration-[#c6bbae] underline-offset-4 hover:text-[#9b3732]">La crítica</a>
+            <a href="#comparacion" className="text-[#38362f] underline decoration-[#c6bbae] underline-offset-4 hover:text-[#9b3732]">Comparación</a>
+          </nav>
+          <ShareButtons url={canonicalUrl} title={article.ai_title} />
+        </div>
+      </header>
 
-          <footer className="mt-16 pt-10 border-t border-white/10 space-y-6">
-            <h3 className="text-xl font-black font-serif text-white uppercase tracking-tight flex items-center gap-2">
-              <Compass size={18} className="text-primary" />
-              Noticias Relacionadas
-            </h3>
+      <section id="analisis" aria-label="Artículo crítico de El Irónico" className="mx-auto max-w-3xl scroll-mt-8 py-8 sm:py-12">
+        <div className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-[#191a17] prose-p:text-[#302f2a] prose-p:leading-[1.85] prose-a:text-[#9b3732] prose-strong:text-[#191a17] prose-blockquote:border-l-[#a33a34] prose-blockquote:text-[#5d594f]">
+          <div dangerouslySetInnerHTML={{ __html: sanitizeEditorialHtml(article.ai_content) }} />
+        </div>
+      </section>
 
-            {relatedArticles.length === 0 ? (
-              <p className="text-xs text-slate-500 italic">No se encontraron artículos similares.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {relatedArticles.map((rel) => (
-                  <Link key={rel.id} href={buildArticleUrl(rel.id, rel.ai_title || rel.original_title, rel.category)} className="group block space-y-3">
-                    <div className="relative aspect-video rounded-xl overflow-hidden border border-white/5 group-hover:border-primary/20 transition-all duration-300">
-                      <SafeImage
-                        src={getArticleImage(rel)}
-                        fallbackSrc={getCategoryFallbackImage(rel.category)}
-                        alt={rel.ai_title}
-                        className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 border rounded ${getCategoryColor(rel.category)}`}>
-                        {rel.category || 'Mundo'}
-                      </span>
-                      <h4 className="text-base font-bold font-serif text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
-                        {rel.ai_title || rel.original_title}
-                      </h4>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </footer>
-        </article>
-
-        <aside className="lg:col-span-4 space-y-10">
-          <div className="sticky top-28 space-y-10">
-            <div className="bg-gradient-to-br from-slate-950 to-slate-900 border border-white/5 rounded-2xl p-5 space-y-4">
-              <div className="flex items-center gap-2 border-b border-white/5 pb-3">
-                <Shield size={16} className="text-secondary" />
-                <h3 className="text-xs font-black uppercase tracking-widest text-white">Código Ético El Irónico</h3>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                Garantizamos que todos nuestros artículos se generan reescribiendo fuentes legítimas mediante inteligencia artificial con el único fin de eliminar calificativos partidistas, manipulaciones emocionales o titulares engañosos.
-              </p>
-              <div className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
-                <Eye size={12} />
-                Auditoría pública en pestaña de transparencia
-              </div>
-            </div>
-
-            {topReadArticles.length > 0 && (
-              <div className="bg-slate-950/40 border border-white/5 rounded-2xl p-5 space-y-5">
-                <h3 className="text-xs font-black uppercase tracking-widest text-white border-b border-white/5 pb-3 flex items-center gap-2">
-                  <TrendingUp size={14} className="text-primary animate-pulse" />
-                  Las más leídas
-                </h3>
-                <div className="space-y-4">
-                  {topReadArticles.map((top) => (
-                    <Link key={top.id} href={buildArticleUrl(top.id, top.ai_title || top.original_title, top.category)} className="flex gap-4 group">
-                      <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-white/10">
-                        <SafeImage
-                          src={getArticleImage(top)}
-                          fallbackSrc={getCategoryFallbackImage(top.category)}
-                          alt={top.ai_title}
-                          className="object-cover w-full h-full"
-                        />
-                      </div>
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <h4 className="text-xs font-bold font-serif text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
-                          {top.ai_title || top.original_title}
-                        </h4>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-between gap-2">
-                          <span>{new Date(top.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                          <span className="text-primary">{(top.views || 0).toLocaleString('es-ES')} lect.</span>
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {relatedArticles.length > 0 && (
-              <div className="bg-slate-950/40 border border-white/5 rounded-2xl p-5 space-y-5">
-                <h3 className="text-xs font-black uppercase tracking-widest text-white border-b border-white/5 pb-3 flex items-center gap-2">
-                  <Flame size={14} className="text-primary animate-pulse" />
-                  Destacados de {editorialCategory}
-                </h3>
-                <div className="space-y-4">
-                  {relatedArticles.slice(0, 3).map((rel) => (
-                    <Link key={rel.id} href={buildArticleUrl(rel.id, rel.ai_title || rel.original_title, rel.category)} className="flex gap-4 group">
-                      <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-white/10">
-                        <SafeImage
-                          src={getArticleImage(rel)}
-                          fallbackSrc={getCategoryFallbackImage(rel.category)}
-                          alt={rel.ai_title}
-                          className="object-cover w-full h-full"
-                        />
-                      </div>
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <h4 className="text-xs font-bold font-serif text-white leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                          {rel.ai_title || rel.original_title}
-                        </h4>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
-                          {new Date(rel.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-              <div className="w-full bg-slate-950/60 border border-white/5 rounded-2xl overflow-hidden ad-container">
-                <div className="px-6 py-4 border-b border-white/5">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-600 block">Publicidad</span>
-                </div>
-                <div className="p-4">
-                  <AdSense slot={AD_SLOTS.ARTICLE_BOTTOM} format="vertical" className="flex justify-center" />
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
+      <div className="mx-auto max-w-3xl border-t border-[#d9d1c5] pt-5 text-sm leading-6 text-[#5d594f]">
+        <p><strong className="text-[#272722]">Criterio editorial:</strong> la evaluación se refiere a decisiones visibles en la pieza y a lo que permiten sostener las evidencias disponibles; no presume intenciones de sus autores.</p>
       </div>
-    </div>
-    </>
+
+      <div className="mx-auto my-10 max-w-5xl">
+        <EditorialComparisonPanel
+          comparison={comparison}
+          sourceName={article.source_name || 'Fuente original'}
+          sourceTitle={article.original_title || ''}
+          sourceUrl={sourceUrl || ''}
+        />
+      </div>
+
+      {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
+        <div className="mx-auto my-10 max-w-5xl rounded-2xl border border-[#d9d1c5] bg-[#eee8dc] p-4 text-center">
+          <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#777064]">Publicidad</span>
+          <AdSense slot={AD_SLOTS.ARTICLE_MIDDLE} format="auto" className="mt-3 w-full" />
+        </div>
+      )}
+
+      <section id="fuentes" className="mx-auto mt-10 max-w-5xl border-t border-[#d9d1c5] pt-6">
+        <h2 className="font-serif text-xl font-bold text-[#191a17]">Fuentes de esta lectura</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5d594f]">La comparación anterior enlaza las evidencias utilizadas para cada observación. La fuente original se identifica arriba; el texto completo de terceros no se reproduce aquí.</p>
+        <a href="#comparacion" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[#9b3732]">Ver evidencias <FileSearch size={15} aria-hidden="true" /></a>
+      </section>
+
+      {related.length > 0 && (
+        <section className="mx-auto mt-14 max-w-5xl border-t border-[#d9d1c5] pt-8">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="font-serif text-2xl font-bold text-[#191a17]">Más análisis de {category}</h2>
+            <Link href={`/categoria/${normalizeCategorySlug(category)}`} className="inline-flex items-center gap-1 text-sm font-bold text-[#9b3732]">Ver sección <ArrowRight size={14} aria-hidden="true" /></Link>
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {related.map((item: any) => (
+              <Link key={item.id} href={buildArticleUrl(item.id, item.ai_title, item.category)} className="rounded-2xl border border-[#d9d1c5] bg-[#f8f5ed] p-5 transition hover:-translate-y-0.5 hover:border-[#b23a34]">
+                <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#9b3732]">Crítica editorial</p>
+                <h3 className="mt-2 font-serif text-lg font-semibold leading-snug text-[#191a17]">{item.ai_title}</h3>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[#9b3732]">Leer <ArrowRight size={13} aria-hidden="true" /></span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </article>
   );
 }

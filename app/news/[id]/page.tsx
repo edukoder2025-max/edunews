@@ -4,6 +4,7 @@ import { generateArticleDescription, generateArticleTitle, generateCategoryKeywo
 import { notFound, redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
+import { hasValidEditorialComparison } from '@/lib/editorialComparison';
 
 export const revalidate = 60; // Revalidar para que el corte de archivo se aplique pronto
 
@@ -13,9 +14,10 @@ async function getArticle(id: string) {
     .select('*')
     .eq('id', id)
     .gte('created_at', PUBLIC_NEWS_CUTOFF)
+    .not('published_at', 'is', null)
     .single();
 
-  if (error || !data) return null;
+  if (error || !data || !data.ai_title || !data.ai_content || !hasValidEditorialComparison(data.editorial_comparison)) return null;
   return data;
 }
 
@@ -25,21 +27,21 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const article = await getArticle(articleId);
   if (!article) return { title: 'Noticia no encontrada', robots: { index: false, follow: false } };
 
-  const title = generateArticleTitle(article.ai_title || article.original_title, article.category || 'Noticias');
+  const title = generateArticleTitle(article.ai_title, article.category || 'Análisis editorial');
   const description = generateArticleDescription(
-    article.ai_title || article.original_title,
-    article.ai_content || article.original_content || '',
+    article.ai_title,
+    article.ai_content,
     article.category || ''
   );
-  const keywords = generateCategoryKeywords(article.category || '');
+  const keywords = generateCategoryKeywords(article.category || 'Análisis editorial');
 
   return {
     title,
     description,
-    keywords: `${keywords}, ${(article.ai_title || article.original_title).substring(0, 50)}`,
+    keywords: `${keywords}, ${article.ai_title.substring(0, 50)}`,
     openGraph: {
-      title: article.ai_title || article.original_title,
-      description: `${article.category || 'Noticia'} | Escrita sin sesgos por IA`,
+      title: article.ai_title,
+      description: `${article.category || 'Análisis editorial'} | Crítica del relato periodístico`,
       type: 'article',
       images: [getArticleImage(article)],
       publishedTime: article.published_at,
@@ -47,7 +49,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     },
     twitter: {
       card: 'summary_large_image',
-      title: article.ai_title || article.original_title,
+      title: article.ai_title,
       description,
       images: [getArticleImage(article)],
     },
@@ -63,5 +65,5 @@ export default async function LegacyArticleRedirect({ params }: { params: { id: 
     notFound();
   }
 
-  redirect(buildArticleUrl(article.id, article.ai_title || article.original_title, article.category));
+  redirect(buildArticleUrl(article.id, article.ai_title, article.category));
 }

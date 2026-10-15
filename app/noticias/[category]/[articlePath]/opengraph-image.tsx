@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og';
 import { supabase } from '@/lib/supabase';
 import { extractArticleId } from '@/lib/articleUtils';
 import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
+import { hasValidEditorialComparison } from '@/lib/editorialComparison';
 
 export const runtime = 'edge';
 export const revalidate = 60;
@@ -17,13 +18,15 @@ export default async function OpenGraphImage({
   const articleId = extractArticleId(params.articlePath);
   const { data: article } = await supabase
     .from('news_articles')
-    .select('ai_title, original_title, category')
+    .select('*')
     .eq('id', articleId)
     .gte('created_at', PUBLIC_NEWS_CUTOFF)
+    .not('published_at', 'is', null)
     .single();
 
-  const title = article?.ai_title || article?.original_title || 'Noticias de Argentina y el mundo';
-  const category = article?.category || 'Noticias';
+  const isPublishable = Boolean(article?.ai_title && article?.ai_content && hasValidEditorialComparison(article?.editorial_comparison));
+  const title = isPublishable ? article!.ai_title : 'El Irónico · lectura crítica del periodismo';
+  const category = isPublishable ? article!.category || 'Análisis editorial' : 'ANÁLISIS EDITORIAL';
 
   return new ImageResponse(
     (
@@ -66,7 +69,7 @@ export default async function OpenGraphImage({
           }}
         >
           <div style={{ display: 'flex', fontSize: 26, color: '#cbd5e1' }}>
-            Noticias sin sesgo
+            Crítica del relato periodístico
           </div>
           <div
             style={{

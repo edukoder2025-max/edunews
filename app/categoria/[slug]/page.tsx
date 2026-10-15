@@ -1,226 +1,47 @@
-import { supabase } from '@/lib/supabase';
-import { buildArticleUrl, getArticleImage, normalizeCategorySlug } from '@/lib/articleUtils';
-import { generateCategoryKeywords, generateSitemapDescription, getSiteUrl } from '@/lib/seoUtils';
-import { Metadata } from 'next';
-import Image from 'next/image';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronLeft, FolderOpen, Calendar, ArrowRight } from 'lucide-react';
-import SafeImage from '@/components/SafeImage';
+import { supabase } from '@/lib/supabase';
+import { buildArticleUrl, normalizeCategorySlug } from '@/lib/articleUtils';
+import { getSiteUrl } from '@/lib/seoUtils';
 import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
+import { hasValidEditorialComparison } from '@/lib/editorialComparison';
 
 export const revalidate = 60;
 
-function getCategoryFromSlug(slug: string) {
-  const normalized = slug.trim().toLowerCase();
-  switch (normalized) {
-    case 'mundo':
-      return 'Mundo';
-    case 'argentina':
-      return 'Argentina';
-    case 'tecnologia':
-      return 'Tecnología';
-    case 'economia':
-      return 'Economía';
-    case 'ciencia':
-      return 'Ciencia';
-    case 'deportes':
-      return 'Deportes';
-    case 'cultura':
-      return 'Cultura';
-    default:
-      return slug;
-  }
+function categoryName(slug: string) {
+  const values: Record<string, string> = { mundo: 'Mundo', argentina: 'Argentina', tecnologia: 'Tecnología', economia: 'Economía', ciencia: 'Ciencia', deportes: 'Deportes', cultura: 'Cultura' };
+  const normalized = normalizeCategorySlug(slug);
+  return values[normalized] || decodeURIComponent(slug);
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const categorySlug = normalizeCategorySlug(decodeURIComponent(params.slug));
-  const category = getCategoryFromSlug(categorySlug);
-  const siteUrl = getSiteUrl();
-  const canonicalUrl = `${siteUrl}/categoria/${categorySlug}`;
-  const description = generateSitemapDescription(category);
-
-  return {
-    title: `${category} | Noticias neutralizadas - El Irónico`,
-    description,
-    keywords: generateCategoryKeywords(category),
-    alternates: { canonical: canonicalUrl },
-    openGraph: {
-      title: `${category} | Noticias neutralizadas - El Irónico`,
-      description,
-      url: canonicalUrl,
-      siteName: 'El Irónico',
-      type: 'website',
-    },
-  };
+  const category = categoryName(params.slug);
+  const canonical = `${getSiteUrl()}/categoria/${normalizeCategorySlug(params.slug)}`;
+  const description = `Análisis críticos de piezas periodísticas sobre ${category}, publicados solo cuando incluyen una comparación editorial documentada.`;
+  return { title: `${category} | Análisis editoriales`, description, alternates: { canonical }, openGraph: { title: `${category} | El Irónico`, description, url: canonical, type: 'website', siteName: 'El Irónico' } };
 }
 
-async function getNewsByCategory(category: string) {
-  const { data, error } = await supabase
-    .from('news_articles')
-    .select('*')
-    .ilike('category', category)
-    .gte('created_at', PUBLIC_NEWS_CUTOFF)
-    .order('published_at', { ascending: false })
-    .limit(24);
-
-  if (error) {
-    console.error('Error fetching category news:', error);
-    return [];
-  }
-  return data || [];
+async function getAnalyses(category: string) {
+  const { data, error } = await supabase.from('news_articles').select('*').ilike('category', category).gte('created_at', PUBLIC_NEWS_CUTOFF).not('published_at', 'is', null).order('published_at', { ascending: false }).limit(100);
+  if (error) { console.error('Error cargando análisis de categoría:', error.message); return []; }
+  return (data || []).filter((item: any) => item.ai_title && item.ai_content && hasValidEditorialComparison(item.editorial_comparison)).slice(0, 24);
 }
 
-function getCategoryColor(category: string) {
-  const cat = (category || '').toLowerCase().trim();
-  if (cat.includes('mundo')) return 'text-cat-mundo border-cat-mundo/20 bg-cat-mundo/10';
-  if (cat.includes('argentina')) return 'text-cat-argentina border-cat-argentina/20 bg-cat-argentina/10';
-  if (cat.includes('tecnolog')) return 'text-cat-tecnologia border-cat-tecnologia/20 bg-cat-tecnologia/10';
-  if (cat.includes('econom')) return 'text-cat-economia border-cat-economia/20 bg-cat-economia/10';
-  if (cat.includes('deport')) return 'text-cat-deportes border-cat-deportes/20 bg-cat-deportes/10';
-  if (cat.includes('ciencia') || cat.includes('cultur') || cat.includes('ciencias')) return 'text-cat-cultura border-cat-cultura/20 bg-cat-cultura/10';
-  return 'text-cat-general border-cat-general/20 bg-cat-general/10';
-}
-
-function getCategoryFallbackImage(category: string) {
-  const cat = (category || '').toLowerCase().trim();
-  if (cat.includes('mundo')) return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('argentina')) return 'https://images.unsplash.com/photo-1545852528-fa22f7f8d17a?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('tecnolog')) return 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('econom')) return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('deport')) return 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=800&auto=format&fit=crop';
-  if (cat.includes('ciencia') || cat.includes('cultur') || cat.includes('ciencias')) return 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800&auto=format&fit=crop';
-  return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=800&auto=format&fit=crop';
-}
-
-function getCategoryTextClass(category: string) {
-  const cat = (category || '').toLowerCase().trim();
-  if (cat.includes('mundo')) return 'text-cat-mundo';
-  if (cat.includes('argentina')) return 'text-cat-argentina';
-  if (cat.includes('tecnolog')) return 'text-cat-tecnologia';
-  if (cat.includes('econom')) return 'text-cat-economia';
-  if (cat.includes('deport')) return 'text-cat-deportes';
-  if (cat.includes('ciencia') || cat.includes('cultur') || cat.includes('ciencias')) return 'text-cat-cultura';
-  return 'text-primary';
+function excerpt(html: string) {
+  return (html || '').replace(/<(script|style|noscript)[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
 }
 
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
-  const rawCategory = decodeURIComponent(params.slug);
-  const canonicalCategorySlug = normalizeCategorySlug(rawCategory);
-  const category = getCategoryFromSlug(canonicalCategorySlug);
-  const news = await getNewsByCategory(category);
-  const siteUrl = getSiteUrl();
-  const categoryStructuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: `${category} | Noticias neutralizadas - El Irónico`,
-    description: generateSitemapDescription(category),
-    url: `${siteUrl}/categoria/${canonicalCategorySlug}`,
-    isPartOf: { '@type': 'WebSite', name: 'El Irónico', url: siteUrl },
-    mainEntity: {
-      '@type': 'ItemList',
-      itemListElement: news.map((article, index) => ({
-        '@type': 'ListItem', position: index + 1,
-        url: `${siteUrl}${buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}`,
-        name: article.ai_title || article.original_title
-      }))
-    }
-  };
-
+  const category = categoryName(params.slug);
+  const articles = await getAnalyses(category);
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryStructuredData) }} />
-      <div className="mb-6">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors group text-xs font-black uppercase tracking-widest"
-        >
-          <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          Volver a la portada
-        </Link>
-      </div>
-
-      <header className="mb-12 border-b border-white/10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl md:text-6xl font-black text-white font-serif tracking-tight uppercase flex items-center gap-3">
-            <FolderOpen className={getCategoryTextClass(category)} size={36} />
-            Sección: <span className={getCategoryTextClass(category)}>{category}</span>
-          </h1>
-          <p className="text-slate-400 mt-2 font-semibold tracking-wider uppercase text-xs">
-            Artículos y reportes de prensa neutralizados de la categoría {category}
-          </p>
-        </div>
-        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest bg-white/5 border border-white/5 px-3 py-1.5 rounded-full">
-          Total de Reportes: {news.length}
-        </div>
+    <main className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+      <header className="border-b border-[#d9d1c5] pb-7">
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-[#9b3732]">Análisis editoriales</p>
+        <h1 className="mt-3 font-serif text-4xl font-bold text-[#191a17] sm:text-5xl">{category}</h1>
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-[#5d594f]">Lecturas críticas de piezas periodísticas con artículo propio y comparación editorial independiente.</p>
       </header>
-
-      {news.length === 0 ? (
-        <div className="text-center py-20 bg-slate-950/40 rounded-3xl border border-dashed border-white/10">
-          <FolderOpen className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-300 font-bold">No hay noticias en esta sección todavía.</p>
-          <p className="text-slate-500 text-xs mt-2 max-w-sm mx-auto">
-            El lector de feeds RSS no ha indexado ni reescrito noticias correspondientes a la sección de "{category}" recientemente.
-          </p>
-          <Link
-            href="/"
-            className="text-xs font-black uppercase tracking-widest text-primary hover:text-white mt-6 inline-flex items-center gap-1.5 transition-colors"
-          >
-            Volver a la Portada
-            <ArrowRight size={12} />
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-          {news.map((article) => (
-            <article key={article.id} className="group flex flex-col space-y-4">
-              <Link
-                href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}
-                className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-white/5 group-hover:border-primary/20 block shadow-lg transition-all duration-300"
-              >
-                <SafeImage
-                  src={getArticleImage(article)}
-                  fallbackSrc={getCategoryFallbackImage(article.category)}
-                  alt={article.ai_title || 'Noticia'}
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-
-                <div className="absolute top-3 left-3">
-                  <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 border rounded shadow-md ${getCategoryColor(article.category)}`}>
-                    {article.category || 'Mundo'}
-                  </span>
-                </div>
-              </Link>
-
-              <div className="space-y-2 flex-1 flex flex-col justify-between">
-                <div className="space-y-1">
-                  <h2 className="text-xl font-black font-serif text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
-                    <Link href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}>
-                      {article.ai_title || article.original_title}
-                    </Link>
-                  </h2>
-                  <p className="text-xs text-slate-400 font-sans line-clamp-3 leading-relaxed">
-                    {(article.ai_content || article.original_content).replace(/<[^>]*>/g, '').substring(0, 150)}...
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-white/5 text-[9px] font-black uppercase text-slate-500 tracking-wider">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    {new Date(article.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
-                  </span>
-                  <Link
-                    href={buildArticleUrl(article.id, article.ai_title || article.original_title, article.category)}
-                    className="text-primary hover:text-white transition-colors"
-                  >
-                    Leer Reporte IA +
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-    </div>
+      {articles.length === 0 ? <section className="mt-8 rounded-2xl border border-[#d9d1c5] bg-[#eee8dc] p-6 sm:p-8"><h2 className="font-serif text-xl font-bold text-[#191a17]">Todavía no hay análisis publicados en esta sección.</h2><p className="mt-2 text-sm leading-6 text-[#5d594f]">El archivo histórico no se muestra como parte de la nueva etapa. Una pieza solo aparece aquí si su texto y su comparación documentada están completos.</p></section> : <div className="mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">{articles.map((article: any) => { const title = article.ai_title; const href = buildArticleUrl(article.id, title, article.category || category); return <article key={article.id} className="border-t-2 border-[#b23a34] pt-4"><p className="text-[11px] font-bold uppercase tracking-[.14em] text-[#9b3732]">{category}</p><h2 className="mt-3 font-serif text-xl font-bold leading-snug text-[#191a17] sm:text-2xl"><Link href={href} className="hover:text-[#8d2d29]">{title}</Link></h2><p className="mt-3 text-sm leading-6 text-[#5d594f]">{excerpt(article.ai_content)}…</p><Link href={href} className="mt-4 inline-block text-sm font-bold text-[#9b3732]">Leer el análisis →</Link></article>; })}</div>}
+    </main>
   );
 }

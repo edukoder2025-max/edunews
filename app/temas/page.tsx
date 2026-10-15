@@ -3,42 +3,8 @@ import Link from 'next/link';
 import { TOPIC_HUBS } from '@/lib/topicHubs';
 import { getSiteUrl } from '@/lib/seoUtils';
 
-export const metadata: Metadata = {
-  title: 'Temas de interés | El Irónico',
-  description: 'Guías y noticias agrupadas por temas de interés para encontrar información útil y actualizada.',
-  alternates: { canonical: `${getSiteUrl()}/temas` },
-};
+export const metadata: Metadata = { title: 'Temas | El Irónico', description: 'Temas de análisis crítico de piezas periodísticas.', alternates: { canonical: `${getSiteUrl()}/temas` } };
 
 export default function TopicsPage() {
-  return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-      <header className="mb-12 max-w-3xl">
-        <p className="text-primary text-xs font-black uppercase tracking-[0.25em]">Información útil</p>
-        <h1 className="text-4xl md:text-6xl font-black font-serif text-white leading-tight mt-4">
-          Temas de interés
-        </h1>
-        <p className="text-lg text-slate-300 leading-relaxed mt-5">
-          Noticias y explicadores agrupados para encontrar información relevante sin perderse entre publicaciones aisladas.
-        </p>
-      </header>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        {TOPIC_HUBS.map((topic) => (
-          <Link
-            key={topic.slug}
-            href={`/temas/${topic.slug}`}
-            className="group rounded-2xl border border-white/10 bg-slate-900/60 p-6 hover:border-primary/50 transition-colors"
-          >
-            <h2 className="text-2xl font-black font-serif text-white group-hover:text-primary transition-colors">
-              {topic.title}
-            </h2>
-            <p className="text-slate-400 leading-relaxed mt-3">{topic.description}</p>
-            <span className="inline-block text-primary text-xs font-black uppercase tracking-widest mt-6">
-              Ver cobertura →
-            </span>
-          </Link>
-        ))}
-      </div>
-    </main>
-  );
+  return <main className="mx-auto w-full max-w-5xl px-5 py-12 sm:px-8 sm:py-16"><header className="mb-9 max-w-3xl border-b border-[#d9d1c5] pb-7"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#9b3732]">Índice temático</p><h1 className="mt-3 font-serif text-4xl font-bold text-[#191a17] sm:text-5xl">Temas para leer críticamente</h1><p className="mt-4 text-sm leading-6 text-[#5d594f]">Agrupamos los análisis editoriales por asunto. Solo aparecen piezas de la nueva etapa con texto propio y comparación documentada; el archivo histórico queda fuera.</p></header><div className="grid gap-5 md:grid-cols-2">{TOPIC_HUBS.map((topic) => <Link key={topic.slug} href={`/temas/${topic.slug}`} className="group rounded-2xl border border-[#d9d1c5] bg-[#f8f5ed] p-6 transition hover:border-[#b23a34]"><h2 className="font-serif text-2xl font-bold text-[#191a17] group-hover:text-[#9b3732]">{topic.title}</h2><p className="mt-3 text-sm leading-6 text-[#5d594f]">{topic.description}</p><span className="mt-5 inline-block text-sm font-bold text-[#9b3732]">Ver análisis →</span></Link>)}</div></main>;
 }

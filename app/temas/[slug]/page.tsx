@@ -1,120 +1,39 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Calendar, ChevronLeft } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { buildArticleUrl } from '@/lib/articleUtils';
 import { getSiteUrl } from '@/lib/seoUtils';
 import { getTopicHub, getTopicOrFilters } from '@/lib/topicHubs';
 import { PUBLIC_NEWS_CUTOFF } from '@/lib/publicationVisibility';
+import { hasValidEditorialComparison } from '@/lib/editorialComparison';
 
 export const revalidate = 300;
 
 async function getTopicArticles(slug: string) {
   const topic = getTopicHub(slug);
   if (!topic) return [];
-
-  const { data, error } = await supabase
-    .from('news_articles')
-    .select('id, ai_title, original_title, ai_content, original_content, category, published_at')
-    .or(getTopicOrFilters(topic.searchTerms))
-    .gte('created_at', PUBLIC_NEWS_CUTOFF)
-    .order('published_at', { ascending: false })
-    .limit(24);
-
-  if (error) {
-    console.error('Error cargando tema:', error);
-    return [];
-  }
-  return data || [];
+  const { data, error } = await supabase.from('news_articles').select('*').or(getTopicOrFilters(topic.searchTerms)).gte('created_at', PUBLIC_NEWS_CUTOFF).not('published_at', 'is', null).order('published_at', { ascending: false }).limit(100);
+  if (error) { console.error('Error cargando tema:', error.message); return []; }
+  return (data || []).filter((item: any) => item.ai_title && item.ai_content && hasValidEditorialComparison(item.editorial_comparison)).slice(0, 24);
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const topic = getTopicHub(params.slug);
-  if (!topic) return { title: 'Tema no encontrado' };
-
-  const canonical = `${getSiteUrl()}/temas/${topic.slug}`;
-  return {
-    title: `${topic.title} | El Irónico`,
-    description: topic.description,
-    keywords: topic.searchTerms.join(', '),
-    alternates: { canonical },
-    openGraph: {
-      title: `${topic.title} | El Irónico`,
-      description: topic.description,
-      url: canonical,
-      type: 'website',
-    },
-  };
+  if (!topic) return { title: 'Tema no encontrado', robots: { index: false, follow: false } };
+  return { title: `${topic.title} | El Irónico`, description: `${topic.description} Análisis con comparación editorial documentada.`, alternates: { canonical: `${getSiteUrl()}/temas/${topic.slug}` }, openGraph: { title: `${topic.title} | El Irónico`, description: topic.description, url: `${getSiteUrl()}/temas/${topic.slug}`, type: 'website' } };
 }
 
 export default async function TopicPage({ params }: { params: { slug: string } }) {
   const topic = getTopicHub(params.slug);
   if (!topic) notFound();
-
   const articles = await getTopicArticles(topic.slug);
-  const siteUrl = getSiteUrl();
-  const topicStructuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: `${topic.title} | El Irónico`,
-    description: topic.description,
-    url: `${siteUrl}/temas/${topic.slug}`,
-    isPartOf: { '@type': 'WebSite', name: 'El Irónico', url: siteUrl },
-    mainEntity: {
-      '@type': 'ItemList',
-      itemListElement: articles.map((article, index) => ({
-        '@type': 'ListItem', position: index + 1,
-        url: `${siteUrl}${buildArticleUrl(article.id, article.ai_title || article.original_title || 'Noticia', article.category)}`,
-        name: article.ai_title || article.original_title || 'Noticia'
-      }))
-    }
-  };
-
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(topicStructuredData) }} />
-      <Link
-        href="/temas"
-        className="inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-xs font-black uppercase tracking-widest"
-      >
-        <ChevronLeft size={16} /> Volver a temas
-      </Link>
-
-      <header className="mt-8 mb-12 border-b border-white/10 pb-8">
-        <p className="text-primary text-xs font-black uppercase tracking-[0.25em]">Cobertura temática</p>
-        <h1 className="text-4xl md:text-6xl font-black font-serif text-white leading-tight mt-4">{topic.title}</h1>
-        <p className="text-lg text-slate-300 leading-relaxed max-w-3xl mt-5">{topic.description}</p>
-      </header>
-
-      {articles.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-10 text-center">
-          <p className="text-slate-300 font-bold">Todavía no hay artículos asociados a este tema.</p>
-          <p className="text-slate-500 text-sm mt-2">La cobertura aparecerá cuando el sistema detecte información relacionada.</p>
-        </div>
-      ) : (
-        <div className="grid gap-8 md:grid-cols-2">
-          {articles.map((article) => {
-            const title = article.ai_title || article.original_title || 'Noticia';
-            const excerpt = (article.ai_content || article.original_content || '').replace(/<[^>]*>/g, '').slice(0, 190);
-            return (
-              <article key={article.id} className="rounded-2xl border border-white/10 bg-slate-900/50 p-6 hover:border-primary/40 transition-colors">
-                <p className="text-primary text-[10px] font-black uppercase tracking-widest">{article.category || 'Noticias'}</p>
-                <h2 className="text-2xl font-black font-serif text-white leading-tight mt-3">
-                  <Link href={buildArticleUrl(article.id, title, article.category)} className="hover:text-primary transition-colors">
-                    {title}
-                  </Link>
-                </h2>
-                <p className="text-slate-400 leading-relaxed mt-3">{excerpt}{excerpt ? '…' : ''}</p>
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 mt-5">
-                  <Calendar size={13} />
-                  {article.published_at ? new Date(article.published_at).toLocaleDateString('es-AR') : 'Sin fecha'}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+    <main className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
+      <Link href="/temas" className="text-sm font-semibold text-[#9b3732] underline underline-offset-4">← Todos los temas</Link>
+      <header className="mt-7 border-b border-[#d9d1c5] pb-7"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#9b3732]">Tema editorial</p><h1 className="mt-3 font-serif text-4xl font-bold text-[#191a17] sm:text-5xl">{topic.title}</h1><p className="mt-4 max-w-3xl text-sm leading-6 text-[#5d594f]">{topic.description} En esta sección solo se muestran análisis propios que incluyen una comparación documentada con la pieza fuente.</p></header>
+      {articles.length === 0 ? <p className="mt-8 rounded-2xl bg-[#eee8dc] p-6 text-sm leading-6 text-[#5d594f]">Todavía no hay análisis publicados en este tema. El archivo histórico no se presenta como parte de la nueva etapa.</p> : <div className="mt-8 grid gap-6 md:grid-cols-2">{articles.map((article: any) => { const title = article.ai_title; return <article key={article.id} className="rounded-2xl border border-[#d9d1c5] bg-[#f8f5ed] p-6"><p className="text-xs font-bold uppercase tracking-[.14em] text-[#9b3732]">{article.category || 'Análisis editorial'}</p><h2 className="mt-3 font-serif text-2xl font-bold leading-snug text-[#191a17]"><Link href={buildArticleUrl(article.id, title, article.category)} className="hover:text-[#9b3732]">{title}</Link></h2><p className="mt-4 text-sm leading-6 text-[#5d594f]">{(article.ai_content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180)}…</p><div className="mt-5 flex items-center gap-2 text-xs text-[#777064]"><Calendar size={13} aria-hidden="true" />{article.published_at ? new Date(article.published_at).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : 'Fecha no disponible'}</div></article>; })}</div>}
     </main>
   );
 }

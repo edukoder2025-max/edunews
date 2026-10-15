@@ -1,398 +1,125 @@
-import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
-import "./globals.css";
-import CookieBanner from "@/components/CookieBanner";
-// import { SWGInitializer } from "@/components/SWGInitializer"; // OCULTO: Temporalmente deshabilitado
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
-import { PUBLIC_NEWS_CUTOFF } from "@/lib/publicationVisibility";
-import { buildArticleUrl } from "@/lib/articleUtils";
-import { getSiteUrl } from "@/lib/seoUtils";
+import type { Metadata } from 'next';
+import { Inter, Playfair_Display } from 'next/font/google';
+import Script from 'next/script';
+import Link from 'next/link';
+import CookieBanner from '@/components/CookieBanner';
+import { getSiteUrl } from '@/lib/seoUtils';
+import './globals.css';
 
-
-import WeatherWidget from "@/components/WeatherWidget";
-import CryptoWidget from "@/components/CryptoWidget";
-import Script from "next/script";
-import NewsletterForm from "@/components/NewsletterForm"; // ✅ ACTIVO: Newsletter gratuito funciona
-import LanguageSwitcher from "@/components/LanguageSwitcher";
-import MainNavigation from "@/components/MainNavigation";
-// import ContributionCTABanner from "@/components/ContributionCTABanner"; // OCULTO: Temporalmente deshabilitado
-// import ContributionButton from "@/components/ContributionButton"; // OCULTO: Temporalmente deshabilitado
-import Image from "next/image";
-
-
-
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({ 
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-});
-
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair', display: 'swap' });
 const siteUrl = getSiteUrl();
 const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "El Irónico | Noticias de Argentina y el Mundo sin Sesgo - Periodismo IA",
-  description: "El Irónico es un periódico digital 100% impulsado por IA que neutraliza noticias de Argentina, Mundo, Tecnología, Economía, Deportes y Ciencia. Periodismo ético, libre de sesgos políticos.",
-  keywords: "noticias, periodismo, Argentina, mundo, tecnología, economía, inteligencia artificial, noticias sin sesgo, periodismo neutral",
-  alternates: {
-    canonical: siteUrl,
+  title: {
+    default: 'El Irónico | Crítica y análisis del periodismo',
+    template: '%s | El Irónico',
   },
-  other: process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID
-    ? {
-        "google-adsense-account": process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID,
-      }
-    : {},
+  description: 'El Irónico examina cómo se construyen las piezas periodísticas: sus títulos, evidencias, atribuciones y contexto. No reescribimos noticias; publicamos análisis críticos propios.',
+  keywords: ['crítica periodística', 'análisis editorial', 'periodismo', 'medios', 'fuentes', 'El Irónico'],
+  alternates: { canonical: siteUrl },
+  other: adsenseClientId ? { 'google-adsense-account': adsenseClientId } : {},
   openGraph: {
-    title: "El Irónico | Noticias Neutrales de Argentina y el Mundo",
-    description: "Periodismo impulsado por IA - Noticias neutralizadas sin intereses políticos",
+    title: 'El Irónico | Crítica y análisis del periodismo',
+    description: 'No repetimos la noticia. Examinamos cómo fue contada.',
     url: siteUrl,
-    siteName: "El Irónico",
-    type: "website",
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop",
-        width: 1200,
-        height: 630,
-        alt: "El Irónico",
-      },
-    ],
+    siteName: 'El Irónico',
+    type: 'website',
+    locale: 'es_AR',
   },
   twitter: {
-    card: "summary_large_image",
-    title: "El Irónico | Noticias Neutrales de Argentina y el Mundo",
-    description: "Periodismo impulsado por IA - Noticias neutralizadas sin intereses políticos",
-    images: ["https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop"],
+    card: 'summary_large_image',
+    title: 'El Irónico | Crítica y análisis del periodismo',
+    description: 'No repetimos la noticia. Examinamos cómo fue contada.',
   },
 };
 
-async function getTickerNews() {
-  try {
-    const { data, error } = await supabase
-      .from('news_articles')
-      .select('id, ai_title, original_title, category')
-      .gte('created_at', PUBLIC_NEWS_CUTOFF)
-      .order('published_at', { ascending: false })
-      .limit(8);
-    if (error) {
-      console.error("Error fetching ticker news:", error);
-      return [];
-    }
-    return data || [];
-  } catch (err) {
-    console.error("Error loading ticker:", err);
-    return [];
-  }
-}
+const primaryLinks = [
+  { href: '/', label: 'Portada' },
+  { href: '/temas', label: 'Temas' },
+  { href: '/search', label: 'Buscar' },
+  { href: '/metodologia', label: 'Método' },
+  { href: '/nosotros', label: 'Quiénes somos' },
+  { href: '/contacto', label: 'Contacto' },
+];
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const rawTickerNews = await getTickerNews();
-  const tickerNews = Array.from(
-    new Map(rawTickerNews.map(news => [news.id, news])).values()
-  );
-  
-  // Fetch active categories dynamically
-  const { data: categoriesData } = await supabase
-    .from('news_articles')
-    .select('category')
-    .gte('created_at', PUBLIC_NEWS_CUTOFF);
-  
-  const activeCategories = Array.from(
-    new Set(categoriesData?.map(item => item.category?.trim()).filter(Boolean) || [])
-  ).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
-
-  const formattedDate = new Date().toLocaleDateString('es-ES', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  });
-
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className="dark">
-      <body className={`${inter.variable} ${playfair.variable} font-sans editorial-paper bg-background text-slate-200 antialiased`}>
-        {/* SVG Filter: Chalk-on-Blackboard turbulence effect — usado por .chalk-title */}
-        <svg
-          style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
-          aria-hidden="true"
-          focusable="false"
-        >
-          <defs>
-            <filter id="chalk-rough" x="-5%" y="-5%" width="110%" height="110%" colorInterpolationFilters="sRGB">
-              {/* Genera ruido fractal que simula la textura granulosa de la tiza */}
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.65 0.75"
-                numOctaves="4"
-                seed="8"
-                stitchTiles="stitch"
-                result="noise"
-              />
-              {/* Desplaza los píxeles del texto según el ruido generado */}
-              <feDisplacementMap
-                in="SourceGraphic"
-                in2="noise"
-                scale="2.5"
-                xChannelSelector="R"
-                yChannelSelector="G"
-                result="roughened"
-              />
-              {/* Mezcla suave: el resultado áspero a 90% + original suave a 10% */}
-              <feBlend in="roughened" in2="SourceGraphic" mode="normal" result="blended" />
-              <feComposite in="blended" in2="SourceGraphic" operator="in" />
-            </filter>
-          </defs>
-        </svg>
-
-        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
+    <html lang="es-AR">
+      <body className={`${inter.variable} ${playfair.variable} editorial-paper font-sans antialiased`}>
+        {adsenseClientId && (
           <Script
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
             crossOrigin="anonymous"
             strategy="lazyOnload"
           />
         )}
-
         {gaMeasurementId && (
           <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
-              strategy="afterInteractive"
-            />
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />
             <Script id="google-analytics" strategy="afterInteractive">
               {`window.dataLayer = window.dataLayer || [];
                 function gtag(){window.dataLayer.push(arguments);}
                 gtag('js', new Date());
-                gtag('config', ${JSON.stringify(gaMeasurementId)}, {
-                  page_path: window.location.pathname,
-                });`}
+                gtag('config', ${JSON.stringify(gaMeasurementId)}, { page_path: window.location.pathname });`}
             </Script>
           </>
         )}
-        
-        {/* OCULTO: Google Subscribe with Google SDK - Temporalmente deshabilitado */}
-        {/* <Script
-          src="https://news.google.com/swg/js/v1/swg-basic.js"
-          strategy="afterInteractive"
-          async
-        /> */}
-        
+
         <div className="min-h-screen flex flex-col">
-          <section
-            data-nosnippet="true"
-            role="status"
-            aria-labelledby="editorial-maintenance-title"
-            className="w-full border-y border-amber-300/20 bg-amber-950/90 px-4 py-6 sm:py-9"
-          >
-            <div className="mx-auto max-w-5xl rounded-3xl border border-amber-200/25 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/60 px-5 py-8 text-center shadow-2xl shadow-black/30 sm:px-10 sm:py-11">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-amber-300">Pausa editorial · 14 al 22 de octubre</p>
-              <h2 id="editorial-maintenance-title" className="font-serif text-2xl font-black leading-tight text-white sm:text-4xl">Estamos mejorando nuestro sistema para vos</h2>
-              <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-slate-200 sm:text-lg">Estamos revisando nuestras fuentes y renovando nuestro proceso editorial para volver con información más propia, precisa y con mayor contexto.</p>
-              <p className="mt-5 text-sm font-bold text-amber-200 sm:text-base">Estimamos volver entre el 21 y el 22 de octubre.</p>
-            </div>
-          </section>
-          {/* OCULTO: Initialize SWG - Temporalmente deshabilitado */}
-          {/* <SWGInitializer /> */}
-
-
-          {/* Centered Newspaper Masthead */}
-          <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 flex flex-col items-center">
-            
-            {/* Grilla Superior: Oreja Izquierda | Logotipo Central | Oreja Derecha */}
-            <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-6 items-center justify-between pb-6 border-b border-white/5">
-              
-              {/* Oreja Izquierda: Datos Técnicos y Lema Clásico */}
-              <div className="hidden md:flex flex-col text-left text-[9px] text-slate-500 font-bold uppercase tracking-wider space-y-1">
-                <div>REGISTRO N.º 48.910</div>
-                <div className="flex gap-2 text-slate-400">
-                  <Link href="/nosotros" className="hover:text-primary transition-colors">Quiénes Somos</Link>
-                  <span>•</span>
-                  <Link href="/contacto" className="hover:text-primary transition-colors">Contacto</Link>
-                </div>
-                <div className="text-primary/70 font-serif italic text-xs tracking-normal normal-case font-bold mt-0.5">
-                  “Veritas et Libertas”
-                </div>
-              </div>
-
-              {/* Logotipo Central (Ocupa 2 columnas de la grilla) */}
-              <div className="col-span-1 md:col-span-2 flex flex-col items-center text-center">
-                <Link href="/" className="group flex flex-col items-center gap-1.5 hover:opacity-95 transition-opacity">
-                  <Image
-                    src="/logo-rect.png"
-                    alt="El Irónico"
-                    width={230}
-                    height={98}
-                    className="object-contain filter drop-shadow-[0_0_15px_rgba(200,100,50,0.15)]"
-                    priority
-                  />
+          <header className="border-b border-[#d9d1c5] bg-[#f8f5ed]">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-5 py-5 sm:px-8 sm:py-7">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <Link href="/" className="group flex items-center gap-3" aria-label="El Irónico, portada">
+                  <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full border border-[#b23a34] font-serif text-xl font-bold text-[#a33a34]">EI</span>
+                  <span>
+                    <span className="block font-serif text-2xl font-bold tracking-[-.04em] text-[#191a17] sm:text-3xl">El Irónico</span>
+                    <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[.15em] text-[#777064]">Crítica del relato periodístico</span>
+                  </span>
                 </Link>
+                <p className="hidden max-w-xs text-right text-sm leading-5 text-[#777064] md:block">No repetimos la noticia.<br /><strong className="text-[#3b3933]">Examinamos cómo fue contada.</strong></p>
               </div>
-
-              {/* Oreja Derecha: Selector de Idioma e Información */}
-              <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-2 text-right">
-                <div className="hidden md:block text-[9px] text-slate-500 font-bold uppercase tracking-wider">
-                  EDICIÓN DIGITAL ESTÁNDAR
-                </div>
-                <div className="flex items-center gap-2.5 bg-slate-950/40 p-1.5 px-3 rounded-full border border-white/5">
-                  <LanguageSwitcher />
-                </div>
-              </div>
-
+              <nav aria-label="Navegación principal" className="flex flex-wrap gap-x-6 gap-y-2 border-t border-[#e3ddd3] pt-4">
+                {primaryLinks.map((item) => (
+                  <Link key={item.href} href={item.href} className="text-sm font-semibold text-[#4d4941] transition hover:text-[#a33a34]">
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
             </div>
-
-            {/* Newspaper Metadata Sub-header with double borders */}
-            <div className="w-full border-newspaper-double py-2 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
-              <div className="flex items-center gap-2 text-primary font-black">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-                Transmisión Continua
-              </div>
-              <div className="text-slate-300 font-medium font-serif italic text-center sm:text-left">
-                {formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}
-              </div>
-              <div className="flex items-center gap-2">
-                <WeatherWidget />
-              </div>
-            </div>
-
-            {/* Principal Editorial Banner (Headline/Lema) */}
-            <div className="w-full text-center py-4 border-b border-white/5">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-serif text-white tracking-normal leading-tight">
-                Noticias Argentina sin sesgo y periodismo IA neutral 24/7
-              </h2>
-              <p className="text-[10px] sm:text-xs text-slate-400 max-w-2xl mx-auto mt-1 font-medium leading-relaxed">
-                Información verificada y neutralizada automáticamente mediante Inteligencia Artificial para una lectura objetiva y transparente.
-              </p>
-            </div>
-
-            <MainNavigation activeCategories={activeCategories} />
           </header>
 
-          {/* Scrolling Ticker of Latest News */}
-          {tickerNews.length > 0 && (
-            <div className="w-full bg-slate-950/60 border-y border-white/5 py-2.5 overflow-hidden flex relative select-none z-20">
-              <div className="flex-shrink-0 bg-primary text-white font-black text-[9px] uppercase tracking-wider px-3 py-1 rounded ml-6 z-10 flex items-center shadow-lg shadow-primary/20">
-                Últimas Noticias
+          <div id="contenido" className="flex-1">{children}</div>
+
+          <footer className="border-t border-[#d9d1c5] bg-[#eee8dc]">
+            <div className="mx-auto grid w-full max-w-6xl gap-8 px-5 py-10 sm:px-8 md:grid-cols-[1.3fr_.7fr] md:py-14">
+              <div>
+                <Link href="/" className="font-serif text-2xl font-bold text-[#191a17]">El Irónico</Link>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-[#5d594f]">
+                  Analizamos las decisiones editoriales de las piezas periodísticas. La crítica se dirige al texto y a su tratamiento de la información, no a las personas.
+                </p>
+                <a href="mailto:edukoder2025@gmail.com" className="mt-4 inline-block text-sm font-semibold text-[#9b3732] underline underline-offset-4">Contacto editorial</a>
               </div>
-              <div className="flex overflow-hidden w-full relative items-center ml-4">
-                <div className="animate-ticker flex gap-12 text-xs font-bold text-slate-300">
-                  {tickerNews.map((news, i) => (
-                    <Link key={`${news.id}-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title, news.category)} className="hover:text-primary transition-colors flex items-center gap-2">
-                      <span className="text-primary font-black">•</span>
-                      {news.ai_title || news.original_title}
-                    </Link>
-                  ))}
-                  {/* Duplicate for infinite loop */}
-                  {tickerNews.map((news, i) => (
-                    <Link key={`${news.id}-dup-${i}`} href={buildArticleUrl(news.id, news.ai_title || news.original_title, news.category)} className="hover:text-primary transition-colors flex items-center gap-2">
-                      <span className="text-primary font-black">•</span>
-                      {news.ai_title || news.original_title}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Live Crypto Market Ticker con Sparklines */}
-          <CryptoWidget />
-
-          {/* OCULTO: ContributionCTABanner - Temporalmente deshabilitado */}
-          {/* <ContributionCTABanner /> */}
-
-          {/* Main Content */}
-          <main className="flex-1 w-full">
-            {children}
-          </main>
-
-          {/* Footer */}
-          <footer className="border-t border-white/5 bg-slate-950 mt-auto">
-            <div className="max-w-7xl mx-auto px-6 py-12 space-y-10">
-              {/* 
-                OCULTO: Sección de Contribución - Temporalmente deshabilitada
-                <div className="rounded-[2rem] border border-primary/20 bg-primary/10 p-8 shadow-lg shadow-primary/10">
-                  ...contenido oculto...
-                </div>
-              */}
-
-              {/* ✅ ACTIVO: Newsletter Gratuito - Sigue funcionando */}
-              <div className="mb-12 border-b border-white/5 pb-12">
-                <NewsletterForm />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <div className="md:col-span-2 space-y-4">
-                  <div className="flex items-center gap-2.5">
-                    <Image
-                      src="/logo-square.png"
-                      alt="El Irónico Logo"
-                      width={32}
-                      height={32}
-                      className="object-contain"
-                    />
-                    <h3 className="text-lg font-bold text-white font-serif">El Irónico</h3>
-                  </div>
-                  <p className="text-sm text-slate-400 max-w-md leading-relaxed">
-                    El primer periódico digital impulsado por IA diseñado para evitar noticias sesgadas por intereses partidarios o políticos. Promovemos un periodismo ético, transparente y correcto.
-                  </p>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    Contacto: <a href="mailto:edukoder2025@gmail.com" className="text-primary hover:text-white transition-colors">edukoder2025@gmail.com</a>
-                  </p>
-                  <nav aria-label="Redes sociales" className="flex flex-wrap items-center gap-3 text-xs font-black uppercase tracking-wider">
-                    <span className="text-slate-500">Seguinos:</span>
-                    <a
-                      href="https://www.instagram.com/elironico.ars/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-white transition-colors"
-                    >
-                      Instagram @elironico.ars
-                    </a>
-                  </nav>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider text-white mb-4">Legal</h3>
-                  <ul className="space-y-2 text-sm text-slate-400 font-medium">
-                    <li><Link href="/privacidad" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
-                    <li><Link href="/terminos" className="hover:text-primary transition-colors">Términos de Servicio</Link></li>
-                    <li><Link href="/cookies" className="hover:text-primary transition-colors">Política de Cookies</Link></li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider text-white mb-4">Secciones</h3>
-                  <ul className="space-y-2 text-sm text-slate-400 font-medium">
-                    <li><Link href="/temas" className="hover:text-primary transition-colors">Temas de interés</Link></li>
-                    <li><Link href="/registro" className="hover:text-primary transition-colors">Registro editorial</Link></li>
-                    <li><Link href="/metodologia" className="hover:text-primary transition-colors">Metodología IA</Link></li>
-                    <li><Link href="/nosotros" className="hover:text-primary transition-colors">Quiénes Somos</Link></li>
-                    <li><Link href="/contacto" className="hover:text-primary transition-colors">Contacto</Link></li>
-                  </ul>
-                </div>
-              </div>
-              <div className="pt-8 border-t border-white/5 text-center text-slate-500 text-xs flex flex-col md:flex-row justify-between items-center gap-4">
-                <p>© {new Date().getFullYear()} El Irónico. Todos los derechos reservados.</p>
-                <p>Las noticias generadas por IA son extraídas de fuentes públicas y reescritas bajo principios de neutralidad.</p>
+              <nav aria-label="Enlaces legales" className="grid grid-cols-2 gap-x-5 gap-y-3 content-start text-sm font-medium text-[#5d594f]">
+                <Link href="/metodologia" className="hover:text-[#9b3732]">Metodología</Link>
+                <Link href="/nosotros" className="hover:text-[#9b3732]">Quiénes somos</Link>
+                <Link href="/privacidad" className="hover:text-[#9b3732]">Privacidad</Link>
+                <Link href="/terminos" className="hover:text-[#9b3732]">Términos</Link>
+                <Link href="/cookies" className="hover:text-[#9b3732]">Cookies</Link>
+                <Link href="/contacto" className="hover:text-[#9b3732]">Contacto</Link>
+              </nav>
+              <div className="border-t border-[#d9d1c5] pt-4 text-xs leading-5 text-[#777064] md:col-span-2 md:flex md:items-center md:justify-between">
+                <p>© {new Date().getFullYear()} El Irónico.</p>
+                <p>Las críticas se apoyan en evidencias disponibles y explicitan sus límites.</p>
               </div>
             </div>
           </footer>
-          
           <CookieBanner />
         </div>
       </body>
     </html>
   );
 }
-
-
