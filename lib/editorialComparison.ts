@@ -39,7 +39,8 @@ export function parseEditorialComparison(raw: unknown): EditorialComparisonData 
     const aspect = cleanText(item.aspect, 120);
     const observation = cleanText(item.observation, 1000);
     if (!aspect || !observation || !Array.isArray(item.evidenceUrls) || item.evidenceUrls.length < 1 || item.evidenceUrls.length > 5) return null;
-    const evidenceUrls = [...new Set(item.evidenceUrls.map(safeEvidenceUrl).filter((url): url is string => Boolean(url)))];
+    const validEvidenceUrls = item.evidenceUrls.map(safeEvidenceUrl).filter((url): url is string => Boolean(url));
+    const evidenceUrls = validEvidenceUrls.filter((url, index) => validEvidenceUrls.indexOf(url) === index);
     if (!evidenceUrls.length || evidenceUrls.length !== item.evidenceUrls.length) return null;
     findings.push({ aspect, observation, evidenceUrls });
   }
@@ -56,7 +57,7 @@ export function parseEditorialComparison(raw: unknown): EditorialComparisonData 
 
   const findingKeys = findings.map((item) => aspectKey(item.aspect));
   const improvementKeys = improvements.map((item) => aspectKey(item.aspect));
-  if (new Set(findingKeys).size !== findingKeys.length || new Set(improvementKeys).size !== improvementKeys.length) return null;
+  if (findingKeys.some((key, index) => findingKeys.indexOf(key) !== index) || improvementKeys.some((key, index) => improvementKeys.indexOf(key) !== index)) return null;
   if (findingKeys.some((key) => !improvementKeys.includes(key))) return null;
 
   return {
